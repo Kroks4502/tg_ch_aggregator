@@ -61,10 +61,10 @@ async def startup():
                 chat_id = message[0]
                 msg_ids = message[1]
                 new_message = await user.forward_messages(
-                    f'/sent_from {BOT_CHAT_ID}',
+                    BOT_CHAT_ID,
                     chat_id, msg_ids
                 )
-                await new_message[0].reply(str(chat_id))
+                await new_message[0].reply(f'/sent_from {chat_id}')
                 await user.read_chat_history(chat_id, max(msg_ids))
             except Exception as err:
                 logger.error('Unhandled error occurred while executing the '

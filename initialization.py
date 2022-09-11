@@ -48,7 +48,7 @@ BOT_CHAT_ID = os.getenv('bot_chat_id')
 PROMO_CHANNEL = os.getenv('promo_channel')
 
 
-DEVELOP_MODE = True
+DEVELOP_MODE = False
 
 user_plugins = dict(
     root='plugins.user',

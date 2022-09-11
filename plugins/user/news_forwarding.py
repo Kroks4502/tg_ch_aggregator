@@ -12,16 +12,18 @@ from plugins.user import custom_filters
     & custom_filters.monitored_channels
 )
 async def new_post_without_media_group(client: Client, message: Message):
-    is_promo_message = False
-    if await custom_filters.is_promo_message(None, None, message):
-        is_promo_message = True
-
+    command = 'sent_from'
     source_id = message.chat.id
-    if is_promo_message:
+
+    is_promo_massage, msg = await custom_filters.is_promo_message(None, None, message)
+    if is_promo_massage:
+        command = 'send_to'
         source_id = PROMO_CHANNEL
 
     new_message = await message.forward(BOT_CHAT_ID)
-    await new_message.reply(f'/sent_from {source_id}')
+    await new_message.reply(f'/{command} {source_id}')
+    if msg:
+        await new_message.reply(f'{msg} #промо')
     await client.read_chat_history(message.chat.id, message.id)
 
 
@@ -42,21 +44,23 @@ async def new_post_with_media_group(client: Client, message: Message):
 
         messages_id_media_group = await message.get_media_group()
 
-        is_promo_message = False
-        for item in messages_id_media_group:
-            if await custom_filters.is_promo_message(None, None, item):
-                is_promo_message = True
-                break
-
+        command = 'sent_from'
         source_id = message.chat.id
-        if is_promo_message:
-            source_id = PROMO_CHANNEL
+        msg = ''
+        for item in messages_id_media_group:
+            is_promo_message, msg = await custom_filters.is_promo_message(
+                None, None, item)
+            if is_promo_message:
+                command = 'send_to'
+                source_id = PROMO_CHANNEL
+                break
 
         messages_id_media_group = [item.id
                                    for item in messages_id_media_group]
         sent_messages = await client.forward_messages(
             BOT_CHAT_ID, message.chat.id, messages_id_media_group)
-        await sent_messages[-1].reply(f'/sent_from {source_id}')
-
+        await sent_messages[-1].reply(f'/{command} {source_id}')
+        if msg:
+            await sent_messages[-1].reply(f'{msg} #промо')
         await client.read_chat_history(
             message.chat.id, max(messages_id_media_group))

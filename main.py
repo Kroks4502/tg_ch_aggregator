@@ -8,12 +8,12 @@ from start_script import startup
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-# scheduler = AsyncIOScheduler()
-# scheduler.add_job(
-#     startup, 'date',
-#     run_date=(datetime.datetime.today() + datetime.timedelta(seconds=5))
-# )
-# scheduler.start()
+scheduler = AsyncIOScheduler()
+scheduler.add_job(
+    startup, 'date',
+    run_date=(datetime.datetime.today() + datetime.timedelta(seconds=10))
+)
+scheduler.start()
 
 compose([
     bot,

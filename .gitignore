@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+*.session
+*.session-journal
+*.db
+/probe.py
+/logs/
+/create_db.py
