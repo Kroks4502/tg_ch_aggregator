@@ -37,18 +37,18 @@ async def is_promo_message(_, __, message: Message):
                     logger.debug(msg)
                     return True, msg
 
-            if entity.type == MessageEntityType.TEXT_LINK:
+            elif entity.type == MessageEntityType.TEXT_LINK:
                 for part_url in (Filter.global_part_of_url()
                                  + channel.get_blacklist_part_of_url()):
-                    if re.search(part_url, text, flags=re.IGNORECASE):
+                    if re.search(part_url, entity.url, flags=re.IGNORECASE):
                         msg = f'Сообщение {message.id} отфильтровано по part_of_url: {part_url}'
                         logger.debug(msg)
                         return True, msg
 
-            if entity.type in (MessageEntityType.CASHTAG,
-                               MessageEntityType.EMAIL,
-                               MessageEntityType.PHONE_NUMBER,
-                               MessageEntityType.BANK_CARD):
+            elif entity.type in (MessageEntityType.CASHTAG,
+                                 MessageEntityType.EMAIL,
+                                 MessageEntityType.PHONE_NUMBER,
+                                 MessageEntityType.BANK_CARD):
                 msg = f'Сообщение {message.id} отфильтровано по CASHTAG|EMAIL|PHONE_NUMBER|BANK_CARD'
                 logger.debug(msg)
                 return True, msg
