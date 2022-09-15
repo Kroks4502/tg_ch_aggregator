@@ -70,8 +70,9 @@ async def startup():
                 await new_message[0].reply(f'/sent_from {chat_id}')
                 await user.read_chat_history(chat_id, max(msg_ids))
             except Exception as err:
-                logger.error('Unhandled error occurred while executing the '
-                             'task. Traceback:\n%s', traceback.format_exc())
+                logger.error(f'Произошла необработанная ошибка.\n'
+                             f'message:\n{message}\n'
+                             f'Traceback:\n{traceback.format_exc()}', )
 
     msg = 'Начальный #скрипт завершил работу'
     logger.debug(msg)

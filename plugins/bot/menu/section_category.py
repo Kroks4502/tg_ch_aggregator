@@ -1,3 +1,5 @@
+import re
+
 import peewee
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
@@ -46,8 +48,10 @@ async def add_edit(
     reply_markup_fix_buttons = InlineKeyboardMarkup(
         buttons.get_fixed(path, back_title='Назад'))
 
+    input_text = re.sub('https://t.me/', '', message.text)
+
     try:
-        channel = await client.get_chat(message.text)
+        channel = await client.get_chat(input_text)
     except (exceptions.bad_request_400.UsernameInvalid,
             exceptions.bad_request_400.UsernameNotOccupied):
         await message.reply_text(

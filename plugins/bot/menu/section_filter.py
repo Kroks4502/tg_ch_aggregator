@@ -158,7 +158,7 @@ async def detail_filter(_, callback_query: CallbackQuery):
     )
 
     await callback_query.message.edit_text(
-        str(path),
+        f'`{filter_obj.pattern}`\n\n{path}',
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )
 
@@ -220,7 +220,8 @@ async def edit_body_filter(client: Client, callback_query: CallbackQuery):
     text += (f'фильтр для источника «{filter_obj.source.title}» '
              if filter_obj.source else 'общий фильтр ')
     text += (f'типа «{filter_obj.content_type}» с паттерном '
-             f'«{filter_obj.pattern}».\n\n**Введи новый паттерн фильтра:**')
+             f'«`{filter_obj.pattern}`».\n\n'
+             f'**Введи новый паттерн фильтра:**')
 
     await client.send_message(chat_id, text)
     input_wait_manager.add(
