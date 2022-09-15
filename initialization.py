@@ -44,9 +44,7 @@ load_dotenv()
 API_ID = os.getenv('api_id')
 API_HASH = os.getenv('api_hash')
 BOT_TOKEN = os.getenv('bot_token')
-BOT_CHAT_ID = os.getenv('bot_chat_id')
-PROMO_CHANNEL = os.getenv('promo_channel')
-
+AGGREGATOR_CHANNEL = int(os.getenv('aggregator_channel'))
 
 DEVELOP_MODE = False
 

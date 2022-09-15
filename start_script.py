@@ -1,8 +1,8 @@
 import traceback
 from operator import itemgetter
 
-from initialization import (logger, user, MONITORED_CHANNELS_ID, BOT_CHAT_ID,
-                            bot)
+from initialization import (logger, user, bot, MONITORED_CHANNELS_ID,
+                            AGGREGATOR_CHANNEL)
 
 
 async def startup():
@@ -64,7 +64,7 @@ async def startup():
                 chat_id = message[0]
                 msg_ids = message[1]
                 new_message = await user.forward_messages(
-                    BOT_CHAT_ID,
+                    AGGREGATOR_CHANNEL,
                     chat_id, msg_ids
                 )
                 await new_message[0].reply(f'/sent_from {chat_id}')

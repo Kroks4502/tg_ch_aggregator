@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-from initialization import PROMO_CHANNEL, BOT_CHAT_ID
+from initialization import AGGREGATOR_CHANNEL
 from plugins.user import custom_filters
 
 
@@ -12,18 +12,16 @@ from plugins.user import custom_filters
     & custom_filters.monitored_channels
 )
 async def new_post_without_media_group(client: Client, message: Message):
-    command = 'sent_from'
-    source_id = message.chat.id
+    forwarded_message = await message.forward(AGGREGATOR_CHANNEL)
 
-    is_promo_massage, msg = await custom_filters.is_promo_message(None, None, message)
-    if is_promo_massage:
-        command = 'send_to'
-        source_id = PROMO_CHANNEL
+    is_promo_message, promo_comment = await custom_filters.is_promo_message(None, None, message)
+    reply_text = f'Источник: [{message.chat.title}]({message.link})\n'
+    if not is_promo_message:
+        reply_text = f'/sent_from {message.chat.id}\n' + reply_text
+    else:
+        reply_text += f'{promo_comment} #отфильтровано'
 
-    new_message = await message.forward(BOT_CHAT_ID)
-    await new_message.reply(f'/{command} {source_id}')
-    if msg:
-        await new_message.reply(f'{msg} #промо')
+    await forwarded_message.reply(reply_text, disable_web_page_preview=True)
     await client.read_chat_history(message.chat.id, message.id)
 
 
@@ -44,23 +42,26 @@ async def new_post_with_media_group(client: Client, message: Message):
 
         messages_id_media_group = await message.get_media_group()
 
-        command = 'sent_from'
-        source_id = message.chat.id
-        msg = ''
+        is_promo_message = False
+        promo_comment = ''
         for item in messages_id_media_group:
-            is_promo_message, msg = await custom_filters.is_promo_message(
+            is_promo_message, promo_comment = await custom_filters.is_promo_message(
                 None, None, item)
             if is_promo_message:
-                command = 'send_to'
-                source_id = PROMO_CHANNEL
                 break
 
         messages_id_media_group = [item.id
                                    for item in messages_id_media_group]
-        sent_messages = await client.forward_messages(
-            BOT_CHAT_ID, message.chat.id, messages_id_media_group)
-        await sent_messages[-1].reply(f'/{command} {source_id}')
-        if msg:
-            await sent_messages[-1].reply(f'{msg} #промо')
+        forwarded_messages = await client.forward_messages(
+            AGGREGATOR_CHANNEL, message.chat.id, messages_id_media_group)
+
+        reply_text = f'Источник: [{message.chat.title}]({message.link})\n'
+        if not is_promo_message:
+            reply_text = f'/sent_from {message.chat.id}\n' + reply_text
+        else:
+            reply_text += f'{promo_comment} #отфильтровано'
+
+        await forwarded_messages[-1].reply(reply_text,
+                                           disable_web_page_preview=True)
         await client.read_chat_history(
             message.chat.id, max(messages_id_media_group))
