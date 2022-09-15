@@ -300,7 +300,10 @@ async def delete_filter(_, callback_query: CallbackQuery):
         await list_filter(_, callback_query)
         return
     await callback_query.message.edit_text(
-        str(path),
+        f'Паттерн: `{filter_obj.pattern}`\n'
+        f'Тип: {filter_obj.content_type}\n'
+        f'Для источника: {filter_obj.source}\n\n'
+        f'{path}',
         reply_markup=InlineKeyboardMarkup(
             [
                 [

@@ -126,7 +126,7 @@ async def detail(_, callback_query: CallbackQuery):
     inline_keyboard = (
             [
                 [InlineKeyboardButton(
-                    f'Источник: {category_obj.title}',
+                    f'Канал: {category_obj.title}',
                     callback_data=path.add_action('edit')
                 ), ],
                 [InlineKeyboardButton(
@@ -138,7 +138,8 @@ async def detail(_, callback_query: CallbackQuery):
     )
 
     await callback_query.message.edit_text(
-        str(path),
+        f'Категория: {category_obj.title}\n\n'
+        f'{path}',
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )
 
@@ -157,7 +158,8 @@ async def delete(_, callback_query: CallbackQuery):
         await list_category(_, callback_query)
         return
     await callback_query.message.edit_text(
-        str(path),
+        f'Категория: {category_obj.title}\n\n'
+        f'{path}',
         reply_markup=InlineKeyboardMarkup(
             [
                 [

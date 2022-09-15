@@ -18,13 +18,13 @@ async def detail(_, callback_query: CallbackQuery):
 
     path = Path(callback_query.data)
 
-    channel_id = int(path.get_value('s'))
-    channel_obj: Source = Source.get(id=channel_id)
+    source_id = int(path.get_value('s'))
+    source_obj: Source = Source.get(id=source_id)
 
     inline_keyboard = (
             [
                 [InlineKeyboardButton(
-                    f'Категория: {channel_obj.category.title}',
+                    f'Категория: {source_obj.category.title}',
                     callback_data=path.add_action('edit_c')
                 ), ],
                 [InlineKeyboardButton(
@@ -36,7 +36,8 @@ async def detail(_, callback_query: CallbackQuery):
     )
 
     await callback_query.message.edit_text(
-        str(path),
+        f'Источник: {source_obj.title}\n\n'
+        f'{path}',
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )
 
@@ -48,13 +49,13 @@ async def edit_category(_, callback_query: CallbackQuery):
 
     path = Path(callback_query.data)
 
-    channel_id = int(path.get_value('s'))
-    channel_obj: Source = Source.get(id=channel_id)
+    source_id = int(path.get_value('s'))
+    source_obj: Source = Source.get(id=source_id)
 
     category_id = int(path.get_value('c', after_action=True))
 
-    channel_obj.category = category_id
-    channel_obj.save()
+    source_obj.category = category_id
+    source_obj.save()
 
     callback_query.data = path.get_prev(2)
     await detail(_, callback_query)
@@ -66,16 +67,17 @@ async def delete(_, callback_query: CallbackQuery):
 
     path = Path(callback_query.data)
 
-    channel_id = int(path.get_value('s'))
-    channel_obj: Source = Source.get(id=channel_id)
+    source_id = int(path.get_value('s'))
+    source_obj: Source = Source.get(id=source_id)
 
     if path.with_confirmation:
         callback_query.data = path.get_prev(3)
-        channel_obj.delete_instance()
+        source_obj.delete_instance()
         await list_channel(_, callback_query)
         return
     await callback_query.message.edit_text(
-        str(path),
+        f'Источник: {source_obj.title}\n\n'
+        f'{path}',
         reply_markup=InlineKeyboardMarkup(
             [
                 [
