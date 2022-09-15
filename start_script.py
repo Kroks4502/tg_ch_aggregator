@@ -1,11 +1,14 @@
 import traceback
 from operator import itemgetter
 
-from initialization import logger, user, MONITORED_CHANNELS_ID, BOT_CHAT_ID
+from initialization import (logger, user, MONITORED_CHANNELS_ID, BOT_CHAT_ID,
+                            bot)
 
 
 async def startup():
-    logger.debug('Start start_script')
+    msg = 'Запущен начальный #скрипт'
+    logger.debug(msg)
+    await bot.send_message(user.me.id, msg)
 
     dialogs = user.get_dialogs()
     new_messages = []
@@ -69,3 +72,7 @@ async def startup():
             except Exception as err:
                 logger.error('Unhandled error occurred while executing the '
                              'task. Traceback:\n%s', traceback.format_exc())
+
+    msg = 'Начальный #скрипт завершил работу'
+    logger.debug(msg)
+    await bot.send_message(user.me.id, msg)
