@@ -14,7 +14,8 @@ from plugins.user import custom_filters
 async def new_post_without_media_group(client: Client, message: Message):
     forwarded_message = await message.forward(AGGREGATOR_CHANNEL)
 
-    is_promo_message, promo_comment = await custom_filters.is_promo_message(None, None, message)
+    is_promo_message, promo_comment = await custom_filters.is_promo_message(
+        None, None, message)
     reply_text = f'Источник: [{message.chat.title}]({message.link})\n'
     if not is_promo_message:
         reply_text = f'/sent_from {message.chat.id}\n' + reply_text
@@ -55,11 +56,11 @@ async def new_post_with_media_group(client: Client, message: Message):
         forwarded_messages = await client.forward_messages(
             AGGREGATOR_CHANNEL, message.chat.id, messages_id_media_group)
 
-        reply_text = f'Источник: [{message.chat.title}]({message.link})\n'
+        reply_text = f'Источник: [{message.chat.title}]({message.link})'
         if not is_promo_message:
             reply_text = f'/sent_from {message.chat.id}\n' + reply_text
         else:
-            reply_text += f'{promo_comment} #отфильтровано'
+            reply_text += f'\n\n{promo_comment} #отфильтровано'
 
         await forwarded_messages[-1].reply(reply_text,
                                            disable_web_page_preview=True)
