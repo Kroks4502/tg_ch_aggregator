@@ -30,6 +30,17 @@ async def is_passed_filter(message: Message):
                         logger.debug(comment)
                         return False, comment
 
+            elif entity.type == MessageEntityType.URL:
+                for part_url in (Filter.global_part_of_url()
+                                 + channel.get_blacklist_part_of_url()):
+                    if re.search(
+                            part_url,
+                            text[entity.offset:entity.offset+entity.length],
+                            flags=re.IGNORECASE):
+                        comment = f'part_of_url: `{part_url}`'
+                        logger.debug(comment)
+                        return False, comment
+
             elif entity.type in (MessageEntityType.CASHTAG,
                                  MessageEntityType.EMAIL,
                                  MessageEntityType.PHONE_NUMBER,

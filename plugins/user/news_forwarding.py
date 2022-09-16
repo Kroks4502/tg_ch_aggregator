@@ -16,13 +16,12 @@ async def new_post_without_media_group(client: Client, message: Message):
     forwarded_message = await message.forward(AGGREGATOR_CHANNEL)
 
     is_pf, filter_comment = await is_passed_filter(message)
-    reply_text = f'Источник: [{message.chat.title}]({message.link})\n'
+    reply_text = f'Источник: [{message.chat.title}]({message.link})'
     if is_pf:
-        reply_text = f'/sent_from {message.chat.id}\n' + reply_text
+        reply_text = f'/sent_from {message.chat.id}\n\n' + reply_text
     else:
-        reply_text += (f'Сообщение отфильтровано\n'
-                       f'{filter_comment}\n'
-                       f'#отфильтровано')
+        reply_text += (f'\n\nСообщение #отфильтровано\n'
+                       f'{filter_comment}')
 
     await forwarded_message.reply(reply_text, disable_web_page_preview=True)
     await client.read_chat_history(message.chat.id, message.id)
@@ -46,9 +45,9 @@ async def new_post_with_media_group(client: Client, message: Message):
         messages_id_media_group = await message.get_media_group()
 
         is_pf = False
-        promo_comment = ''
+        filter_comment = ''
         for item in messages_id_media_group:
-            is_pf, promo_comment = await is_passed_filter(item)
+            is_pf, filter_comment = await is_passed_filter(item)
             if not is_pf:
                 break
 
@@ -61,7 +60,8 @@ async def new_post_with_media_group(client: Client, message: Message):
         if is_pf:
             reply_text = f'/sent_from {message.chat.id}\n' + reply_text
         else:
-            reply_text += f'\n\n{promo_comment} #отфильтровано'
+            reply_text += (f'\n\nСообщение #отфильтровано\n'
+                           f'{filter_comment}')
 
         await forwarded_messages[-1].reply(reply_text,
                                            disable_web_page_preview=True)
