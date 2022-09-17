@@ -7,7 +7,7 @@ from initialization import logger
 from models import Source
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.section_filter import list_channel
+from plugins.bot.menu.section_filter import list_source
 
 SECTION = '^/s'
 
@@ -36,7 +36,8 @@ async def detail(_, callback_query: CallbackQuery):
     )
 
     await callback_query.message.edit_text(
-        f'Источник: {source_obj.title}\n\n'
+        f'Источник: {source_obj.title}\n'
+        f'Категория: {source_obj.category}\n\n'
         f'{path}',
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )
@@ -73,10 +74,11 @@ async def delete(_, callback_query: CallbackQuery):
     if path.with_confirmation:
         callback_query.data = path.get_prev(3)
         source_obj.delete_instance()
-        await list_channel(_, callback_query)
+        await list_source(_, callback_query)
         return
     await callback_query.message.edit_text(
-        f'Источник: {source_obj.title}\n\n'
+        f'Источник: {source_obj.title}\n'
+        f'Категория: {source_obj.category}\n\n'
         f'{path}',
         reply_markup=InlineKeyboardMarkup(
             [

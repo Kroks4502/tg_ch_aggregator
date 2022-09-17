@@ -54,11 +54,12 @@ async def list_category(_, callback_query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(
     r'^/((s|f)|f/[\w/]*/f_\d+/:edit_s)/c_\d+/$'))
-async def list_channel(_, callback_query: CallbackQuery):
+async def list_source(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
     category_id = int(path.get_value('c', after_action=True))
+    category_obj = Category.get(id=category_id) if category_id else None
     select_kwargs = None
     if category_id:
         select_kwargs = {'category': category_id}
@@ -74,8 +75,10 @@ async def list_channel(_, callback_query: CallbackQuery):
             callback_data=path.add_action('add')
         ), ])
     inline_keyboard += buttons.get_fixed(path)
+
     await callback_query.message.edit_text(
-        str(path),
+        f'Категория: {category_obj if category_obj else "__<все категории>__"}'
+        f'\n\n{path}',
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )
 
@@ -86,13 +89,21 @@ async def list_filter_content_type(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
+    source_id = int(path.get_value('s'))
+    source_obj = Source.get(id=source_id) if source_id else None
+
+    path = Path(callback_query.data)
     inline_keyboard = buttons.get_list_model(
         data=FILTER_CONTENT_TYPES,
         path=path,
         prefix_path='t'
     ) + buttons.get_fixed(path)
+
+    text = ((f'Канал: {source_obj}\n'
+            f'Категория: {source_obj.category}\n\n')
+            if source_obj else '**Общий фильтр**\n\n')
     await callback_query.message.edit_text(
-        str(path),
+        f'{text}{path}',
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )
 
@@ -103,10 +114,11 @@ async def list_filter(_, callback_query: CallbackQuery):
 
     path = Path(callback_query.data)
     content_type = path.get_value('t')
-    channel_id = int(path.get_value('s'))
+    source_id = int(path.get_value('s'))
+    source_obj = Source.get(id=source_id) if source_id else None
     select_kwargs = {
         'content_type': content_type,
-        'source': channel_id if channel_id else None
+        'source': source_id if source_id else None
     }
 
     inline_keyboard = buttons.get_list_model(
@@ -120,8 +132,13 @@ async def list_filter(_, callback_query: CallbackQuery):
             callback_data=path.add_action('add'))])
     inline_keyboard += buttons.get_fixed(path)
 
+    text = ((f'Канал: {source_obj}\n'
+            f'Категория: {source_obj.category}\n')
+            if source_obj else '**Общий фильтр**\n')
     await callback_query.message.edit_text(
-        str(path),
+        f'{text}'
+        f'Тип фильтра: {content_type}\n\n'
+        f'{path}',
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )
 
@@ -157,8 +174,14 @@ async def detail_filter(_, callback_query: CallbackQuery):
             + buttons.get_fixed(path)
     )
 
+    text = ((f'Канал: {filter_obj.source}\n'
+            f'Категория: {filter_obj.source.category}\n')
+            if filter_obj.source else '**Общий фильтр**\n')
     await callback_query.message.edit_text(
-        f'`{filter_obj.pattern}`\n\n{path}',
+        f'{text}'
+        f'Тип фильтра: {filter_obj.content_type}\n'
+        f'Паттерн: `{filter_obj.pattern}`\n\n'
+        f'{path}',
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )
 
@@ -169,28 +192,28 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
 
     path = Path(callback_query.data)
     chat_id = callback_query.message.chat.id
-    channel_id = int(path.get_value('s'))
-    channel_obj = Source.get_or_none(id=channel_id)
+    source_id = int(path.get_value('s'))
+    source_obj = Source.get_or_none(id=source_id)
     content_type = path.get_value('t')
 
     text = 'ОК. Ты добавляешь '
-    text += (f'фильтр для источника «{channel_obj}» ' if channel_obj
+    text += (f'фильтр для источника «{source_obj}» ' if source_obj
              else 'общий фильтр ')
     text += f'типа «{content_type}».\n\n**Введи паттерн нового фильтра:**'
 
     await client.send_message(chat_id, text)
     input_wait_manager.add(
         chat_id, add_filter_wait_input, client, callback_query, content_type,
-        channel_obj)
+        source_obj)
 
 
 async def add_filter_wait_input(_, message: Message, callback_query,
-                                content_type, channel_obj):
+                                content_type, source_obj):
     logger.debug(callback_query.data)
 
     try:
         Filter.create(pattern=message.text, content_type=content_type,
-                      source=channel_obj.id if channel_obj else None)
+                      source=source_obj.id if source_obj else None)
 
         text = '✅ Фильтр добавлен'
     except Exception as err:
@@ -270,15 +293,15 @@ async def edit_type_filter(_, callback_query: CallbackQuery):
 
 @Client.on_callback_query(
     filters.regex(SECTION + r'[\w/]*/f_\d+/:edit_s/\w+/s_\d+/$'))
-async def edit_channel_filter(_, callback_query: CallbackQuery):
+async def edit_source_filter(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
-    channel_id = int(path.get_value('s', after_action=True))
+    source_id = int(path.get_value('s', after_action=True))
 
     filter_id = int(path.get_value('f'))
     filter_obj = Filter.get_or_none(id=filter_id)
-    filter_obj.source = channel_id if channel_id > 0 else None
+    filter_obj.source = source_id if source_id > 0 else None
     filter_obj.save()
 
     callback_query.data = path.get_prev(3)
@@ -299,10 +322,14 @@ async def delete_filter(_, callback_query: CallbackQuery):
         filter_obj.delete_instance()
         await list_filter(_, callback_query)
         return
+
+    text = ((f'Канал: {filter_obj.source}\n'
+            f'Категория: {filter_obj.source.category}\n')
+            if filter_obj.source else '**Общий фильтр**\n')
     await callback_query.message.edit_text(
+        f'{text}'
         f'Паттерн: `{filter_obj.pattern}`\n'
-        f'Тип: {filter_obj.content_type}\n'
-        f'Для источника: {filter_obj.source}\n\n'
+        f'Тип: {filter_obj.content_type}\n\n'
         f'{path}',
         reply_markup=InlineKeyboardMarkup(
             [

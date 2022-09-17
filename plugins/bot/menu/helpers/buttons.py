@@ -42,9 +42,10 @@ def get_list_model(
             buttons.append(row_buttons)
             row_buttons = []
         value = item if isinstance(data, tuple) else item.id
+
         row_buttons.append(
             InlineKeyboardButton(
-                str(item),
+                t if (t := str(item)) else '<пусто>',
                 callback_data=path.add_value(prefix_path, value)
             )
         )
