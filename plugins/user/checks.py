@@ -18,7 +18,7 @@ async def is_passed_filter(message: Message):
                 for hashtag in (Filter.global_hashtag_patterns()
                                 + source.get_filter_hashtag()):
                     if re.search(hashtag, entity_text, flags=re.IGNORECASE):
-                        comment = f'hashtag: `{hashtag}`'
+                        comment = f'#hashtag: `{hashtag}`'
                         logger.debug(comment)
                         return False, comment
 
@@ -26,7 +26,7 @@ async def is_passed_filter(message: Message):
                 for part_url in (Filter.global_part_of_url_patterns()
                                  + source.get_filter_part_of_url()):
                     if re.search(part_url, entity.url, flags=re.IGNORECASE):
-                        comment = f'part_of_url: `{part_url}`'
+                        comment = f'#part_of_url: `{part_url}`'
                         logger.debug(comment)
                         return False, comment
 
@@ -37,7 +37,7 @@ async def is_passed_filter(message: Message):
                             part_url,
                             text[entity.offset:entity.offset+entity.length],
                             flags=re.IGNORECASE):
-                        comment = f'part_of_url: `{part_url}`'
+                        comment = f'#part_of_url: `{part_url}`'
                         logger.debug(comment)
                         return False, comment
 
@@ -45,7 +45,7 @@ async def is_passed_filter(message: Message):
                                  MessageEntityType.EMAIL,
                                  MessageEntityType.PHONE_NUMBER,
                                  MessageEntityType.BANK_CARD):
-                comment = f'CASHTAG|EMAIL|PHONE_NUMBER|BANK_CARD'
+                comment = f'#CASHTAG|#EMAIL|#PHONE_NUMBER|#BANK_CARD'
                 logger.debug(comment)
                 return False, comment
 
@@ -53,13 +53,13 @@ async def is_passed_filter(message: Message):
         for part_text in (Filter.global_part_of_text_patterns()
                           + source.get_filter_part_of_text()):
             if re.search(part_text, text, flags=re.IGNORECASE):
-                comment = f'part_of_text: `{part_text}`'
+                comment = f'#part_of_text: `{part_text}`'
                 logger.debug(comment)
                 return False, comment
 
     if Filter.global_reply_markup_patterns() + source.get_filter_reply_markup():
         if message.reply_markup:
-            comment = f'reply_markup'
+            comment = f'#reply_markup'
             logger.debug(comment)
             return False, comment
 
