@@ -15,12 +15,12 @@ async def is_passed_filter(message: Message):
         for entity in entities:
             if entity.type == MessageEntityType.HASHTAG:
                 entity_text = text[entity.offset:entity.offset + entity.length]
-                if (entity_text
-                        in Filter.global_hashtag()
-                        + channel.get_blacklist_hashtag()):
-                    comment = f'hashtag: `{entity_text}`'
-                    logger.debug(comment)
-                    return False, comment
+                for hashtag in (Filter.global_hashtag()
+                                + channel.get_blacklist_hashtag()):
+                    if re.search(hashtag, entity_text, flags=re.IGNORECASE):
+                        comment = f'hashtag: `{hashtag}`'
+                        logger.debug(comment)
+                        return False, comment
 
             elif entity.type == MessageEntityType.TEXT_LINK:
                 for part_url in (Filter.global_part_of_url()
