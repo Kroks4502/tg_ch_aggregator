@@ -17,7 +17,7 @@ def get_fixed(path: Path, back_title='Назад') -> list[
     return [row_buttons]
 
 
-MAX_LENGTH_BUTTON_TEXT = 17
+MAX_LENGTH_BUTTON_TEXT = 16
 
 
 def get_list_model(
@@ -25,10 +25,17 @@ def get_list_model(
         path: Path,
         prefix_path: str = '',
         button_show_all_title: str = '',
-        select_kwargs: dict = None,
-        count_model: Type[BaseModel] = None,
-        count_select_kwargs: dict = None
+        filter_kwargs: dict = None,
+        counter_model: Type[BaseModel] = None,
+        counter_filter_field_item: str = '',
+        counter_filter_fields: dict = None,
+        counter_filter_fields_with_data_attr: dict = None,
 ) -> list[list[InlineKeyboardButton]]:
+    if counter_filter_fields is None:
+        counter_filter_fields = {}
+    if counter_filter_fields_with_data_attr is None:
+        counter_filter_fields_with_data_attr = {}
+
     buttons = []
     row_buttons = []
 
@@ -40,34 +47,36 @@ def get_list_model(
             )
         ])
 
-    if select_kwargs:
-        data = data.filter(**select_kwargs)
+    if filter_kwargs:
+        data = data.filter(**filter_kwargs)
 
     for item in data:
         if len(row_buttons) == 2:
             buttons.append(row_buttons)
             row_buttons = []
-        value = item if isinstance(data, tuple) else item.id
+
         text = t if (t := str(item)) else '<пусто>'
-        if count_model and count_select_kwargs:
+        if counter_model:
             fields = {}
-            for key, arg in count_select_kwargs.items():
-                if isinstance(arg, str) and arg[0] == '.':
-                    if isinstance(data, BaseModel):
-                        fields[key] = getattr(data, arg[1:])
-                    else:
-                        fields[key] = item
-                else:
-                    fields[key] = arg
-            count_entities = count_model.filter(**fields).count()
-            if count_entities > 0:
+            for key, attr in counter_filter_fields_with_data_attr.items():
+                fields[key] = getattr(item, attr)
+            for key, value in counter_filter_fields.items():
+                fields[key] = value
+            if counter_filter_field_item:
+                fields[counter_filter_field_item] = item
+            count_entities = counter_model.filter(**fields).count()
+            if count_entities:
                 if len(text) > MAX_LENGTH_BUTTON_TEXT:
-                    text = f'{text[:MAX_LENGTH_BUTTON_TEXT]}..'
+                    text = f'{text[:MAX_LENGTH_BUTTON_TEXT]}'
+                    text = text[:-1] if text[-1] == ' ' else text
+                    text += '…'
                 text = f'{text} ({count_entities})'
+
+        callback_data_value = item if isinstance(data, tuple) else item.id
         row_buttons.append(
             InlineKeyboardButton(
                 text,
-                callback_data=path.add_value(prefix_path, value)
+                callback_data=path.add_value(prefix_path, callback_data_value)
             )
         )
     buttons.append(row_buttons)

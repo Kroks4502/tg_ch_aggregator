@@ -26,10 +26,14 @@ async def list_category(_, callback_query: CallbackQuery):
     if section == 'f':
         if not action:
             inline_keyboard.append([InlineKeyboardButton(
-                f'🔘 Общие фильтры ({Filter.filter(source=None).count()})', callback_data=path.add_value('s', 0))])
+                f'🔘 Общие фильтры ({Filter.filter(source=None).count()})',
+                callback_data=path.add_value('s', 0)
+            )])
         elif action == 'edit_s':
             inline_keyboard.append([InlineKeyboardButton(
-                '✖️ Без источника', callback_data=f'{path}c_0/s_0/')])
+                '✖️ Без источника',
+                callback_data=f'{path}c_0/s_0/'
+            )])
     elif section == 'c':
         button_show_all_title = ''
         inline_keyboard.append([InlineKeyboardButton(
@@ -42,8 +46,8 @@ async def list_category(_, callback_query: CallbackQuery):
         path=path,
         prefix_path='c',
         button_show_all_title=button_show_all_title,
-        count_model=Source,
-        count_select_kwargs={'category': '.id'}
+        counter_model=Source,
+        counter_filter_fields_with_data_attr={'category': 'id'},
     ) + inline_keyboard
 
     inline_keyboard += buttons.get_fixed(path)
@@ -69,9 +73,9 @@ async def list_source(_, callback_query: CallbackQuery):
         data=Source,
         path=path,
         prefix_path='s',
-        select_kwargs=select_kwargs,
-        count_model=Filter,
-        count_select_kwargs={'source': '.id'}
+        filter_kwargs=select_kwargs,
+        counter_model=Filter,
+        counter_filter_fields_with_data_attr={'source': 'id'}
     )
     if path.section == 's' and path.get_value('c') != '0':
         inline_keyboard.append([InlineKeyboardButton(
@@ -101,11 +105,9 @@ async def list_filter_content_type(_, callback_query: CallbackQuery):
         data=FILTER_CONTENT_TYPES,
         path=path,
         prefix_path='t',
-        count_model=Filter,
-        count_select_kwargs={
-            'source': source_id if source_id else None,
-            'content_type': '.'
-        }
+        counter_model=Filter,
+        counter_filter_field_item='content_type',
+        counter_filter_fields={'source': source_id if source_id else None, }
     ) + buttons.get_fixed(path)
 
     text = ((f'Канал: {source_obj}\n'
@@ -134,7 +136,7 @@ async def list_filter(_, callback_query: CallbackQuery):
         data=Filter,
         path=path,
         prefix_path='f',
-        select_kwargs=select_kwargs)
+        filter_kwargs=select_kwargs)
     inline_keyboard.append([
         InlineKeyboardButton(
             '➕ Добавить фильтр',
@@ -161,6 +163,10 @@ async def detail_filter(_, callback_query: CallbackQuery):
     filter_id = int(path.get_value('f'))
     filter_obj: Filter = Filter.get(id=filter_id)
 
+    source_title = '<не установлен>'
+    if filter_obj.source:
+        source_title = filter_obj.source.title
+
     inline_keyboard = (
             [
                 [InlineKeyboardButton(
@@ -172,7 +178,7 @@ async def detail_filter(_, callback_query: CallbackQuery):
                     callback_data=path.add_action('edit_t')
                 ), ],
                 [InlineKeyboardButton(
-                    f'Источник: {filter_obj.source.title if filter_obj.source else "не установлен"}',
+                    f'Источник: {source_title}',
                     callback_data=path.add_action('edit_s')
                 ), ],
                 [InlineKeyboardButton(
