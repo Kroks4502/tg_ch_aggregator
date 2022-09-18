@@ -18,7 +18,7 @@ async def list_category(_, callback_query: CallbackQuery):
 
     path = Path(callback_query.data)
 
-    button_show_all_title = '📚 Все источники'
+    button_show_all_title = f'📚 Все источники ({Source.filter().count()})'
     inline_keyboard = []
     section = path.section
     action = path.action
@@ -26,7 +26,7 @@ async def list_category(_, callback_query: CallbackQuery):
     if section == 'f':
         if not action:
             inline_keyboard.append([InlineKeyboardButton(
-                '🔘 Общие фильтры', callback_data=path.add_value('s', 0))])
+                f'🔘 Общие фильтры ({Filter.filter(source=None).count()})', callback_data=path.add_value('s', 0))])
         elif action == 'edit_s':
             inline_keyboard.append([InlineKeyboardButton(
                 '✖️ Без источника', callback_data=f'{path}c_0/s_0/')])
@@ -41,7 +41,9 @@ async def list_category(_, callback_query: CallbackQuery):
         data=Category,
         path=path,
         prefix_path='c',
-        button_show_all_title=button_show_all_title
+        button_show_all_title=button_show_all_title,
+        count_model=Source,
+        count_select_kwargs={'category': '.id'}
     ) + inline_keyboard
 
     inline_keyboard += buttons.get_fixed(path)
@@ -67,7 +69,9 @@ async def list_source(_, callback_query: CallbackQuery):
         data=Source,
         path=path,
         prefix_path='s',
-        select_kwargs=select_kwargs
+        select_kwargs=select_kwargs,
+        count_model=Filter,
+        count_select_kwargs={'source': '.id'}
     )
     if path.section == 's' and path.get_value('c') != '0':
         inline_keyboard.append([InlineKeyboardButton(
@@ -96,11 +100,16 @@ async def list_filter_content_type(_, callback_query: CallbackQuery):
     inline_keyboard = buttons.get_list_model(
         data=FILTER_CONTENT_TYPES,
         path=path,
-        prefix_path='t'
+        prefix_path='t',
+        count_model=Filter,
+        count_select_kwargs={
+            'source': source_id if source_id else None,
+            'content_type': '.'
+        }
     ) + buttons.get_fixed(path)
 
     text = ((f'Канал: {source_obj}\n'
-            f'Категория: {source_obj.category}\n\n')
+             f'Категория: {source_obj.category}\n\n')
             if source_obj else '**Общий фильтр**\n\n')
     await callback_query.message.edit_text(
         f'{text}{path}',
@@ -133,7 +142,7 @@ async def list_filter(_, callback_query: CallbackQuery):
     inline_keyboard += buttons.get_fixed(path)
 
     text = ((f'Канал: {source_obj}\n'
-            f'Категория: {source_obj.category}\n')
+             f'Категория: {source_obj.category}\n')
             if source_obj else '**Общий фильтр**\n')
     await callback_query.message.edit_text(
         f'{text}'
@@ -175,7 +184,7 @@ async def detail_filter(_, callback_query: CallbackQuery):
     )
 
     text = ((f'Канал: {filter_obj.source}\n'
-            f'Категория: {filter_obj.source.category}\n')
+             f'Категория: {filter_obj.source.category}\n')
             if filter_obj.source else '**Общий фильтр**\n')
     await callback_query.message.edit_text(
         f'{text}'
@@ -324,7 +333,7 @@ async def delete_filter(_, callback_query: CallbackQuery):
         return
 
     text = ((f'Канал: {filter_obj.source}\n'
-            f'Категория: {filter_obj.source.category}\n')
+             f'Категория: {filter_obj.source.category}\n')
             if filter_obj.source else '**Общий фильтр**\n')
     await callback_query.message.edit_text(
         f'{text}'
