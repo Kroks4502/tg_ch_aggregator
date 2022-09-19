@@ -1,18 +1,45 @@
+import logging
+import sys
 import traceback
+from asyncio import sleep
 from operator import itemgetter
 
 from initialization import (logger, user, bot, MONITORED_CHANNELS_ID,
                             AGGREGATOR_CHANNEL)
+from models import Admin, Category, Source
 
 
 async def startup():
+    while not user.is_connected or not bot.is_connected:
+        await sleep(0.1)
+
     msg = 'Запущен начальный #скрипт'
     logger.debug(msg)
-    await bot.send_message(user.me.id, msg)
+    await user.get_me()
+    # await bot.send_message(user.me.id, msg)
+
+    await update_admin_usernames()
+
+    if not Admin.select().where(Admin.tg_id == user.me.id).exists():
+        Admin.create(tg_id=user.me.id, username=user.me.username)
+
+    def update_title(model, tg_id, new_title):
+        q = (model
+             .update({model.title: new_title})
+             .where(model.tg_id == tg_id))
+        q.execute()
+
+    def get_db_titles(model):
+        return {item.tg_id: (model, item.title) for item in model.select()}
+
+    db_channel_titles = get_db_titles(Category)
+    db_channel_titles.update(get_db_titles(Source))
 
     dialogs = user.get_dialogs()
     new_messages = []
     async for dialog in dialogs:
+        update_channel_titles(dialog, db_channel_titles)
+
         if (
                 dialog.unread_messages_count != 0
                 and dialog.chat.id in MONITORED_CHANNELS_ID
@@ -76,4 +103,26 @@ async def startup():
 
     msg = 'Начальный #скрипт завершил работу'
     logger.debug(msg)
-    await bot.send_message(user.me.id, msg)
+    # await bot.send_message(user.me.id, msg)
+
+
+async def update_admin_usernames():
+    db_data = {admin.tg_id: admin.username for admin in Admin.select()}
+    actual = {admin.id: admin.username
+              for admin in await user.get_users(list(db_data.keys()))}
+    for tg_id in actual:
+        if actual[tg_id] != db_data[tg_id]:
+            q = (Admin
+                 .update({Admin.username: actual[tg_id]})
+                 .where(Admin.tg_id == tg_id))
+            q.execute()
+
+
+def update_channel_titles(dialog, db_channel_titles):
+    if dialog.chat.id in db_channel_titles:
+        if db_channel_titles[dialog.chat.id][1] != dialog.chat.title:
+            model = db_channel_titles[dialog.chat.id][0]
+            q = (model
+                 .update({model.title: dialog.chat.title})
+                 .where(model.tg_id == dialog.chat.id))
+            q.execute()
