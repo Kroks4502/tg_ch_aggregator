@@ -4,11 +4,11 @@ import os
 from dotenv import load_dotenv
 from pyrogram import Client
 
-from models import db, Category, Source, Filter
+from models import db, Category, Source, Filter, Admin
 
 db.create_tables(
     [
-        Category, Source, Filter
+        Category, Source, Filter, Admin
     ]
 )
 

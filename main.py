@@ -11,7 +11,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 scheduler = AsyncIOScheduler()
 scheduler.add_job(
     startup, 'date',
-    run_date=(datetime.datetime.today() + datetime.timedelta(seconds=10))
+    run_date=(datetime.datetime.today() + datetime.timedelta(seconds=1))
 )
 scheduler.start()
 

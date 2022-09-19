@@ -79,3 +79,11 @@ class Filter(BaseModel):
     @classmethod
     def global_reply_markup_patterns(cls) -> list:
         return cls.get_global_patterns('reply_markup')
+
+
+class Admin(BaseModel):
+    tg_id = IntegerField(unique=True)
+    username = CharField()
+
+    def __str__(self):
+        return self.username
