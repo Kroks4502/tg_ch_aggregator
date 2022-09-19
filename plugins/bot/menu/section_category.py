@@ -24,7 +24,7 @@ async def list_category(_, callback_query: CallbackQuery):
     path = Path(callback_query.data)
     action = path.action
 
-    text = '**Категории агрегатора**'
+    text = '**Агрегатор каналов**'
     if action == 'edit':
         source_id = int(path.get_value('s'))
         source_obj = Source.get(id=source_id)
@@ -36,20 +36,25 @@ async def list_category(_, callback_query: CallbackQuery):
 
     button_show_all_title = ''
     if action != 'edit':
-        button_show_all_title = f'📚 Все источники ({Source.filter().count()})'
+        button_show_all_title = f'📚 Все источники'
         if custom_filters.is_admin(None, None, callback_query):
             inline_keyboard.append([InlineKeyboardButton(
                 '➕ Добавить категорию',
                 callback_data=path.add_action('add')
             ), ])
 
+    query = (Category
+             .select(Category.id,
+                     Category.title,
+                     peewee.fn.Count(Source.id).alias('count'))
+             .join(Source, peewee.JOIN.LEFT_OUTER)
+             .group_by(Category.id))
+
     inline_keyboard += buttons.get_list_model(
-        data=Category,
+        data={f'{item.id}': (item.title, item.count) for item in query},
         path=path,
         prefix_path='c',
         button_show_all_title=button_show_all_title,
-        counter_model=Source,
-        counter_filter_fields_with_data_attr={'category': 'id'},
     )
 
     if action != 'edit':

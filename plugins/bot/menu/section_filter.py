@@ -1,3 +1,4 @@
+import peewee
 from pyrogram import Client, filters
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
@@ -17,7 +18,8 @@ async def list_type_content_filters(_, callback_query: CallbackQuery):
 
     path = Path(callback_query.data)
 
-    source_obj = Source.get_or_none(id=int(path.get_value('s')))
+    source_id = int(path.get_value('s'))
+    source_obj = Source.get_or_none(id=source_id)
 
     inline_keyboard = []
 
@@ -36,14 +38,22 @@ async def list_type_content_filters(_, callback_query: CallbackQuery):
                 ), ],
             )
 
+    source_where = None if source_id else Filter.source.is_null(True)
+    query = (
+        Filter
+        .select(Filter.content_type,
+                peewee.fn.Count(Filter.id).alias('count'))
+        .where(source_where if source_where else Filter.source == source_id)
+        .group_by(Filter.content_type)
+    )
+    data = {content_type: (content_type, 0)
+            for content_type in FILTER_CONTENT_TYPES}
+    data.update({item.content_type: (item.content_type, item.count)
+                 for item in query})
     inline_keyboard += buttons.get_list_model(
-        data=FILTER_CONTENT_TYPES,
+        data=data,
         path=path,
         prefix_path='t',
-        counter_model=Filter,
-        counter_filter_field_item='content_type',
-        counter_filter_fields={
-            'source': source_obj.id if source_obj else None, }
     )
 
     inline_keyboard += buttons.get_fixed(path)
@@ -63,11 +73,6 @@ async def list_filters(_, callback_query: CallbackQuery):
     source_id = int(path.get_value('s'))
     source_obj = Source.get(id=source_id) if source_id else None
 
-    select_kwargs = {
-        'content_type': content_type,
-        'source': source_obj.id if source_obj else None
-    }
-
     inline_keyboard = []
 
     if custom_filters.is_admin(None, None, callback_query):
@@ -76,11 +81,17 @@ async def list_filters(_, callback_query: CallbackQuery):
             callback_data=path.add_action('add')
         )])
 
+    source_where = None if source_id else Filter.source.is_null(True)
+    query = (
+        Filter
+        .select()
+        .where((source_where if source_where else Filter.source == source_id)
+               & (Filter.content_type == content_type))
+    )
     inline_keyboard += buttons.get_list_model(
-        data=Filter,
+        data={f'{item.id}': (item.pattern, 0) for item in query},
         path=path,
-        prefix_path='f',
-        filter_kwargs=select_kwargs)
+        prefix_path='f')
 
     inline_keyboard += buttons.get_fixed(path)
 

@@ -42,16 +42,19 @@ async def list_source(_, callback_query: CallbackQuery):
             callback_data=path.add_action('delete')
         ), ])
 
-    select_kwargs = None
-    if category_obj:
-        select_kwargs = {'category': category_obj.id}
+    cat_where = None if category_id else Filter.source.is_null(True)
+    query = (
+        Source
+        .select(Source.id, Source.title,
+                peewee.fn.Count(Filter.id).alias('count'))
+        .where(cat_where if cat_where else Source.category == category_id)
+        .join(Filter, peewee.JOIN.LEFT_OUTER)
+        .group_by(Source.id)
+    )
     inline_keyboard += buttons.get_list_model(
-        data=Source,
+        data={item.id: (item.title, item.count) for item in query},
         path=path,
         prefix_path='s',
-        filter_kwargs=select_kwargs,
-        counter_model=Filter,
-        counter_filter_fields_with_data_attr={'source': 'id'}
     )
 
     inline_keyboard += buttons.get_fixed(path)
