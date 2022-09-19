@@ -39,6 +39,9 @@ handler.setFormatter(logging.Formatter(
 ))
 logger2.addHandler(handler)
 
+peewee_logger = logging.getLogger('peewee')
+peewee_logger.setLevel(logging.DEBUG)
+
 load_dotenv()
 
 API_ID = os.getenv('api_id')

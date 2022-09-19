@@ -1,5 +1,3 @@
-import logging
-import sys
 import traceback
 from asyncio import sleep
 from operator import itemgetter
@@ -16,18 +14,12 @@ async def startup():
     msg = 'Запущен начальный #скрипт'
     logger.debug(msg)
     await user.get_me()
-    # await bot.send_message(user.me.id, msg)
+    await bot.send_message(user.me.id, msg)
 
     await update_admin_usernames()
 
     if not Admin.select().where(Admin.tg_id == user.me.id).exists():
         Admin.create(tg_id=user.me.id, username=user.me.username)
-
-    def update_title(model, tg_id, new_title):
-        q = (model
-             .update({model.title: new_title})
-             .where(model.tg_id == tg_id))
-        q.execute()
 
     def get_db_titles(model):
         return {item.tg_id: (model, item.title) for item in model.select()}
@@ -96,14 +88,14 @@ async def startup():
                 )
                 await new_message[0].reply(f'/sent_from {chat_id}')
                 await user.read_chat_history(chat_id, max(msg_ids))
-            except Exception as err:
+            except Exception:
                 logger.error(f'Произошла необработанная ошибка.\n'
                              f'message:\n{message}\n'
                              f'Traceback:\n{traceback.format_exc()}', )
 
     msg = 'Начальный #скрипт завершил работу'
     logger.debug(msg)
-    # await bot.send_message(user.me.id, msg)
+    await bot.send_message(user.me.id, msg)
 
 
 async def update_admin_usernames():

@@ -6,8 +6,8 @@ from models import BaseModel
 from plugins.bot.menu.helpers.path import Path
 
 
-def get_fixed(path: Path, back_title='Назад') -> list[
-    list[InlineKeyboardButton]]:
+def get_fixed(
+        path: Path, back_title='Назад') -> list[list[InlineKeyboardButton]]:
     row_buttons = [InlineKeyboardButton('🗂 На главную', callback_data='/')]
     prev_data = path.get_prev()
     if prev_data != '/':
@@ -38,14 +38,6 @@ def get_list_model(
 
     buttons = []
     row_buttons = []
-
-    if button_show_all_title:
-        buttons.append([
-            InlineKeyboardButton(
-                button_show_all_title,
-                callback_data=path.add_value(prefix_path, 0)
-            )
-        ])
 
     if filter_kwargs:
         data = data.filter(**filter_kwargs)
@@ -80,5 +72,13 @@ def get_list_model(
             )
         )
     buttons.append(row_buttons)
+
+    if button_show_all_title:
+        buttons.append([
+            InlineKeyboardButton(
+                button_show_all_title,
+                callback_data=path.add_value(prefix_path, 0)
+            )
+        ])
 
     return buttons
