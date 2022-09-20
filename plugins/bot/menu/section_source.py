@@ -42,12 +42,11 @@ async def list_source(_, callback_query: CallbackQuery):
             callback_data=path.add_action('delete')
         ), ])
 
-    cat_where = None if category_id else Filter.source.is_null(True)
     query = (
         Source
         .select(Source.id, Source.title,
                 peewee.fn.Count(Filter.id).alias('count'))
-        .where(cat_where if cat_where else Source.category == category_id)
+        .where(Source.category == category_id if category_id else True)
         .join(Filter, peewee.JOIN.LEFT_OUTER)
         .group_by(Source.id)
     )
