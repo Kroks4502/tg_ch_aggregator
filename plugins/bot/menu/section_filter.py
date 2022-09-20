@@ -155,12 +155,12 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
 
     await client.send_message(chat_id, text)
     input_wait_manager.add(
-        chat_id, add_filter_wait_input, client, callback_query, content_type,
+        chat_id, add_filter_waiting_input, client, callback_query, content_type,
         source_obj)
 
 
-async def add_filter_wait_input(_, message: Message, callback_query,
-                                content_type, source_obj):
+async def add_filter_waiting_input(_, message: Message, callback_query,
+                                   content_type, source_obj):
     logger.debug(callback_query.data)
 
     try:

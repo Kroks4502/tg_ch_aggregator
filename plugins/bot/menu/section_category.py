@@ -87,10 +87,10 @@ async def add_edit_category(client: Client, callback_query: CallbackQuery):
 
     await client.send_message(chat_id, text)
     input_wait_manager.add(
-        chat_id, wait_input_category_channel, client, callback_query)
+        chat_id, add_edit_category_waiting_input, client, callback_query)
 
 
-async def wait_input_category_channel(
+async def add_edit_category_waiting_input(
         client: Client, message: Message, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 

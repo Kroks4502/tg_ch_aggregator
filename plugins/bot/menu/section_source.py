@@ -95,10 +95,10 @@ async def add_source(client: Client, callback_query: CallbackQuery):
 
     await client.send_message(chat_id, text)
     input_wait_manager.add(
-        chat_id, wait_input_source_channel, client, callback_query)
+        chat_id, add_source_waiting_input, client, callback_query)
 
 
-async def wait_input_source_channel(
+async def add_source_waiting_input(
         client: Client, message: Message, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
