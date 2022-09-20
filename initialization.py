@@ -1,5 +1,6 @@
 import logging
 import os
+from logging.handlers import RotatingFileHandler
 
 from dotenv import load_dotenv
 from pyrogram import Client
@@ -12,33 +13,22 @@ db.create_tables(
     ]
 )
 
-logging.basicConfig(
-    format='%(asctime)s : %(levelname)s : %(module)s : %(funcName)s : '
-           '%(message)s',
-)
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
 LOGS_PATH = 'logs'
 os.makedirs(LOGS_PATH, exist_ok=True)
 
-handler = logging.FileHandler(os.path.join(LOGS_PATH, 'log_file.log'),
-                              encoding='utf8')
-handler.setFormatter(logging.Formatter(
-    fmt='%(asctime)s : %(levelname)s : %(module)s : %(funcName)s : %(message)s'
-))
+logging.basicConfig(
+    level=logging.WARNING,
+    format='%(asctime)s : %(levelname)s : %(module)s : '
+           '%(funcName)s : %(message)s'
+)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
+handler = RotatingFileHandler(
+    os.path.join(LOGS_PATH, 'main.log'), maxBytes=50000000, backupCount=5)
+
 logger.addHandler(handler)
-
-logger2 = logging.getLogger()
-logger2.setLevel(logging.WARNING)
-handler = logging.FileHandler(os.path.join(
-    LOGS_PATH, 'log_file_all_warning.log'), encoding='utf8')
-handler.setFormatter(logging.Formatter(
-    fmt='%(asctime)s : %(levelname)s : %(module)s : %(funcName)s : %(message)s'
-))
-logger2.addHandler(handler)
-
+logger.addHandler(logging.StreamHandler())
 load_dotenv()
 
 API_ID = os.getenv('api_id')
