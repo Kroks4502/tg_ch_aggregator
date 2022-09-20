@@ -46,7 +46,7 @@ API_HASH = os.getenv('api_hash')
 BOT_TOKEN = os.getenv('bot_token')
 AGGREGATOR_CHANNEL = int(os.getenv('aggregator_channel'))
 
-DEVELOP_MODE = False
+DEVELOP_MODE = os.getenv('develop_mode')
 
 if DEVELOP_MODE:
     peewee_logger = logging.getLogger('peewee')
