@@ -134,14 +134,12 @@ async def add_edit_category_waiting_input(
             success_text = f'✅ Категория «{channel.title}» добавлена'
 
         else:
-            category_id = int(path.get_value('c'))
-            category = Category.get(id=category_id)
-            category.tg_id = channel.id
-            old_title = category.title
-            category.title = channel.title
-            category.save()
-            success_text = (f'✅ Категория «{old_title}» изменена '
-                            f'на «{channel.title}»')
+            q = (Category
+                 .update({Category.tg_id: channel.id,
+                          Category.title: channel.title})
+                 .where(Category.id == int(path.get_value('c'))))
+            q.execute()
+            success_text = f'✅ Категория изменена на «{channel.title}»'
 
     except peewee.IntegrityError:
         await message.reply_text(

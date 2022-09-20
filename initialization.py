@@ -39,9 +39,6 @@ handler.setFormatter(logging.Formatter(
 ))
 logger2.addHandler(handler)
 
-# peewee_logger = logging.getLogger('peewee')
-# peewee_logger.setLevel(logging.DEBUG)
-
 load_dotenv()
 
 API_ID = os.getenv('api_id')
@@ -50,6 +47,10 @@ BOT_TOKEN = os.getenv('bot_token')
 AGGREGATOR_CHANNEL = int(os.getenv('aggregator_channel'))
 
 DEVELOP_MODE = False
+
+if not DEVELOP_MODE:
+    peewee_logger = logging.getLogger('peewee')
+    peewee_logger.setLevel(logging.DEBUG)
 
 user_plugins = dict(
     root='plugins.user',

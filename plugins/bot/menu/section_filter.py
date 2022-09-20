@@ -95,13 +95,11 @@ async def list_filters(_, callback_query: CallbackQuery):
 
     inline_keyboard += buttons.get_fixed(path)
 
-    text = '**Общие фильтры**'
-    if source_obj:
-        text = f'Канал: **{source_obj}**'
+    text = f'Канал: **{source_obj}**' if source_obj else '**Общие фильтры**'
+    text += f'\nФильтр: **{content_type}**'
 
     await callback_query.message.edit_text(
-        f'{text}\n'
-        f'Фильтр: **{content_type}**',
+        text,
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )
 
@@ -129,10 +127,11 @@ async def detail_filter(_, callback_query: CallbackQuery):
 
     text = (f'Канал: **{filter_obj.source}**'
             if filter_obj.source else '**Общий фильтр**')
+    text += (f'\nТип фильтра: **{filter_obj.content_type}**'
+             f'\nПаттерн: `{filter_obj.pattern}`')
+
     await callback_query.message.edit_text(
-        f'{text}\n'
-        f'Тип фильтра: **{filter_obj.content_type}**\n'
-        f'Паттерн: `{filter_obj.pattern}`',
+        text,
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )
 
@@ -155,8 +154,8 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
 
     await client.send_message(chat_id, text)
     input_wait_manager.add(
-        chat_id, add_filter_waiting_input, client, callback_query, content_type,
-        source_obj)
+        chat_id, add_filter_waiting_input, client, callback_query,
+        content_type, source_obj)
 
 
 async def add_filter_waiting_input(_, message: Message, callback_query,
