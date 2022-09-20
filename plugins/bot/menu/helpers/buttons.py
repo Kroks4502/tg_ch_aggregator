@@ -49,7 +49,7 @@ def get_list_model(
         )
     buttons.append(row_buttons)
 
-    if button_show_all_title:
+    if button_show_all_title and total_amount:
         buttons.append([
             InlineKeyboardButton(
                 f'{button_show_all_title} ({total_amount})',

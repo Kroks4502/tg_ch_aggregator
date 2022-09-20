@@ -48,7 +48,7 @@ AGGREGATOR_CHANNEL = int(os.getenv('aggregator_channel'))
 
 DEVELOP_MODE = False
 
-if not DEVELOP_MODE:
+if DEVELOP_MODE:
     peewee_logger = logging.getLogger('peewee')
     peewee_logger.setLevel(logging.DEBUG)
 

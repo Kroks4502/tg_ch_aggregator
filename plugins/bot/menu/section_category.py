@@ -80,10 +80,13 @@ async def add_edit_category(client: Client, callback_query: CallbackQuery):
     path = Path(callback_query.data)
     chat_id = callback_query.message.chat.id
 
-    text = 'ОК. Ты меняешь канал у категории.\n\n'
+    text = 'ОК. Ты меняешь канал для категории, '
     if path.action == 'add':
-        text = 'ОК. Ты добавляешь новую категорию.\n\n'
-    text += '**Введи ID канала или ссылку на него:**'
+        text = 'ОК. Ты добавляешь новый канал для категории, '
+    text += ('в который будут пересылаться сообщения из источников. '
+             'Этот бот должен быть администратором канала '
+             'с возможностью публиковать записи.\n\n'
+             '**Введи ID или ссылку на канал:**')
 
     await client.send_message(chat_id, text)
     input_wait_manager.add(

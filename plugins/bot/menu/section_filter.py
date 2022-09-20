@@ -150,7 +150,9 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
     text = 'ОК. Ты добавляешь '
     text += (f'фильтр для источника «{source_obj}» ' if source_obj
              else 'общий фильтр ')
-    text += f'типа «{content_type}».\n\n**Введи паттерн нового фильтра:**'
+    text += (f'типа «{content_type}». Паттерн является регулярным выражением '
+             f'с игнорированием регистра.\n\n'
+             '**Введи паттерн нового фильтра:**')
 
     await client.send_message(chat_id, text)
     input_wait_manager.add(
