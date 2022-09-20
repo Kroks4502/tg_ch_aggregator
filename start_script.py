@@ -13,13 +13,13 @@ async def startup():
 
     msg = 'Запущен начальный #скрипт'
     logger.debug(msg)
-    await user.get_me()
-    await bot.send_message(user.me.id, msg)
+    me = await user.get_me()
+    await bot.send_message(me.id, msg)
 
     await update_admin_usernames()
 
-    if not Admin.select().where(Admin.tg_id == user.me.id).exists():
-        Admin.create(tg_id=user.me.id, username=user.me.username)
+    if not Admin.select().where(Admin.tg_id == me.id).exists():
+        Admin.create(tg_id=me.id, username=me.username)
 
     def get_db_titles(model):
         return {item.tg_id: (model, item.title) for item in model.select()}
