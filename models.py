@@ -4,8 +4,48 @@ db = SqliteDatabase('.db', pragmas={'foreign_keys': 1})
 
 
 class BaseModel(Model):
+    __is_actual_cache = False
+    __cache = {}
+
     class Meta:
         database = db
+
+    @classmethod
+    def get_cache(cls, *fields, **where):
+        cls.__update_cache()
+
+        if 'id' in where:
+            db_id = where.pop('id')
+            data = cls.__cache[db_id]
+            if not all([data[key] == value for key, value in where.items()]):
+                return {}
+            return {db_id: {field: data[field] for field in fields}
+                    if fields else data}
+
+        selections_from_data = {}
+        for db_id, data in cls.__cache.items():
+            if all([data[key] == value for key, value in where.items()]):
+                selections_from_data.update({
+                    db_id: {field: data[field] for field in fields}
+                    if fields else data
+                })
+        return selections_from_data
+
+    @classmethod
+    def get_cache_all_field(cls, field, **where):
+        cls.__update_cache()
+        return {value[field] for key, value in cls.get_cache(**where).items()}
+
+    @classmethod
+    def __update_cache(cls):
+        if not cls.__is_actual_cache:
+            cls.__cache = {item.pop('id'): item
+                           for item in Source.select().dicts()}
+            cls.__is_actual_cache = True
+
+    @classmethod
+    def clear_actual_cache(cls):
+        cls.__is_actual_cache = False
 
 
 class Category(BaseModel):
@@ -40,10 +80,6 @@ class Source(BaseModel):
 
     def get_filter_reply_markup(self) -> list:
         return self.get_filter_patterns('reply_markup')
-
-    @staticmethod
-    def get_all_ids():
-        return [s.tg_id for s in Source.select(Source.tg_id)]
 
 
 FILTER_CONTENT_TYPES = ('hashtag', 'part_of_url', 'part_of_text',

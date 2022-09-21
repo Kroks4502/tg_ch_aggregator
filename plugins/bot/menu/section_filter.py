@@ -168,7 +168,10 @@ async def add_filter_waiting_input(_, message: Message, callback_query,
         Filter.create(pattern=message.text, content_type=content_type,
                       source=source_obj.id if source_obj else None)
 
+        Filter.clear_actual_cache()
+
         text = '✅ Фильтр добавлен'
+
     except Exception as err:
         text = f'❌ Что-то пошло не так\n\n{err}'
 
@@ -213,6 +216,9 @@ async def edit_body_filter_wait_input(
     try:
         filter_obj.pattern = message.text
         filter_obj.save()
+
+        Filter.clear_actual_cache()
+
         text = '✅ Фильтр изменен'
     except Exception as err:
         text = f'❌ При сохранении изменений произошла ошибка\n{err}'
@@ -242,6 +248,8 @@ async def delete_filter(_, callback_query: CallbackQuery):
              .delete()
              .where(Filter.id == filter_id))
         q.execute()
+
+        Filter.clear_actual_cache()
 
         callback_query.data = path.get_prev(3)
         await list_filters(_, callback_query)

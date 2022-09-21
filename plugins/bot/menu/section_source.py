@@ -78,6 +78,8 @@ async def edit_source_category(_, callback_query: CallbackQuery):
          .where(Source.id == source_id))
     q.execute()
 
+    Source.clear_actual_cache()
+
     callback_query.data = path.get_prev(2)
     await list_type_content_filters(_, callback_query)
 
@@ -133,6 +135,9 @@ async def add_source_waiting_input(
     try:
         Source.create(tg_id=channel.id, title=channel.title,
                       category=category_id)
+
+        Source.clear_actual_cache()
+
         success_text = f'✅ Источник «{channel.title}» добавлен'
 
     except peewee.IntegrityError:
@@ -162,6 +167,8 @@ async def delete_source(_, callback_query: CallbackQuery):
              .delete()
              .where(Source.id == source_id))
         q.execute()
+
+        Source.clear_actual_cache()
 
         callback_query.data = path.get_prev(3)
         await list_source(_, callback_query)

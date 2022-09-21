@@ -1,6 +1,6 @@
 from pyrogram import filters
 
-from initialization import MONITORED_CHANNELS_ID
+from models import Source
 
 
 async def is_forward_from_chat(_, __, message):
@@ -11,7 +11,7 @@ forward_from_chat = filters.create(is_forward_from_chat)
 
 
 async def is_monitored_channels(_, __, message):
-    return message.chat.id in MONITORED_CHANNELS_ID
+    return message.chat.id in Source.get_cache_all_field('tg_id')
 
 
 monitored_channels = filters.create(is_monitored_channels)

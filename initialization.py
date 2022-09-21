@@ -59,5 +59,3 @@ bot = Client(
     'bot', API_ID, API_HASH, bot_token=BOT_TOKEN,
     plugins=bot_plugins
 )
-
-MONITORED_CHANNELS_ID = Source.get_all_ids()

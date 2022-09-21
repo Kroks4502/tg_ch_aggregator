@@ -2,8 +2,7 @@ import traceback
 from asyncio import sleep
 from operator import itemgetter
 
-from initialization import (logger, user, bot, MONITORED_CHANNELS_ID,
-                            AGGREGATOR_CHANNEL)
+from initialization import logger, user, bot, AGGREGATOR_CHANNEL
 from models import Admin, Category, Source
 
 
@@ -34,7 +33,7 @@ async def startup():
 
         if (
                 dialog.unread_messages_count != 0
-                and dialog.chat.id in MONITORED_CHANNELS_ID
+                and dialog.chat.id in Source.get_cache_all_field('tg_id')
         ):
             dialog_messages = user.get_chat_history(
                 dialog.chat.id, dialog.unread_messages_count)

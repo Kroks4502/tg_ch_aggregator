@@ -8,7 +8,7 @@ from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
 
 from initialization import logger
-from models import Source, Category
+from models import Source, Category, Filter
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.path import Path
@@ -144,6 +144,8 @@ async def add_edit_category_waiting_input(
             q.execute()
             success_text = f'✅ Категория изменена на «{channel.title}»'
 
+        Category.clear_actual_cache()
+
     except peewee.IntegrityError:
         await message.reply_text(
             f'❗️Этот канал уже используется',
@@ -174,6 +176,10 @@ async def delete_category(_, callback_query: CallbackQuery):
              .delete()
              .where(Category.id == category_id))
         q.execute()
+
+        Category.clear_actual_cache()
+        Source.clear_actual_cache()
+        Filter.clear_actual_cache()
 
         callback_query.data = path.get_prev(3)
         await list_category(_, callback_query)
