@@ -22,3 +22,13 @@ jobs:
             cd /home/tgbot/tg_ch_aggregator/
             git pull
             supervisorctl restart tgbot
+  send_message:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+    - name: send message
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        message: ${{ github.workflow }} успешно выполнен!
