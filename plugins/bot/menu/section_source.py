@@ -20,14 +20,14 @@ from plugins.bot.menu.section_filter import list_type_content_filters
 
 @Client.on_callback_query(filters.regex(
     r'^/c_\d+/$'))
-async def list_source(_, callback_query: CallbackQuery):
+async def list_source(client: Client, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
     category_id = int(path.get_value('c'))
     category_obj = Category.get(id=category_id) if category_id else None
-
-    text = (f'Категория: **{category_obj}**'
+    category_chat = await client.get_chat(category_obj.tg_id)
+    text = (f'Категория: **[{category_obj}]({category_chat.invite_link})**'
             if category_obj else '**Все источники**')
 
     inline_keyboard = []
@@ -59,10 +59,11 @@ async def list_source(_, callback_query: CallbackQuery):
     )
 
     inline_keyboard += buttons.get_fixed(path)
-
+    await callback_query.answer()
     await callback_query.message.edit_text(
         text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard)
+        reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        disable_web_page_preview=True
     )
 
 
@@ -83,6 +84,7 @@ async def edit_source_category(_, callback_query: CallbackQuery):
     Source.clear_actual_cache()
 
     callback_query.data = path.get_prev(2)
+    await callback_query.answer()
     await list_type_content_filters(_, callback_query)
 
 
@@ -96,6 +98,7 @@ async def add_source(client: Client, callback_query: CallbackQuery):
     text = ('ОК. Ты добавляешь новый источник.\n\n'
             '**Введи ID канала или ссылку на него:**')
 
+    await callback_query.answer()
     await client.send_message(chat_id, text)
     input_wait_manager.add(
         chat_id, add_source_waiting_input, client, callback_query)
@@ -158,26 +161,31 @@ async def add_source_waiting_input(
 
 @Client.on_callback_query(filters.regex(
     r's_\d+/:delete/') & custom_filters.admin_only)
-async def delete_source(_, callback_query: CallbackQuery):
+async def delete_source(client: Client, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
     source_id = int(path.get_value('s'))
-
+    source_obj: Source = Source.get(id=source_id)
+    source_chat = await user.get_chat(source_obj.tg_id)
     if path.with_confirmation:
-        q = (Source
-             .delete()
-             .where(Source.id == source_id))
-        q.execute()
-
+        source_obj.delete_instance()
         Source.clear_actual_cache()
 
         callback_query.data = path.get_prev(3)
-        await list_source(_, callback_query)
+        await callback_query.answer('Источник удален')
+        await list_source(client, callback_query)
+
+        if callback_query.from_user.id != user.me.id:
+            await client.send_message(
+                user.me.id, f'@{callback_query.from_user.username} '
+                            f'удалил источник [{source_obj.title}]'
+                            f'(https://{source_chat.username}.t.me)',
+                disable_web_page_preview=True)
         return
 
-    source_obj = Source.get(id=source_id)
-    text = f'Источник: **{source_obj.title}**\n\n'
+    text = (f'Источник: **[{source_obj.title}]'
+            f'(https://{source_chat.username}.t.me)**\n\n')
     text += 'Ты **удаляешь** источник!'
 
     inline_keyboard = [[InlineKeyboardButton(
@@ -186,7 +194,9 @@ async def delete_source(_, callback_query: CallbackQuery):
     ), ]]
     inline_keyboard += buttons.get_fixed(path)
 
+    await callback_query.answer()
     await callback_query.message.edit_text(
         text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard)
+        reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        disable_web_page_preview=True
     )

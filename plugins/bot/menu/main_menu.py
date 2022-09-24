@@ -13,13 +13,17 @@ def main_menu(data: Message | CallbackQuery) -> (str, list[list]):
 
     text = '**Агрегатор каналов**'
 
-    inline_keyboard = list_category_buttons(path, f'📚 Все источники')
-
+    inline_keyboard = []
     if is_admin(data.from_user.id):
         inline_keyboard.append([InlineKeyboardButton(
-            '➕ Добавить категорию',
+            '➕',
             callback_data=path.add_action('add')
+        ), InlineKeyboardButton(
+            '⚙',
+            callback_data='/o/'
         ), ])
+
+    inline_keyboard += list_category_buttons(path, f'📚 Все источники')
 
     inline_keyboard.append([InlineKeyboardButton(
         f'🔘 Общие фильтры',
@@ -35,6 +39,7 @@ async def set_main_menu(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     text, inline_keyboard = main_menu(callback_query)
+    await callback_query.answer()
     await callback_query.message.edit_text(
         text, reply_markup=InlineKeyboardMarkup(inline_keyboard))
 

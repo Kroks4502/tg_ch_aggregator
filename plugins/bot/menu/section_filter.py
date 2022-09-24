@@ -1,8 +1,11 @@
+import re
+
 import peewee
 from pyrogram import Client, filters
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
 
+from initialization import user
 from log import logger
 from models import Source, Filter, FILTER_CONTENT_TYPES
 from plugins.bot.menu import custom_filters
@@ -26,8 +29,14 @@ async def list_type_content_filters(_, callback_query: CallbackQuery):
 
     text = '**Общие фильтры**'
     if source_obj:
-        text = (f'Источник: **{source_obj.title}**\n'
-                f'Категория: **{source_obj.category.title}**')
+        source_chat = await user.get_chat(source_obj.tg_id)
+        category_chat = await user.get_chat(source_obj.category.tg_id)
+        text = (f'Источник: **[{source_obj.title}]'
+                f'(https://{source_chat.username}.t.me)**')
+        description = re.sub('\n', ' ', source_chat.description[:40])
+        text += f'\nОписание: `{description}…`' if description else ''
+        text += (f'\nКатегория: **[{source_obj.category.title}]'
+                 f'({category_chat.invite_link})**')
         if is_admin(callback_query.from_user.id):
             inline_keyboard.append(
                 [InlineKeyboardButton(
@@ -58,9 +67,12 @@ async def list_type_content_filters(_, callback_query: CallbackQuery):
     )
 
     inline_keyboard += buttons.get_fixed(path)
+
+    await callback_query.answer()
     await callback_query.message.edit_text(
         text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard)
+        reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        disable_web_page_preview=True
     )
 
 
@@ -73,6 +85,14 @@ async def list_filters(_, callback_query: CallbackQuery):
     content_type = path.get_value('t')
     source_id = int(path.get_value('s'))
     source_obj = Source.get(id=source_id) if source_id else None
+
+    if source_obj:
+        source_chat = await user.get_chat(source_obj.tg_id)
+        text = (f'Источник: **[{source_obj}]'
+                f'(https://{source_chat.username}.t.me)**')
+    else:
+        text = '**Общие фильтры**'
+    text += f'\nФильтр: **{content_type}**'
 
     inline_keyboard = []
 
@@ -96,12 +116,11 @@ async def list_filters(_, callback_query: CallbackQuery):
 
     inline_keyboard += buttons.get_fixed(path)
 
-    text = f'Канал: **{source_obj}**' if source_obj else '**Общие фильтры**'
-    text += f'\nФильтр: **{content_type}**'
-
+    await callback_query.answer()
     await callback_query.message.edit_text(
         text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard)
+        reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        disable_web_page_preview=True
     )
 
 
@@ -126,14 +145,20 @@ async def detail_filter(_, callback_query: CallbackQuery):
 
     inline_keyboard += buttons.get_fixed(path)
 
-    text = (f'Канал: **{filter_obj.source}**'
-            if filter_obj.source else '**Общий фильтр**')
+    if filter_obj.source:
+        source_chat = await user.get_chat(filter_obj.source.tg_id)
+        text = (f'Источник: **[{filter_obj.source}]'
+                f'(https://{source_chat.username}.t.me)**')
+    else:
+        text = '**Общий фильтр**'
     text += (f'\nТип фильтра: **{filter_obj.content_type}**'
              f'\nПаттерн: `{filter_obj.pattern}`')
 
+    await callback_query.answer()
     await callback_query.message.edit_text(
         text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard)
+        reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        disable_web_page_preview=True
     )
 
 
@@ -155,6 +180,7 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
              f'с игнорированием регистра.\n\n'
              '**Введи паттерн нового фильтра:**')
 
+    await callback_query.answer()
     await client.send_message(chat_id, text)
     input_wait_manager.add(
         chat_id, add_filter_waiting_input, client, callback_query,
@@ -204,6 +230,7 @@ async def edit_body_filter(client: Client, callback_query: CallbackQuery):
              f'«`{filter_obj.pattern}`».\n\n'
              f'**Введи новый паттерн фильтра:**')
 
+    await callback_query.answer()
     await client.send_message(chat_id, text)
     input_wait_manager.add(
         chat_id, edit_body_filter_wait_input, client, callback_query,
@@ -253,23 +280,31 @@ async def delete_filter(_, callback_query: CallbackQuery):
         Filter.clear_actual_cache()
 
         callback_query.data = path.get_prev(3)
+        await callback_query.answer('Паттерн удален')
         await list_filters(_, callback_query)
         return
 
     filter_obj = Filter.get(id=filter_id)
 
-    text = (f'Канал: **{filter_obj.source}**\n'
-            if filter_obj.source else '**Общий фильтр**\n')
-    text += f'Тип фильтра: **{filter_obj.content_type}**\n'
-    text += f'Паттерн: `{filter_obj.pattern}`\n\n'
+    if filter_obj.source:
+        source_chat = await user.get_chat(filter_obj.source.tg_id)
+        text = (f'Источник: **[{filter_obj.source}]'
+                f'(https://{source_chat.username}.t.me)**')
+    else:
+        text = '**Общий фильтр**'
+    text += (f'\nТип фильтра: **{filter_obj.content_type}**'
+             f'\nПаттерн: `{filter_obj.pattern}`\n\n')
     text += 'Ты **удаляешь** фильтр!'
+
     inline_keyboard = [[InlineKeyboardButton(
         '❌ Подтвердить удаление',
         callback_data=f'{path}/'
     ), ]]
     inline_keyboard += buttons.get_fixed(path)
 
+    await callback_query.answer()
     await callback_query.message.edit_text(
         text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard)
+        reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        disable_web_page_preview=True
     )

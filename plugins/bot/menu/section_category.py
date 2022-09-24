@@ -7,6 +7,7 @@ from pyrogram.errors import exceptions
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
 
+from initialization import user
 from log import logger
 from models import Source, Category, Filter
 from plugins.bot.menu import custom_filters
@@ -35,20 +36,24 @@ def list_category_buttons(
 
 @Client.on_callback_query(filters.regex(
     r's_\d+/:edit/$') & custom_filters.admin_only)
-async def list_category(_, callback_query: CallbackQuery):
+async def choice_source_category(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
 
     source_obj = Source.get(id=int(path.get_value('s')))
-    text = (f'Источник: **{source_obj}**\n\n'
+    source_chat = await user.get_chat(source_obj.tg_id)
+    text = (f'Источник: **[{source_obj.title}]'
+            f'(https://{source_chat.username}.t.me)**\n\n'
             f'Ты **меняешь категорию** у источника.\n'
             f'Выбери новую категорию:')
 
     inline_keyboard = list_category_buttons(path)
     inline_keyboard += buttons.get_fixed(path)
+    await callback_query.answer()
     await callback_query.message.edit_text(
-        text, reply_markup=InlineKeyboardMarkup(inline_keyboard))
+        text, reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        disable_web_page_preview=True)
 
 
 @Client.on_callback_query(filters.regex(
@@ -67,6 +72,7 @@ async def add_edit_category(client: Client, callback_query: CallbackQuery):
              'с возможностью публиковать записи.\n\n'
              '**Введи ID или ссылку на канал:**')
 
+    await callback_query.answer()
     await client.send_message(chat_id, text)
     input_wait_manager.add(
         chat_id, add_edit_category_waiting_input, client, callback_query)
@@ -137,7 +143,7 @@ async def add_edit_category_waiting_input(
 
     callback_query.data = path.get_prev()
     if path.action == 'add':
-        await list_category(client, callback_query)
+        await choice_source_category(client, callback_query)
         return
     await list_source(client, callback_query)
 
@@ -161,7 +167,8 @@ async def delete_category(_, callback_query: CallbackQuery):
         Filter.clear_actual_cache()
 
         callback_query.data = path.get_prev(3)
-        await list_category(_, callback_query)
+        await callback_query.answer('Категория удалена')
+        await choice_source_category(_, callback_query)
         return
 
     category_obj = Category.get(id=category_id)
@@ -174,6 +181,7 @@ async def delete_category(_, callback_query: CallbackQuery):
     ), ]]
     inline_keyboard += buttons.get_fixed(path)
 
+    await callback_query.answer()
     await callback_query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(inline_keyboard)
