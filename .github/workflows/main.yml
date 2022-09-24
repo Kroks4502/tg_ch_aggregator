@@ -17,8 +17,7 @@ jobs:
         with:
           host: ${{ secrets.S1_HOST }}
           username: ${{ secrets.S1_USER }}
-          key: ${{ secrets.S1_SSH_KEY }}
-          passphrase: ${{ secrets.S1_PASSPHRASE }}
+          password: ${{ secrets.S1_PSW }}
           script: |
             cd /home/tgbot/tg_ch_aggregator/
             git pull
