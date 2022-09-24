@@ -20,6 +20,6 @@ jobs:
           key: ${{ secrets.S1_SSH_KEY }}
           passphrase: ${{ secrets.S1_PASSPHRASE }}
           script: |
-            sudo docker pull <имя-пользователя>/<имя-репозитория>
-            sudo docker stop $(sudo docker ps -a -q)
-            sudo docker run --rm -d -p 5000:5000 <имя-пользователя>/<имя-репозитория>
+            cd /home/tgbot/tg_ch_aggregator/
+            git pull
+            supervisorctl restart tgbot
