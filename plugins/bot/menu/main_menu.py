@@ -2,12 +2,13 @@ from pyrogram import Client, filters
 from pyrogram.types import (Message, CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup)
 
+from log import logger
 from plugins.bot.menu.helpers.checks import is_admin
 from plugins.bot.menu.helpers.path import Path
 from plugins.bot.menu.section_category import list_category_buttons
 
 
-async def main_menu(data: Message | CallbackQuery) -> (str, list[list]):
+def main_menu(data: Message | CallbackQuery) -> (str, list[list]):
     path = Path('/')
 
     text = '**Агрегатор каналов**'
@@ -31,6 +32,8 @@ async def main_menu(data: Message | CallbackQuery) -> (str, list[list]):
 @Client.on_callback_query(filters.regex(
     r'^/$'))
 async def set_main_menu(_, callback_query: CallbackQuery):
+    logger.debug(callback_query.data)
+
     text, inline_keyboard = main_menu(callback_query)
     await callback_query.message.edit_text(
         text, reply_markup=InlineKeyboardMarkup(inline_keyboard))
