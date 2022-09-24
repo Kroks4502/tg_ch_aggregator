@@ -2,7 +2,9 @@ import traceback
 from asyncio import sleep
 from operator import itemgetter
 
-from initialization import logger, user, bot, AGGREGATOR_CHANNEL
+from log import logger
+from settings import AGGREGATOR_CHANNEL
+from initialization import user, bot
 from models import Admin, Category, Source
 
 

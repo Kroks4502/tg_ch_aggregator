@@ -1,4 +1,4 @@
-peewee==3.15.2
-Pyrogram==2.0.54
+peewee==3.15.3
+Pyrogram==2.0.57
 python-dotenv==0.21.0
 APScheduler==3.9.1

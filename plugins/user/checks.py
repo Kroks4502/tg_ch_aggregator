@@ -3,7 +3,7 @@ import re
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message
 
-from initialization import logger
+from log import logger
 from models import Source, Filter
 
 

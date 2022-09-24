@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-from initialization import AGGREGATOR_CHANNEL
+from settings import AGGREGATOR_CHANNEL
 from plugins.user import custom_filters
 from plugins.user.checks import is_passed_filter
 

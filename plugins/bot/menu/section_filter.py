@@ -3,10 +3,11 @@ from pyrogram import Client, filters
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
 
-from initialization import logger
+from log import logger
 from models import Source, Filter, FILTER_CONTENT_TYPES
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
+from plugins.bot.menu.helpers.checks import is_admin
 from plugins.bot.menu.helpers.path import Path
 from plugins.bot.menu.managers.input_wait import input_wait_manager
 
@@ -27,7 +28,7 @@ async def list_type_content_filters(_, callback_query: CallbackQuery):
     if source_obj:
         text = (f'Источник: **{source_obj.title}**\n'
                 f'Категория: **{source_obj.category.title}**')
-        if custom_filters.is_admin(None, None, callback_query):
+        if is_admin(callback_query.from_user.id):
             inline_keyboard.append(
                 [InlineKeyboardButton(
                     f'📝',
@@ -75,7 +76,7 @@ async def list_filters(_, callback_query: CallbackQuery):
 
     inline_keyboard = []
 
-    if custom_filters.is_admin(None, None, callback_query):
+    if is_admin(callback_query.from_user.id):
         inline_keyboard.append([InlineKeyboardButton(
             '➕ Добавить фильтр',
             callback_data=path.add_action('add')
@@ -114,7 +115,7 @@ async def detail_filter(_, callback_query: CallbackQuery):
 
     inline_keyboard = []
 
-    if custom_filters.is_admin(None, None, callback_query):
+    if is_admin(callback_query.from_user.id):
         inline_keyboard.append([InlineKeyboardButton(
             f'📝',
             callback_data=path.add_action('edit')

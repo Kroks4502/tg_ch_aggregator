@@ -7,7 +7,7 @@ from pyrogram.errors import exceptions
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
 
-from initialization import logger
+from log import logger
 from models import Source, Category, Filter
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
@@ -16,33 +16,8 @@ from plugins.bot.menu.managers.input_wait import input_wait_manager
 from plugins.bot.menu.section_source import list_source
 
 
-@Client.on_callback_query(filters.regex(
-    r'^/$|s_\d+/:edit/$'))
-async def list_category(_, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
-
-    path = Path(callback_query.data)
-    action = path.action
-
-    text = '**Агрегатор каналов**'
-    if action == 'edit':
-        source_id = int(path.get_value('s'))
-        source_obj = Source.get(id=source_id)
-        text = (f'Источник: **{source_obj}**\n\n'
-                f'Ты **меняешь категорию** у источника.\n'
-                f'Выбери новую категорию:')
-
-    inline_keyboard = []
-
-    button_show_all_title = ''
-    if action != 'edit':
-        button_show_all_title = f'📚 Все источники'
-        if custom_filters.is_admin(None, None, callback_query):
-            inline_keyboard.append([InlineKeyboardButton(
-                '➕ Добавить категорию',
-                callback_data=path.add_action('add')
-            ), ])
-
+def list_category_buttons(
+        path: Path, button_show_all_title='') -> list[list]:
     query = (Category
              .select(Category.id,
                      Category.title,
@@ -50,26 +25,30 @@ async def list_category(_, callback_query: CallbackQuery):
              .join(Source, peewee.JOIN.LEFT_OUTER)
              .group_by(Category.id))
 
-    inline_keyboard += buttons.get_list_model(
+    return buttons.get_list_model(
         data={f'{item.id}': (item.title, item.count) for item in query},
         path=path,
         prefix_path='c',
         button_show_all_title=button_show_all_title,
     )
 
-    if action != 'edit':
-        inline_keyboard.append([InlineKeyboardButton(
-            f'🔘 Общие фильтры',
-            callback_data=path.add_value('s', 0)
-        )])
 
-    if action == 'edit':
-        inline_keyboard += buttons.get_fixed(path)
+@Client.on_callback_query(filters.regex(
+    r's_\d+/:edit/$') & custom_filters.admin_only)
+async def list_category(_, callback_query: CallbackQuery):
+    logger.debug(callback_query.data)
 
+    path = Path(callback_query.data)
+
+    source_obj = Source.get(id=int(path.get_value('s')))
+    text = (f'Источник: **{source_obj}**\n\n'
+            f'Ты **меняешь категорию** у источника.\n'
+            f'Выбери новую категорию:')
+
+    inline_keyboard = list_category_buttons(path)
+    inline_keyboard += buttons.get_fixed(path)
     await callback_query.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard)
-    )
+        text, reply_markup=InlineKeyboardMarkup(inline_keyboard))
 
 
 @Client.on_callback_query(filters.regex(

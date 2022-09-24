@@ -1,7 +1,7 @@
 from pyrogram import Client
 from pyrogram.types import CallbackQuery
 
-from initialization import logger
+from log import logger
 
 
 @Client.on_callback_query(group=-999)

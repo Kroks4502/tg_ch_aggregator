@@ -7,10 +7,12 @@ from pyrogram.errors import exceptions
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
 
-from initialization import logger, user
+from log import logger
+from initialization import user
 from models import Source, Filter, Category
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
+from plugins.bot.menu.helpers.checks import is_admin
 from plugins.bot.menu.helpers.path import Path
 from plugins.bot.menu.managers.input_wait import input_wait_manager
 from plugins.bot.menu.section_filter import list_type_content_filters
@@ -30,7 +32,7 @@ async def list_source(_, callback_query: CallbackQuery):
 
     inline_keyboard = []
 
-    if category_obj and custom_filters.is_admin(None, None, callback_query):
+    if category_obj and is_admin(callback_query.from_user.id):
         inline_keyboard.append([InlineKeyboardButton(
             '➕',
             callback_data=path.add_action('add')

@@ -1,7 +1,7 @@
 from pyrogram import filters
 from pyrogram.types import Message, CallbackQuery
 
-from models import Admin
+from plugins.bot.menu.helpers.checks import is_admin
 
 
 def chat(chat_id: int):
@@ -19,11 +19,8 @@ def is_command(_, __, message: Message) -> bool:
 command_message = filters.create(is_command)
 
 
-def is_admin(_, __, callback_query: CallbackQuery | Message):
-    return (Admin
-            .select()
-            .where(Admin.tg_id == callback_query.from_user.id)
-            .exists())
+def is_admin_f(_, __, callback_query: CallbackQuery | Message):
+    return is_admin(callback_query.from_user.id)
 
 
-admin_only = filters.create(is_admin)
+admin_only = filters.create(is_admin_f)

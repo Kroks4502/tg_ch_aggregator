@@ -1,7 +1,9 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-from initialization import logger, user, AGGREGATOR_CHANNEL
+from log import logger
+from settings import AGGREGATOR_CHANNEL
+from initialization import user
 from models import Source
 from plugins.bot.menu import custom_filters
 
