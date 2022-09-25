@@ -7,6 +7,7 @@ from pyrogram.errors import exceptions
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
 
+from initialization import user
 from log import logger
 from models import Source, Category, Filter
 from plugins.bot.menu import custom_filters
@@ -138,6 +139,13 @@ async def add_edit_category_waiting_input(
             return
     except exceptions.bad_request_400.UserNotParticipant:
         await reply('❌ Бот не администратор этого канала')
+        return
+
+    try:
+        await user.join_chat(input_text)
+    except Exception as err:
+        await reply(f'❌ Основной клиент не может подписаться на канал\n\n'
+                    f'{err}')
         return
 
     try:

@@ -126,7 +126,7 @@ async def add_source_waiting_input(
             disable_web_page_preview=True)
 
     try:
-        chat = await client.get_chat(input_text)
+        chat = await user.get_chat(input_text)
     except (exceptions.BadRequest, exceptions.NotAcceptable) as err:
         await reply(f'❌ Что-то пошло не так\n\n{err}')
         return
@@ -135,9 +135,11 @@ async def add_source_waiting_input(
         await reply('❌ Это не канал')
         return
 
-    if chat.id not in [dialog.chat.id
-                       async for dialog in user.get_dialogs()]:
-        await reply('❌ Клиент не подписан на этот канал')
+    try:
+        await user.join_chat(input_text)
+    except Exception as err:
+        await reply(f'❌ Основной клиент не может подписаться на канал\n\n'
+                    f'{err}')
         return
 
     try:
