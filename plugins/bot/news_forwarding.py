@@ -19,7 +19,7 @@ async def is_unique_message(category, new_message):
                 and h_message.forward_from_message_id
                 == new_message.forward_from_message_id
         ):
-            msg = (f'Сообщение {new_message.id} уже есть в канале '
+            msg = (f'Сообщение {new_message.id} уже есть в категории '
                    f'[{category.title}]({h_message.link}) #повтор')
             logger.debug(msg)
             return False, msg

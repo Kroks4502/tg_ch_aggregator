@@ -89,13 +89,11 @@ async def startup():
                     AGGREGATOR_CHANNEL,
                     chat_id, msg_ids
                 )
-                await new_message[0].reply(f'/sent_from {chat_id}')
                 await user.read_chat_history(chat_id, max(msg_ids))
+                await new_message[0].reply(f'/sent_from {chat_id}')
             except Exception:
-                logger.error(f'Произошла необработанная ошибка.\n'
-                             f'message:\n{message}\n'
-                             f'Traceback:\n{traceback.format_exc()}', )
-
+                # Сервисные сообщения не пересылаются
+                ...
     msg = 'Начальный #скрипт завершил работу'
     logger.debug(msg)
 

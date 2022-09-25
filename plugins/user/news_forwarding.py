@@ -38,6 +38,8 @@ async def new_post_with_media_group(client: Client, message: Message):
     chat = media_group_ids.get(message.chat.id)
     if not chat:
         chat = media_group_ids[message.chat.id] = []
+        if len(media_group_ids) > 10:
+            media_group_ids.pop(list(media_group_ids.keys())[0])
 
     if message.media_group_id not in chat:
         chat.append(message.media_group_id)
@@ -70,7 +72,7 @@ async def new_post_with_media_group(client: Client, message: Message):
 
 
 @Client.on_message(
-    (filters.poll | ~filters.service)
+    (filters.poll | filters.service)
     & custom_filters.monitored_channels
 )
 async def pool_and_service_messages(client: Client, message: Message):
