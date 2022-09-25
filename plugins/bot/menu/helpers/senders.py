@@ -16,4 +16,4 @@ async def send_message_to_main_user(
                 f'{f_user.last_name + " " if f_user.last_name else ""}')
             b_text = f'({f_user.id})' if full_name else f'{f_user.id}'
         await client.send_message(
-            user.me.id, f'{b_text} {text}', disable_web_page_preview=True)
+            user.me.id, f'{b_text}\n{text}', disable_web_page_preview=True)
