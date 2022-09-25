@@ -179,13 +179,17 @@ async def add_admin_waiting_input(
             reply_markup=reply_markup_fix_buttons)
         return
 
+    text = f'✅ Администратор **{await admin_obj.get_formatted_link()}** ' \
+           f'добавлен'
     await message.reply_text(
-        f'✅ Администратор **{await admin_obj.get_formatted_link()}** добавлен',
+        text,
         reply_markup=reply_markup_fix_buttons, disable_web_page_preview=True)
 
     callback_query.data = path.get_prev()
 
     await list_admins(client, callback_query)
+
+    await send_message_to_main_user(client, callback_query, text)
     return
 
 
@@ -224,6 +228,6 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
 
     await callback_query.answer()
     await callback_query.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard)
+        text, reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        disable_web_page_preview=True
     )
