@@ -3,7 +3,7 @@ from asyncio import sleep
 from operator import itemgetter
 
 from log import logger
-from settings import AGGREGATOR_CHANNEL
+from settings import AGGREGATOR_CHANNEL, DEVELOP_MODE
 from initialization import user, bot
 from models import Admin, Category, Source
 
@@ -15,7 +15,9 @@ async def startup():
     msg = 'Запущен начальный #скрипт'
     logger.debug(msg)
     me = await user.get_me()
-    await bot.send_message(me.id, msg)
+
+    if not DEVELOP_MODE:
+        await bot.send_message(me.id, msg)
 
     await update_admin_usernames()
 
@@ -96,7 +98,9 @@ async def startup():
 
     msg = 'Начальный #скрипт завершил работу'
     logger.debug(msg)
-    await bot.send_message(user.me.id, msg)
+
+    if not DEVELOP_MODE:
+        await bot.send_message(user.me.id, msg)
 
 
 async def update_admin_usernames():

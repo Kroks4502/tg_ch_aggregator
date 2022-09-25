@@ -3,7 +3,7 @@ import datetime
 from pyrogram import compose
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from initialization import bot, user, DEVELOP_MODE
+from initialization import bot, user
 from start_script import startup
 
 scheduler = AsyncIOScheduler()

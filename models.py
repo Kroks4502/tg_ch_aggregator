@@ -1,5 +1,7 @@
 from peewee import *
 
+from initialization import user
+
 db = SqliteDatabase('.db', pragmas={'foreign_keys': 1})
 
 
@@ -48,22 +50,29 @@ class BaseModel(Model):
         cls.__is_actual_cache = False
 
 
-class Category(BaseModel):
+class ChannelModel(BaseModel):
     tg_id = IntegerField(unique=True)
     title = CharField()
+
+    async def get_formatted_link(self) -> str:
+        chat = await user.get_chat(self.tg_id)
+        if chat.username:
+            return f'[{chat.title}](https://{chat.username}.t.me)'
+        if chat.invite_link:
+            return f'[{chat.title}]({chat.invite_link})'
+        return chat.title
 
     def __str__(self):
         return self.title
 
 
-class Source(BaseModel):
-    tg_id = IntegerField(unique=True)
-    title = CharField()
+class Category(ChannelModel):
+    ...
+
+
+class Source(ChannelModel):
     category = ForeignKeyField(
         Category, backref='sources', on_delete='CASCADE')
-
-    def __str__(self):
-        return self.title
 
     def get_filter_patterns(self, content_type):
         query = Filter.filter(content_type=content_type, source=self)
@@ -92,9 +101,6 @@ class Filter(BaseModel):
     source = ForeignKeyField(
         Source, null=True, backref='filters', on_delete='CASCADE')
 
-    def __str__(self):
-        return self.pattern
-
     @classmethod
     def get_global_patterns(cls, content_type) -> list:
         query = cls.filter(content_type=content_type, source=None)
@@ -116,10 +122,31 @@ class Filter(BaseModel):
     def global_reply_markup_patterns(cls) -> list:
         return cls.get_global_patterns('reply_markup')
 
+    def __str__(self):
+        return self.pattern
+
 
 class Admin(BaseModel):
     tg_id = IntegerField(unique=True)
     username = CharField()
 
+    async def get_formatted_link(self) -> str:
+        chat = await user.get_chat(self.tg_id)
+        if chat.username:
+            return f'[{chat.username}](https://{chat.username}.t.me)'
+        full_name = (f'{chat.first_name + " " if chat.first_name else ""}'
+                     f'{chat.last_name + " " if chat.last_name else ""}')
+        if full_name:
+            return (f'{full_name} ({self.tg_id})'
+                    if full_name else f'{self.tg_id}')
+        return str(self.tg_id)
+
     def __str__(self):
         return self.username
+
+
+db.create_tables(
+    [
+        Category, Source, Filter, Admin
+    ]
+)

@@ -13,6 +13,7 @@ from models import Admin
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.path import Path
+from plugins.bot.menu.helpers.senders import send_message_to_main_user
 from plugins.bot.menu.managers.input_wait import input_wait_manager
 from settings import LOGS_DIR, BASE_DIR
 
@@ -52,9 +53,15 @@ async def get_logs(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     await callback_query.answer('Загрузка...')
-    for file in os.listdir(LOGS_DIR):
-        await callback_query.message.reply_document(
-            os.path.join(LOGS_DIR, file))
+    info_message = ''
+    for filename in os.listdir(LOGS_DIR):
+        file_path = os.path.join(LOGS_DIR, filename)
+        if os.stat(file_path).st_size:
+            await callback_query.message.reply_document(file_path)
+        else:
+            info_message += f'Файл **{filename}** пуст\n'
+    if info_message:
+        await callback_query.message.reply(info_message)
 
 
 @Client.on_callback_query(filters.regex(
@@ -63,8 +70,7 @@ async def get_db(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     await callback_query.answer('Загрузка...')
-    await callback_query.message.reply_document(
-        os.path.join(BASE_DIR, '.db'))
+    await callback_query.message.reply_document(os.path.join(BASE_DIR, '.db'))
 
 
 @Client.on_callback_query(filters.regex(
@@ -103,8 +109,8 @@ async def detail_admin(_, callback_query: CallbackQuery):
     path = Path(callback_query.data)
 
     admin_id = int(path.get_value('u'))
-    admin_obj = Admin.get(id=admin_id)
-    text = f'**{admin_obj.username}**\n\n'
+    admin_obj: Admin = Admin.get(id=admin_id)
+    text = f'**{await admin_obj.get_formatted_link()}**\n\n'
 
     inline_keyboard = []
     if admin_obj.tg_id != user.me.id:
@@ -116,7 +122,8 @@ async def detail_admin(_, callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.edit_text(
         text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard)
+        reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        disable_web_page_preview=True
     )
 
 
@@ -159,9 +166,13 @@ async def add_admin_waiting_input(
         return
 
     try:
-        Admin.create(tg_id=chat.id, username=chat.username)
+        if chat.username:
+            username = chat.username
+        else:
+            username = (f'{chat.first_name + " " if chat.first_name else ""}'
+                        f'{chat.last_name + " " if chat.last_name else ""}')
+        admin_obj = Admin.create(tg_id=chat.id, username=username)
         Admin.clear_actual_cache()
-
     except peewee.IntegrityError:
         await message.reply_text(
             f'❗️Этот пользователь уже администратор',
@@ -169,8 +180,8 @@ async def add_admin_waiting_input(
         return
 
     await message.reply_text(
-        f'✅ Администратор «{chat.username}» добавлен',
-        reply_markup=reply_markup_fix_buttons)
+        f'✅ Администратор **{await admin_obj.get_formatted_link()}** добавлен',
+        reply_markup=reply_markup_fix_buttons, disable_web_page_preview=True)
 
     callback_query.data = path.get_prev()
 
@@ -180,12 +191,13 @@ async def add_admin_waiting_input(
 
 @Client.on_callback_query(filters.regex(
     r'u_\d+/:delete/') & custom_filters.admin_only)
-async def delete_admin(_, callback_query: CallbackQuery):
+async def delete_admin(client: Client, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
     admin_id = int(path.get_value('u'))
-
+    admin_obj: Admin = Admin.get(id=admin_id)
+    text = f'**{await admin_obj.get_formatted_link()}**'
     if path.with_confirmation:
         q = (Admin
              .delete()
@@ -196,12 +208,13 @@ async def delete_admin(_, callback_query: CallbackQuery):
 
         callback_query.data = path.get_prev(3)
         await callback_query.answer('Администратор удален')
-        await list_admins(_, callback_query)
+        await list_admins(client, callback_query)
+
+        await send_message_to_main_user(
+            client, callback_query, f'Удален администратор {text}')
         return
 
-    admin_obj = Admin.get(id=admin_id)
-    text = f'**{admin_obj.username}**\n\n'
-    text += 'Ты **удаляешь** администратора!'
+    text += '\n\nТы **удаляешь** администратора!'
 
     inline_keyboard = [[InlineKeyboardButton(
         '❌ Подтвердить удаление',
