@@ -123,7 +123,7 @@ async def add_edit_category_waiting_input(
             disable_web_page_preview=True)
 
     try:
-        chat = await client.get_chat(input_text)
+        chat = await user.get_chat(input_text)
     except (exceptions.BadRequest, exceptions.NotAcceptable) as err:
         await reply(f'❌ Что-то пошло не так\n\n{err}')
         return
