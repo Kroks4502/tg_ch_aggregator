@@ -14,7 +14,7 @@ def get_fixed(
     return [row_buttons]
 
 
-MAX_LENGTH_BUTTON_TEXT = 16
+MAX_LENGTH_BUTTON_TEXT = 12
 
 
 def get_list_model(
