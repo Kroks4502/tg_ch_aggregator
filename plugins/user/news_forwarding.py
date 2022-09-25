@@ -67,3 +67,11 @@ async def new_post_with_media_group(client: Client, message: Message):
                                            disable_web_page_preview=True)
         await client.read_chat_history(
             message.chat.id, max(messages_id_media_group))
+
+
+@Client.on_message(
+    (filters.poll | ~filters.service)
+    & custom_filters.monitored_channels
+)
+async def pool_and_service_messages(client: Client, message: Message):
+    await client.read_chat_history(message.chat.id, message.id)
