@@ -1,8 +1,8 @@
-import traceback
 from asyncio import sleep
 from operator import itemgetter
 
 from log import logger
+from plugins.user.helpers import save_history
 from settings import AGGREGATOR_CHANNEL, DEVELOP_MODE
 from initialization import user, bot
 from models import Admin, Category, Source
@@ -15,7 +15,6 @@ async def startup():
     msg = 'Запущен начальный #скрипт'
     logger.debug(msg)
     me = await user.get_me()
-
     if not DEVELOP_MODE:
         await bot.send_message(me.id, msg)
 
@@ -82,16 +81,20 @@ async def startup():
                     break
     if new_messages:
         for message in sorted(new_messages, key=itemgetter(2)):
+            chat_id = message[0]
+            msg_ids = message[1]
             try:
-                chat_id = message[0]
-                msg_ids = message[1]
                 new_message = await user.forward_messages(
                     AGGREGATOR_CHANNEL,
                     chat_id, msg_ids
                 )
                 await user.read_chat_history(chat_id, max(msg_ids))
                 await new_message[0].reply(f'/sent_from {chat_id}')
+                for msg_ig in msg_ids:
+                    save_history([chat_id, msg_ig, '?'], 'OK')
             except Exception:
+                for msg_ig in msg_ids:
+                    save_history([chat_id, msg_ig, '?'], 'start_script failed')
                 # Сервисные сообщения не пересылаются
                 ...
     msg = 'Начальный #скрипт завершил работу'

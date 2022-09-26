@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
+from plugins.user.helpers import save_history
 from settings import AGGREGATOR_CHANNEL
 from plugins.user import custom_filters
 from plugins.user.checks import is_passed_filter
@@ -25,6 +26,7 @@ async def new_post_without_media_group(client: Client, message: Message):
 
     await forwarded_message.reply(reply_text, disable_web_page_preview=True)
     await client.read_chat_history(message.chat.id, message.id)
+    save_history(message, filter_comment if filter_comment else 'OK')
 
 
 media_group_ids = {}
@@ -41,13 +43,13 @@ async def new_post_with_media_group(client: Client, message: Message):
         if len(media_group_ids) > 10:
             media_group_ids.pop(list(media_group_ids.keys())[0])
 
+    filter_comment = ''
     if message.media_group_id not in chat:
         chat.append(message.media_group_id)
 
         messages_id_media_group = await message.get_media_group()
 
         is_pf = False
-        filter_comment = ''
         for item in messages_id_media_group:
             is_pf, filter_comment = await is_passed_filter(item)
             if not is_pf:
@@ -70,6 +72,8 @@ async def new_post_with_media_group(client: Client, message: Message):
         await client.read_chat_history(
             message.chat.id, max(messages_id_media_group))
 
+    save_history(message, filter_comment if filter_comment else 'OK')
+
 
 @Client.on_message(
     (filters.poll | filters.service)
@@ -77,3 +81,4 @@ async def new_post_with_media_group(client: Client, message: Message):
 )
 async def pool_and_service_messages(client: Client, message: Message):
     await client.read_chat_history(message.chat.id, message.id)
+    save_history(message, 'poll' if message.poll else 'service')

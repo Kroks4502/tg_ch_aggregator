@@ -145,8 +145,18 @@ class Admin(BaseModel):
         return self.username
 
 
+class History(BaseModel):
+    from_chat = IntegerField()
+    message_id = IntegerField()
+    media_group_id = CharField()
+    status = TextField()
+
+    def __str__(self):
+        return f'{self.from_chat} {self.message_ids} {self.status}'
+
+
 db.create_tables(
     [
-        Category, Source, Filter, Admin
+        Category, Source, Filter, Admin, History
     ]
 )
