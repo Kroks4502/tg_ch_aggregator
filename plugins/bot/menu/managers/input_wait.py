@@ -1,9 +1,10 @@
 from typing import Callable
 
-from pyrogram import Client, filters
+from pyrogram import Client
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 
+from log import logger
 from plugins.bot.menu import custom_filters
 
 
@@ -18,9 +19,7 @@ class InputWaitManager:
                 MessageHandler(
                     self.__input_text,
                     filters=(custom_filters.chat(chat_id)
-                             & ~custom_filters.command_message
-                             & ~filters.forwarded
-                             & ~filters.reply)
+                             & ~custom_filters.command_message)
                 ),
             ),
             'func': func,
@@ -36,8 +35,13 @@ class InputWaitManager:
     async def __input_text(
             self, client: Client, message: Message) -> None:
         input_chat = self.remove(client, message.chat.id)
-        await input_chat['func'](
-            client, message, *input_chat['args'], **input_chat['kwargs'])
+        try:
+            await input_chat['func'](
+                client, message, *input_chat['args'], **input_chat['kwargs'])
+        except Exception as err:
+            logger.error(f'Во время выполнения функции '
+                         f'{input_chat["func"].__name__} '
+                         f'было перехвачено исключение: {err}')
 
 
 input_wait_manager = InputWaitManager()

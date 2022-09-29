@@ -9,7 +9,7 @@ from pyrogram.types import (CallbackQuery, InlineKeyboardMarkup,
 
 from initialization import user
 from log import logger
-from models import Admin
+from models import Admin, History
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.path import Path
@@ -34,11 +34,15 @@ async def options(_, callback_query: CallbackQuery):
         ), ],
         [InlineKeyboardButton(
             '💾 Логи',
-            callback_data='/o/:get_logs'
+            callback_data='/o/:get_logs/'
         ), InlineKeyboardButton(
             '💾 db',
-            callback_data='/o/:get_db'
-        ), ]
+            callback_data='/o/:get_db/'
+        ), ],
+        [InlineKeyboardButton(
+            'Проверить пост',
+            callback_data='/o/:check_post/'
+        ), ],
     ]
 
     inline_keyboard += buttons.get_fixed(path)
@@ -48,7 +52,7 @@ async def options(_, callback_query: CallbackQuery):
 
 
 @Client.on_callback_query(filters.regex(
-    r'^/o/:get_logs$') & custom_filters.admin_only)
+    r'^/o/:get_logs/$') & custom_filters.admin_only)
 async def get_logs(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
@@ -65,7 +69,7 @@ async def get_logs(_, callback_query: CallbackQuery):
 
 
 @Client.on_callback_query(filters.regex(
-    r'^/o/:get_db') & custom_filters.admin_only)
+    r'^/o/:get_db/') & custom_filters.admin_only)
 async def get_db(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
@@ -179,8 +183,8 @@ async def add_admin_waiting_input(
             reply_markup=reply_markup_fix_buttons)
         return
 
-    text = f'✅ Администратор **{await admin_obj.get_formatted_link()}** ' \
-           f'добавлен'
+    text = (f'✅ Администратор **{await admin_obj.get_formatted_link()}** '
+            f'добавлен')
     await message.reply_text(
         text,
         reply_markup=reply_markup_fix_buttons, disable_web_page_preview=True)
@@ -231,3 +235,45 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
         text, reply_markup=InlineKeyboardMarkup(inline_keyboard),
         disable_web_page_preview=True
     )
+
+
+@Client.on_callback_query(filters.regex(
+    r'^/o/:check_post/$') & custom_filters.admin_only)
+async def check_post(client: Client, callback_query: CallbackQuery):
+    logger.debug(callback_query.data)
+
+    chat_id = callback_query.message.chat.id
+
+    text = ('ОК. Ты хочешь проверить есть ли пост в истории.\n\n'
+            '**Перешли пост в этот чат и я проверю.**')
+
+    await callback_query.answer()
+    await callback_query.message.reply(text)
+    input_wait_manager.add(
+        chat_id, add_admin_waiting_input, client, callback_query)
+
+
+async def check_post_waiting_forwarding(
+        client: Client, message: Message, callback_query: CallbackQuery):
+    logger.debug(callback_query.data)
+
+    path = Path(callback_query.data)
+
+    history_obj = History.get_or_none(
+        from_chat=message.forward_from_chat.id,
+        message_id=message.forward_from_message_id,
+        media_group_id=message.media_group_id if message.media_group_id else '')
+
+    if history_obj:
+        text = (f'✅ Пост был обработан со статусом '
+                f'**{history_obj.status}** ')
+    else:
+        text = '❌ Поста нет в истории'
+
+    await message.reply_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(
+            buttons.get_fixed(path, back_title='Назад')))
+
+    callback_query.data = path.get_prev()
+    await options(client, callback_query)
