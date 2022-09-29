@@ -250,7 +250,7 @@ async def check_post(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.reply(text)
     input_wait_manager.add(
-        chat_id, add_admin_waiting_input, client, callback_query)
+        chat_id, check_post_waiting_forwarding, client, callback_query)
 
 
 async def check_post_waiting_forwarding(
