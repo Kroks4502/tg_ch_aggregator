@@ -264,7 +264,9 @@ async def check_post_waiting_forwarding(
         message_id=message.forward_from_message_id,)
 
     if history_obj:
-        text = f'✅ **{history_obj}** '
+        text = f'✅ **{history_obj}**\n' \
+               f'{history_obj.media_group_id}\n' \
+               f'{message.media_group_id}'
     else:
         text = '❌ Поста нет в истории'
 
