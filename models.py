@@ -152,7 +152,7 @@ class History(BaseModel):
     status = TextField()
 
     def __str__(self):
-        return f'{self.from_chat} {self.message_ids} {self.status}'
+        return f'{self.from_chat} {self.message_id} {self.status}'
 
 
 db.create_tables(

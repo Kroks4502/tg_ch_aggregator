@@ -261,12 +261,10 @@ async def check_post_waiting_forwarding(
 
     history_obj = History.get_or_none(
         from_chat=message.forward_from_chat.id,
-        message_id=message.forward_from_message_id,
-        media_group_id=message.media_group_id if message.media_group_id else '')
+        message_id=message.forward_from_message_id,)
 
     if history_obj:
-        text = (f'✅ Пост был обработан со статусом '
-                f'**{history_obj.status}** ')
+        text = f'✅ **{history_obj}** '
     else:
         text = '❌ Поста нет в истории'
 
