@@ -250,24 +250,25 @@ async def check_post(client: Client, callback_query: CallbackQuery):
 
 
 async def check_post_waiting_forwarding(
-        client: Client, message: Message, callback_query: CallbackQuery):
+        _, message: Message, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
-    path = Path(callback_query.data)
+    async def reply(text):
+        await message.reply_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(
+                buttons.get_fixed(
+                    Path(callback_query.data), back_title='Назад')),
+            disable_web_page_preview=True)
+
+    if not message.forward_from_chat:
+        await reply('🫥 Это не пересланный пост')
 
     history_obj = History.get_or_none(
         from_chat=message.forward_from_chat.id,
         message_id=message.forward_from_message_id,)
 
-    if history_obj:
-        text = f'✅ **{history_obj}**'
-    else:
-        text = '❌ Поста нет в истории'
+    if not history_obj:
+        await reply('❌ Поста нет в истории')
 
-    await message.reply_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(
-            buttons.get_fixed(path, back_title='Назад')))
-
-    callback_query.data = path.get_prev()
-    await options(client, callback_query)
+    await reply(f'✅ **{history_obj}**')
