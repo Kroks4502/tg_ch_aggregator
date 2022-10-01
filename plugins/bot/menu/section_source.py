@@ -118,7 +118,7 @@ async def add_source_waiting_input(
 
     new_message = await message.reply_text('⏳ Проверка…')
 
-    async def reply(text):
+    async def edit_text(text):
         await new_message.edit_text(
             text,
             reply_markup=InlineKeyboardMarkup(
@@ -128,17 +128,17 @@ async def add_source_waiting_input(
     try:
         chat = await user.get_chat(input_text)
     except (exceptions.BadRequest, exceptions.NotAcceptable) as err:
-        await reply(f'❌ Что-то пошло не так\n\n{err}')
+        await edit_text(f'❌ Что-то пошло не так\n\n{err}')
         return
 
     if chat.type != ChatType.CHANNEL:
-        await reply('❌ Это не канал')
+        await edit_text('❌ Это не канал')
         return
 
     try:
         await user.join_chat(input_text)
     except Exception as err:
-        await reply(f'❌ Основной клиент не может подписаться на канал\n\n'
+        await edit_text(f'❌ Основной клиент не может подписаться на канал\n\n'
                     f'{err}')
         return
 
@@ -147,14 +147,14 @@ async def add_source_waiting_input(
                       category=category_id)
         Source.clear_actual_cache()
     except peewee.IntegrityError:
-        await reply(f'❗️Этот канал уже используется')
+        await edit_text(f'❗️Этот канал уже используется')
         return
 
     category_obj: Category = Category.get(id=category_id)
     success_text = (f'✅ Источник [{chat.title}](https://{chat.username}.t.me) '
                     f'добавлен в категорию '
                     f'{await category_obj.get_formatted_link()}')
-    await reply(success_text)
+    await edit_text(success_text)
 
     callback_query.data = path.get_prev()
     await list_source(client, callback_query)

@@ -93,7 +93,7 @@ async def list_admins(_, callback_query: CallbackQuery):
 
     query = (Admin
              .select(Admin.id,
-                     Admin.username,))
+                     Admin.username, ))
     inline_keyboard += buttons.get_list_model(
         data={f'{item.id}': (item.username, 0) for item in query},
         path=path,
@@ -152,21 +152,22 @@ async def add_admin_waiting_input(
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
-    reply_markup_fix_buttons = InlineKeyboardMarkup(
-        buttons.get_fixed(path, back_title='Назад'))
+
+    async def reply(text):
+        await message.reply_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(
+                buttons.get_fixed(path, back_title='Назад')),
+            disable_web_page_preview=True)
 
     try:
         chat = await client.get_chat(message.text)
     except (exceptions.BadRequest, exceptions.NotAcceptable) as err:
-        await message.reply_text(
-            f'❌ Что-то пошло не так\n\n{err}',
-            reply_markup=reply_markup_fix_buttons)
+        await reply(f'❌ Что-то пошло не так\n\n{err}')
         return
 
     if chat.type != ChatType.PRIVATE:
-        await message.reply_text(
-            '❌ Это не пользователь',
-            reply_markup=reply_markup_fix_buttons)
+        await reply('❌ Это не пользователь')
         return
 
     try:
@@ -178,22 +179,17 @@ async def add_admin_waiting_input(
         admin_obj = Admin.create(tg_id=chat.id, username=username)
         Admin.clear_actual_cache()
     except peewee.IntegrityError:
-        await message.reply_text(
-            f'❗️Этот пользователь уже администратор',
-            reply_markup=reply_markup_fix_buttons)
+        await reply(f'❗️Этот пользователь уже администратор')
         return
 
-    text = (f'✅ Администратор **{await admin_obj.get_formatted_link()}** '
-            f'добавлен')
-    await message.reply_text(
-        text,
-        reply_markup=reply_markup_fix_buttons, disable_web_page_preview=True)
+    success_text = (f'✅ Администратор '
+                    f'**{await admin_obj.get_formatted_link()}** добавлен')
+    await reply(success_text)
 
     callback_query.data = path.get_prev()
-
     await list_admins(client, callback_query)
 
-    await send_message_to_main_user(client, callback_query, text)
+    await send_message_to_main_user(client, callback_query, success_text)
     return
 
 
