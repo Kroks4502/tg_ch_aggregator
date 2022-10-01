@@ -79,6 +79,8 @@ async def startup():
                         ]
                     )
                     break
+
+    msg = 'Начальный #скрипт завершил работу'
     if new_messages:
         for message in sorted(new_messages, key=itemgetter(2)):
             chat_id = message[0]
@@ -97,7 +99,8 @@ async def startup():
                     save_history([chat_id, msg_ig, '?'], 'start_script failed')
                 # Сервисные сообщения не пересылаются
                 ...
-    msg = 'Начальный #скрипт завершил работу'
+        msg = f'. Обработано сообщений: {len(new_messages)}'
+
     logger.debug(msg)
 
     if not DEVELOP_MODE:
