@@ -1,21 +1,32 @@
 from pyrogram.types import Message
 
-from models import History
+from models import Source, CategoryMessageHistory, FilterMessageHistory, Filter
 
 
-def save_history(message: Message | list[int, int, str], status: str):
-    if isinstance(message, list):
-        from_chat = message[0]
-        message_id = message[1]
-        media_group_id = (message[2]
-                          if message[2] else '')
-    else:
-        from_chat = message.chat.id
-        message_id = message.id
-        media_group_id = (message.media_group_id
-                          if message.media_group_id else '')
+def add_to_category_history(
+        original_message: Message, category_message: Message,
+        source: Source = None, rewritten: bool = False):
+    if not source:
+        source = Source.get(tg_id=original_message.chat.id)
 
-    History.create(from_chat=from_chat,
-                   message_id=message_id,
-                   media_group_id=media_group_id,
-                   status=status,)
+    CategoryMessageHistory.create(
+        source=source,
+        source_message_id=original_message.id,
+        is_media_group=True if original_message.media_group_id else False,
+        category_message_id=category_message.id,
+        rewritten=rewritten,
+    )
+
+
+def add_to_filter_history(
+        original_message: Message, filter: Filter,
+        source: Source = None):
+    if not source:
+        source = Source.get(tg_id=original_message.chat.id)
+
+    FilterMessageHistory.create(
+        source=source,
+        source_message_id=original_message.id,
+        is_media_group=True if original_message.media_group_id else False,
+        filter=filter
+    )

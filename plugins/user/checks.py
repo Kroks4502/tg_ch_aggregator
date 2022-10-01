@@ -7,7 +7,7 @@ from log import logger
 from models import Source, Filter
 
 
-async def is_passed_filter(message: Message):
+async def perform_filtering(message: Message) -> Filter:
     text = message.text or message.caption
     entities = message.entities or message.caption_entities
     source = Source.get(tg_id=message.chat.id)

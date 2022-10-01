@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from peewee import *
 
 from initialization import user
@@ -145,18 +147,27 @@ class Admin(BaseModel):
         return self.username
 
 
-class History(BaseModel):
-    from_chat = IntegerField()
-    message_id = IntegerField()
-    media_group_id = CharField()
-    status = TextField()
+class MessageHistoryModel(BaseModel):
+    source = ForeignKeyField(Source, on_delete='CASCADE')
+    source_message_id = IntegerField()
+    is_media_group = BooleanField()
 
-    def __str__(self):
-        return f'{self.from_chat} {self.message_id} {self.status}'
+
+class FilterMessageHistory(MessageHistoryModel):
+    filter = ForeignKeyField(Filter, backref='history')
+
+
+class CategoryMessageHistory(MessageHistoryModel):
+    category_message_id = IntegerField()
+    rewritten = BooleanField()
+    edited = BooleanField(default=False)
+    deleted = BooleanField(default=False)
+    date = DateTimeField(default=datetime.now)
 
 
 db.create_tables(
     [
-        Category, Source, Filter, Admin, History
+        Category, Source, Filter, Admin,
+        FilterMessageHistory, CategoryMessageHistory
     ]
 )
