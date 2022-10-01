@@ -99,7 +99,7 @@ async def startup():
                     save_history([chat_id, msg_ig, '?'], 'start_script failed')
                 # Сервисные сообщения не пересылаются
                 ...
-        msg = f'. Обработано сообщений: {len(new_messages)}'
+        msg += f'. Обработано сообщений: {len(new_messages)}'
 
     logger.debug(msg)
 
