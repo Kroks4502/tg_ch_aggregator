@@ -148,21 +148,24 @@ class Admin(BaseModel):
 
 
 class MessageHistoryModel(BaseModel):
-    source = ForeignKeyField(Source, on_delete='CASCADE')
+    source = ForeignKeyField(Source)
     source_message_id = IntegerField()
     is_media_group = BooleanField()
+    date = DateTimeField(default=datetime.now)
 
 
 class FilterMessageHistory(MessageHistoryModel):
-    filter = ForeignKeyField(Filter, backref='history')
+    filter = ForeignKeyField(Filter, backref='history', on_delete='CASCADE')
 
 
 class CategoryMessageHistory(MessageHistoryModel):
+    category = ForeignKeyField(Category, on_delete='CASCADE')
     category_message_id = IntegerField()
+    forward_from_chat_id = IntegerField(null=True)
+    forward_from_message_id = IntegerField(null=True)
     rewritten = BooleanField()
     edited = BooleanField(default=False)
     deleted = BooleanField(default=False)
-    date = DateTimeField(default=datetime.now)
 
 
 db.create_tables(
