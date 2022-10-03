@@ -132,9 +132,8 @@ class CategoryMessageHistory(MessageHistoryModel):
     forward_from_chat_id = IntegerField(null=True)
     forward_from_message_id = IntegerField(null=True)
     category = ForeignKeyField(Category, on_delete='CASCADE')
-    category_message_id = IntegerField()
+    message_id = IntegerField()
     rewritten = BooleanField()
-    edited = BooleanField(default=False)
     deleted = BooleanField(default=False)
 
 
