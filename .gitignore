@@ -131,6 +131,6 @@ dmypy.json
 *.session
 *.session-journal
 *.db
-/probe.py
+/probe*.py
 /logs/
 /create_db.py
