@@ -13,13 +13,17 @@ def add_to_category_history(
         source=source,
         source_message_id=original_message.id,
         is_media_group=True if original_message.media_group_id else False,
+        forward_from_chat_id=(original_message.forward_from_chat.id
+                              if original_message.forward_from_chat else None),
+        forward_from_message_id=original_message.forward_from_message_id,
+        category=source.category,
         category_message_id=category_message.id,
         rewritten=rewritten,
     )
 
 
 def add_to_filter_history(
-        original_message: Message, filter: Filter,
+        original_message: Message, filter: Filter | int,
         source: Source = None):
     if not source:
         source = Source.get(tg_id=original_message.chat.id)

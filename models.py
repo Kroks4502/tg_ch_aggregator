@@ -15,7 +15,7 @@ class BaseModel(Model):
         database = db
 
     @classmethod
-    def get_cache(cls, *fields, **where):
+    def get_cache(cls, *fields, **where) -> dict:
         cls.__update_cache()
 
         if 'id' in where:
@@ -44,7 +44,7 @@ class BaseModel(Model):
     def __update_cache(cls):
         if not cls.__is_actual_cache:
             cls.__cache = {item.pop('id'): item
-                           for item in Source.select().dicts()}
+                           for item in cls.select().dicts()}
             cls.__is_actual_cache = True
 
     @classmethod
@@ -76,53 +76,23 @@ class Source(ChannelModel):
     category = ForeignKeyField(
         Category, backref='sources', on_delete='CASCADE')
 
-    def get_filter_patterns(self, content_type):
-        query = Filter.filter(content_type=content_type, source=self)
-        return [f.pattern for f in query]
 
-    def get_filter_hashtag(self) -> list:
-        return self.get_filter_patterns('hashtag')
-
-    def get_filter_part_of_url(self) -> list:
-        return self.get_filter_patterns('part_of_url')
-
-    def get_filter_part_of_text(self) -> list:
-        return self.get_filter_patterns('part_of_text')
-
-    def get_filter_reply_markup(self) -> list:
-        return self.get_filter_patterns('reply_markup')
-
-
-FILTER_CONTENT_TYPES = ('hashtag', 'part_of_url', 'part_of_text',
-                        'reply_markup')
+# FILTER_CONTENT_TYPES = ('hashtag', 'part_of_url', 'part_of_text',
+#                         'reply_markup', )
+FILTER_CONTENT_TYPES_CHOICES = (
+    (0, 'Hashtag'),
+    (1, 'Url'),
+    (2, 'Text'),
+    (3, 'Reply markup'),
+    (4, 'Entities types')
+)
 
 
 class Filter(BaseModel):
     pattern = CharField()
-    content_type = CharField()
+    content_type = IntegerField(choices=FILTER_CONTENT_TYPES_CHOICES)
     source = ForeignKeyField(
         Source, null=True, backref='filters', on_delete='CASCADE')
-
-    @classmethod
-    def get_global_patterns(cls, content_type) -> list:
-        query = cls.filter(content_type=content_type, source=None)
-        return [f.pattern for f in query]
-
-    @classmethod
-    def global_hashtag_patterns(cls) -> list:
-        return cls.get_global_patterns('hashtag')
-
-    @classmethod
-    def global_part_of_url_patterns(cls) -> list:
-        return cls.get_global_patterns('part_of_url')
-
-    @classmethod
-    def global_part_of_text_patterns(cls) -> list:
-        return cls.get_global_patterns('part_of_text')
-
-    @classmethod
-    def global_reply_markup_patterns(cls) -> list:
-        return cls.get_global_patterns('reply_markup')
 
     def __str__(self):
         return self.pattern
@@ -159,10 +129,10 @@ class FilterMessageHistory(MessageHistoryModel):
 
 
 class CategoryMessageHistory(MessageHistoryModel):
-    category = ForeignKeyField(Category, on_delete='CASCADE')
-    category_message_id = IntegerField()
     forward_from_chat_id = IntegerField(null=True)
     forward_from_message_id = IntegerField(null=True)
+    category = ForeignKeyField(Category, on_delete='CASCADE')
+    category_message_id = IntegerField()
     rewritten = BooleanField()
     edited = BooleanField(default=False)
     deleted = BooleanField(default=False)
