@@ -25,7 +25,7 @@ async def new_post_without_media_group(client: Client, message: Message):
                        f'{filter_comment}')
 
     await forwarded_message.reply(reply_text, disable_web_page_preview=True)
-    await client.read_chat_history(message.chat.id, message.id)
+    await client.read_chat_history(message.chat.id)
     save_history(message, filter_comment if filter_comment else 'OK')
 
 
@@ -69,8 +69,7 @@ async def new_post_with_media_group(client: Client, message: Message):
 
         await forwarded_messages[-1].reply(reply_text,
                                            disable_web_page_preview=True)
-        await client.read_chat_history(
-            message.chat.id, max(messages_id_media_group))
+        await client.read_chat_history(message.chat.id)
 
     save_history(message, filter_comment if filter_comment else 'OK')
 
@@ -80,5 +79,5 @@ async def new_post_with_media_group(client: Client, message: Message):
     & custom_filters.monitored_channels
 )
 async def pool_and_service_messages(client: Client, message: Message):
-    await client.read_chat_history(message.chat.id, message.id)
+    await client.read_chat_history(message.chat.id)
     save_history(message, 'poll' if message.poll else 'service')

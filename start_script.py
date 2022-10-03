@@ -90,7 +90,7 @@ async def startup():
                     AGGREGATOR_CHANNEL,
                     chat_id, msg_ids
                 )
-                await user.read_chat_history(chat_id, max(msg_ids))
+                await user.read_chat_history(chat_id)
                 await new_message[0].reply(f'/sent_from {chat_id}')
                 for msg_ig in msg_ids:
                     save_history([chat_id, msg_ig, '?'], 'OK')
