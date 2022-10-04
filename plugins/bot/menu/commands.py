@@ -14,7 +14,7 @@ async def send_main_menu(_, message: Message):
 
 
 @Client.on_message(filters.command('check'))
-async def send_main_menu(client: Client, message: Message):
+async def send_check(client: Client, message: Message):
     chat_id = message.chat.id
 
     text = ('ОК. Ты хочешь проверить есть ли пост в истории.\n\n'
