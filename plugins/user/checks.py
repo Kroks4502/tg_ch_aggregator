@@ -45,8 +45,8 @@ class Inspector:
 
     def _check_hashtag(self, entity) -> int | None:
         entity_text = self.text[entity.offset:entity.offset + entity.length]
-
-        for filter_id, data in Filter.get_cache(source=self.source).items():
+        for filter_id, data in (Filter.get_cache(source=self.source)
+                                | Filter.get_cache(source=None)).items():
             if re.search(data['pattern'], entity_text, flags=re.IGNORECASE):
                 return filter_id
 

@@ -1,3 +1,4 @@
+import enum
 from datetime import datetime
 
 from peewee import *
@@ -77,20 +78,19 @@ class Source(ChannelModel):
         Category, backref='sources', on_delete='CASCADE')
 
 
-# FILTER_CONTENT_TYPES = ('hashtag', 'part_of_url', 'part_of_text',
-#                         'reply_markup', )
-FILTER_CONTENT_TYPES_CHOICES = (
-    (0, 'Hashtag'),
-    (1, 'Url'),
-    (2, 'Text'),
-    (3, 'Reply markup'),
-    (4, 'Entities types')
-)
+@enum.unique
+class FilterContentTypesChoices(enum.Enum):
+    HASHTAG = 1
+    URL = 2
+    TEXT = 3
+    REPLY_MARKUP = 4
+    ENTITIES_TYPES = 5
 
 
 class Filter(BaseModel):
     pattern = CharField()
-    content_type = IntegerField(choices=FILTER_CONTENT_TYPES_CHOICES)
+    type = IntegerField(choices=[(content_type.name, content_type.value)
+                                 for content_type in FilterContentTypesChoices])
     source = ForeignKeyField(
         Source, null=True, backref='filters', on_delete='CASCADE')
 
