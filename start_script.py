@@ -21,7 +21,7 @@ async def startup():
     await update_admin_usernames()
 
     if not Admin.select().where(Admin.tg_id == me.id).exists():
-        Admin.create(tg_id=me.id, username=me.username)
+        Admin.create(tg_id=me.id, username=me.username if me.username else me.id)
 
     def get_db_titles(model):
         return {item.tg_id: (model, item.title) for item in model.select()}
