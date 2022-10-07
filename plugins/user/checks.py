@@ -1,10 +1,12 @@
 import re
+from itertools import chain
 
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message
 
 from log import logger
 from models import Source, Filter
+from types import FilterTypes
 
 
 def perform_filtering(message: Message):
@@ -45,12 +47,16 @@ class Inspector:
 
     def _check_hashtag(self, entity) -> int | None:
         entity_text = self.text[entity.offset:entity.offset + entity.length]
-        for filter_id, data in (Filter.get_cache(source=self.source)
-                                | Filter.get_cache(source=None)).items():
+        data = chain(
+            Filter.get_cache(source=self.source, type=FilterTypes.HASHTAG),
+            Filter.get_cache(source=None, type=FilterTypes.HASHTAG)
+        )
+        for filter_id, data in data.items:
             if re.search(data['pattern'], entity_text, flags=re.IGNORECASE):
                 return filter_id
 
     def _check_text_link(self, entity) -> int | None:
+
         for part_url in ...:
             if re.search(part_url, entity.url, flags=re.IGNORECASE):
                 comment = f'#part_of_url: `{part_url}`'

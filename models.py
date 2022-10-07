@@ -3,7 +3,8 @@ from datetime import datetime
 
 from peewee import *
 
-from initialization import user
+# from initialization import user
+from models_types import FilterTypes
 
 db = SqliteDatabase('.db', pragmas={'foreign_keys': 1})
 
@@ -30,11 +31,12 @@ class BaseModel(Model):
         selections_from_data = {}
         for db_id, data in cls.__cache.items():
             if all([data[key] == value for key, value in where.items()]):
-                selections_from_data.update({
-                    db_id: {field: data[field] for field in fields}
-                    if fields else data
-                })
-        return selections_from_data
+                yield {field: data[field] for field in fields} if fields else data
+        #         selections_from_data.update({
+        #             db_id: {field: data[field] for field in fields}
+        #             if fields else data
+        #         })
+        # return selections_from_data
 
     @classmethod
     def get_cache_all_field(cls, field, **where):
@@ -57,13 +59,13 @@ class ChannelModel(BaseModel):
     tg_id = IntegerField(unique=True)
     title = CharField()
 
-    async def get_formatted_link(self) -> str:
-        chat = await user.get_chat(self.tg_id)
-        if chat.username:
-            return f'[{chat.title}](https://{chat.username}.t.me)'
-        if chat.invite_link:
-            return f'[{chat.title}]({chat.invite_link})'
-        return chat.title
+    # async def get_formatted_link(self) -> str:
+    #     chat = await user.get_chat(self.tg_id)
+    #     if chat.username:
+    #         return f'[{chat.title}](https://{chat.username}.t.me)'
+    #     if chat.invite_link:
+    #         return f'[{chat.title}]({chat.invite_link})'
+    #     return chat.title
 
     def __str__(self):
         return self.title
@@ -78,19 +80,10 @@ class Source(ChannelModel):
         Category, backref='sources', on_delete='CASCADE')
 
 
-@enum.unique
-class FilterContentTypesChoices(enum.Enum):
-    HASHTAG = 1
-    URL = 2
-    TEXT = 3
-    REPLY_MARKUP = 4
-    ENTITIES_TYPES = 5
-
-
 class Filter(BaseModel):
     pattern = CharField()
     type = IntegerField(choices=[(content_type.name, content_type.value)
-                                 for content_type in FilterContentTypesChoices])
+                                 for content_type in FilterTypes])
     source = ForeignKeyField(
         Source, null=True, backref='filters', on_delete='CASCADE')
 
@@ -102,16 +95,16 @@ class Admin(BaseModel):
     tg_id = IntegerField(unique=True)
     username = CharField()
 
-    async def get_formatted_link(self) -> str:
-        chat = await user.get_chat(self.tg_id)
-        if chat.username:
-            return f'[{chat.username}](https://{chat.username}.t.me)'
-        full_name = (f'{chat.first_name + " " if chat.first_name else ""}'
-                     f'{chat.last_name + " " if chat.last_name else ""}')
-        if full_name:
-            return (f'{full_name} ({self.tg_id})'
-                    if full_name else f'{self.tg_id}')
-        return str(self.tg_id)
+    # async def get_formatted_link(self) -> str:
+    #     chat = await user.get_chat(self.tg_id)
+    #     if chat.username:
+    #         return f'[{chat.username}](https://{chat.username}.t.me)'
+    #     full_name = (f'{chat.first_name + " " if chat.first_name else ""}'
+    #                  f'{chat.last_name + " " if chat.last_name else ""}')
+    #     if full_name:
+    #         return (f'{full_name} ({self.tg_id})'
+    #                 if full_name else f'{self.tg_id}')
+    #     return str(self.tg_id)
 
     def __str__(self):
         return self.username
