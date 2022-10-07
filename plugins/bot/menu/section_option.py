@@ -13,7 +13,7 @@ from models import Admin, History
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_main_user
+from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager
 from settings import LOGS_DIR, BASE_DIR
 
@@ -189,7 +189,7 @@ async def add_admin_waiting_input(
     callback_query.data = path.get_prev()
     await list_admins(client, callback_query)
 
-    await send_message_to_main_user(client, callback_query, success_text)
+    await send_message_to_admins(client, callback_query, success_text)
     return
 
 
@@ -214,7 +214,7 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
         await callback_query.answer('Администратор удален')
         await list_admins(client, callback_query)
 
-        await send_message_to_main_user(
+        await send_message_to_admins(
             client, callback_query, f'Удален администратор {text}')
         return
 

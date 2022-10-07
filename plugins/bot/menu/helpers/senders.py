@@ -4,7 +4,7 @@ from pyrogram.types import CallbackQuery
 from initialization import user
 
 
-async def send_message_to_main_user(
+async def send_message_to_admins(
         client: Client, callback_query: CallbackQuery, text):
     f_user = callback_query.from_user
     if f_user.id != user.me.id:

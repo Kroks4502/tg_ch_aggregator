@@ -14,7 +14,7 @@ from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.checks import is_admin
 from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_main_user
+from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager
 from plugins.bot.menu.section_filter import list_type_content_filters
 
@@ -85,7 +85,7 @@ async def edit_source_category(client: Client, callback_query: CallbackQuery):
     await callback_query.answer('Категория изменена')
     await list_type_content_filters(client, callback_query)
 
-    await send_message_to_main_user(
+    await send_message_to_admins(
         client, callback_query,
         f'Изменена категория у источника '
         f'{await source_obj.get_formatted_link()} '
@@ -159,7 +159,7 @@ async def add_source_waiting_input(
     callback_query.data = path.get_prev()
     await list_source(client, callback_query)
 
-    await send_message_to_main_user(client, callback_query, success_text)
+    await send_message_to_admins(client, callback_query, success_text)
 
 
 @Client.on_callback_query(filters.regex(
@@ -177,7 +177,7 @@ async def delete_source(client: Client, callback_query: CallbackQuery):
         await callback_query.answer('Источник удален')
         await list_source(client, callback_query)
 
-        await send_message_to_main_user(
+        await send_message_to_admins(
             client, callback_query,
             f'Удален источник **{await source_obj.get_formatted_link()}**')
         return

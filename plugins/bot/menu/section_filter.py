@@ -9,7 +9,7 @@ from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.checks import is_admin
 from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_main_user
+from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager
 
 
@@ -202,7 +202,7 @@ async def add_filter_waiting_input(
     callback_query.data = path.get_prev()
     await list_filters(client, callback_query)
 
-    await send_message_to_main_user(client, callback_query, success_text)
+    await send_message_to_admins(client, callback_query, success_text)
 
 
 @Client.on_callback_query(filters.regex(
@@ -261,7 +261,7 @@ async def edit_body_filter_wait_input(
     callback_query.data = path.get_prev()
     await detail_filter(client, callback_query)
 
-    await send_message_to_main_user(client, callback_query, success_text)
+    await send_message_to_admins(client, callback_query, success_text)
 
 
 @Client.on_callback_query(filters.regex(
@@ -291,7 +291,7 @@ async def delete_filter(client: Client, callback_query: CallbackQuery):
         await callback_query.answer('Паттерн удален')
         await list_filters(client, callback_query)
 
-        await send_message_to_main_user(
+        await send_message_to_admins(
             client, callback_query, f'Удален фильтр:\n{text}')
         return
 

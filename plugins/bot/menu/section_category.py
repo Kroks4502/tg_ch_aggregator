@@ -14,7 +14,7 @@ from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.checks import is_admin
 from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_main_user
+from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager
 from plugins.bot.menu.section_source import list_source
 
@@ -171,7 +171,7 @@ async def add_edit_category_waiting_input(
 
     await reply(success_text)
 
-    await send_message_to_main_user(client, callback_query, success_text)
+    await send_message_to_admins(client, callback_query, success_text)
 
     callback_query.data = path.get_prev()
     if path.action == 'add':
@@ -197,7 +197,7 @@ async def delete_category(client: Client, callback_query: CallbackQuery):
         await callback_query.answer('Категория удалена')
         await set_main_menu(client, callback_query)
 
-        await send_message_to_main_user(
+        await send_message_to_admins(
             client, callback_query,
             f'Удалена категория **{await category_obj.get_formatted_link()}**')
         return
