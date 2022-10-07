@@ -109,7 +109,7 @@ async def startup():
 
 async def update_admin_usernames():
     db_data = {admin.tg_id: admin.username for admin in Admin.select()}
-    actual = {admin.id: admin.username
+    actual = {admin.id: admin.username if admin.username else admin.id
               for admin in await user.get_users(list(db_data.keys()))}
     for tg_id in actual:
         if actual[tg_id] != db_data[tg_id]:
