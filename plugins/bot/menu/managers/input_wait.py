@@ -41,7 +41,7 @@ class InputWaitManager:
         except Exception as err:
             logger.error(f'Во время выполнения функции '
                          f'{input_chat["func"].__name__} '
-                         f'было перехвачено исключение: {err.__traceback__}')
+                         f'было перехвачено исключение: {err.with_traceback(err.__traceback__)}')
 
 
 input_wait_manager = InputWaitManager()
