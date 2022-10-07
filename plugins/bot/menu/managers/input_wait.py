@@ -1,3 +1,4 @@
+import traceback
 from typing import Callable
 
 from pyrogram import Client
@@ -41,7 +42,8 @@ class InputWaitManager:
         except Exception as err:
             logger.error(f'Во время выполнения функции '
                          f'{input_chat["func"].__name__} '
-                         f'было перехвачено исключение: {err.with_traceback(err.__traceback__)}')
+                         f'было перехвачено исключение: {err}\n'
+                         f'{traceback.format_exc()}')
 
 
 input_wait_manager = InputWaitManager()
