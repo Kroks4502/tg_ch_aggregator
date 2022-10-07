@@ -1,7 +1,6 @@
 from pyrogram import Client
 from pyrogram.types import CallbackQuery
 
-from initialization import user
 from models import Admin
 
 
