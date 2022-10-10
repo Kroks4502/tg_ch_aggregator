@@ -4,50 +4,43 @@ from datetime import datetime
 from peewee import *
 
 # from initialization import user
-from models_types import FilterTypes
+from models_types import FilterType
 
 db = SqliteDatabase('.db', pragmas={'foreign_keys': 1})
 
 
 class BaseModel(Model):
     __is_actual_cache = False
-    __cache = {}
+    __cache = None
 
     class Meta:
         database = db
 
     @classmethod
-    def get_cache(cls, *fields, **where) -> dict:
+    def get_cache(cls, **where) -> dict:
         cls.__update_cache()
 
-        if 'id' in where:
-            db_id = where.pop('id')
-            data = cls.__cache[db_id]
-            if not all([data[key] == value for key, value in where.items()]):
-                return {}
-            return {db_id: {field: data[field] for field in fields}
-                    if fields else data}
+        conditions = {}
+        if where:
+            for i, field_name in enumerate(cls._meta.sorted_field_names):
+                if field_name in where:
+                    conditions[i] = where[field_name]
+            if len(where) != len(conditions):
+                raise Exception(f'Одного из имен полей нет в модели {cls.__name__}')
 
-        selections_from_data = {}
-        for db_id, data in cls.__cache.items():
-            if all([data[key] == value for key, value in where.items()]):
-                yield {field: data[field] for field in fields} if fields else data
-        #         selections_from_data.update({
-        #             db_id: {field: data[field] for field in fields}
-        #             if fields else data
-        #         })
-        # return selections_from_data
+        for row in cls.__cache:
+            if all(True if row[i] == value else False for i, value in conditions.items()):
+                yield {field_name: row[i] for i, field_name in enumerate(cls._meta.sorted_field_names)}
 
-    @classmethod
-    def get_cache_all_field(cls, field, **where):
-        cls.__update_cache()
-        return {value[field] for key, value in cls.get_cache(**where).items()}
+    # @classmethod
+    # def get_cache_all_field(cls, field, **where):
+    #     cls.__update_cache()
+    #     return {value[field] for key, value in cls.get_cache(**where).items()}
 
     @classmethod
     def __update_cache(cls):
         if not cls.__is_actual_cache:
-            cls.__cache = {item.pop('id'): item
-                           for item in cls.select().dicts()}
+            cls.__cache = tuple(Category.select().tuples())
             cls.__is_actual_cache = True
 
     @classmethod
@@ -83,7 +76,7 @@ class Source(ChannelModel):
 class Filter(BaseModel):
     pattern = CharField()
     type = IntegerField(choices=[(content_type.name, content_type.value)
-                                 for content_type in FilterTypes])
+                                 for content_type in FilterType])
     source = ForeignKeyField(
         Source, null=True, backref='filters', on_delete='CASCADE')
 
