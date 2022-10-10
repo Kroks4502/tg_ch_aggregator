@@ -18,7 +18,7 @@ async def startup():
     if not DEVELOP_MODE:
         await bot.send_message(me.id, msg)
 
-    await update_admin_usernames()
+    # await update_admin_usernames()
 
     if not Admin.select().where(Admin.tg_id == me.id).exists():
         Admin.create(tg_id=me.id, username=me.username if me.username else me.id)
@@ -107,16 +107,16 @@ async def startup():
         await bot.send_message(user.me.id, msg)
 
 
-async def update_admin_usernames():
-    db_data = {admin.tg_id: admin.username for admin in Admin.select()}
-    actual = {admin.id: admin.username if admin.username else admin.id
-              for admin in await user.get_users(list(db_data.keys()))}
-    for tg_id in actual:
-        if actual[tg_id] != db_data[tg_id]:
-            q = (Admin
-                 .update({Admin.username: actual[tg_id]})
-                 .where(Admin.tg_id == tg_id))
-            q.execute()
+# async def update_admin_usernames():
+#     db_data = {admin.tg_id: admin.username for admin in Admin.select()}
+#     actual = {admin.id: admin.username if admin.username else admin.id
+#               for admin in await user.get_users(list(db_data.keys()))}
+#     for tg_id in actual:
+#         if actual[tg_id] != db_data[tg_id]:
+#             q = (Admin
+#                  .update({Admin.username: actual[tg_id]})
+#                  .where(Admin.tg_id == tg_id))
+#             q.execute()
 
 
 def update_channel_titles(dialog, db_channel_titles):
