@@ -3,9 +3,9 @@ import re
 import peewee
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
-from pyrogram.errors import exceptions
+from pyrogram.errors import exceptions, RPCError
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
-                            InlineKeyboardMarkup, Message)
+                            InlineKeyboardMarkup, Message, Chat, ChatPrivileges)
 
 from initialization import user
 from log import logger
@@ -13,8 +13,9 @@ from models import Source, Category, Filter
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.checks import is_admin
+from plugins.bot.menu.helpers.links import get_channel_formatted_link
 from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_main_user
+from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager
 from plugins.bot.menu.section_source import list_source
 
@@ -71,12 +72,12 @@ async def set_main_menu(_, callback_query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(
     r's_\d+/:edit/$') & custom_filters.admin_only)
-async def choice_source_category(client: Client, callback_query: CallbackQuery):
+async def choice_source_category(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
     source_obj: Source = Source.get(id=int(path.get_value('s')))
-    text = (f'Источник: {await source_obj.get_formatted_link()}\n\n'
+    text = (f'Источник: {await get_channel_formatted_link(source_obj.tg_id)}\n\n'
             f'Ты **меняешь категорию** у источника.\n'
             f'Выбери новую категорию:')
 
@@ -88,27 +89,84 @@ async def choice_source_category(client: Client, callback_query: CallbackQuery):
 
 
 @Client.on_callback_query(filters.regex(
-    r'^/:add/$|^/c_\d+/:edit/$') & custom_filters.admin_only)
-async def add_edit_category(client: Client, callback_query: CallbackQuery):
+    r'^/:add/$') & custom_filters.admin_only)
+async def add_category(client: Client, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
-    text = 'ОК. Ты меняешь канал для категории, '
-    if Path(callback_query.data).action == 'add':
-        text = 'ОК. Ты добавляешь новую категорию с каналом, '
-    text += ('в который будут пересылаться сообщения из источников. '
-             'Этот бот должен быть администратором канала '
-             'с возможностью публиковать записи.\n\n'
-             '**Введи ID или ссылку на канал:**')
-
     await callback_query.answer()
-    await callback_query.message.reply(text)
+    await callback_query.message.reply(
+        'ОК. Ты добавляешь новую категорию, '
+        'в которую будут пересылаться сообщения из источников. '
+        'Будет создан новый канал-агрегатор.\n\n'
+        '**Введи название новой категории:**')
 
     input_wait_manager.add(
-        callback_query.message.chat.id, add_edit_category_waiting_input,
+        callback_query.message.chat.id, add_category_waiting_input,
         client, callback_query)
 
 
-async def add_edit_category_waiting_input(
+async def add_category_waiting_input(
+        client: Client, message: Message, callback_query: CallbackQuery):
+    logger.debug(callback_query.data)
+
+    new_channel_name = f'{message.text} | Aggregator'
+    new_message = await message.reply_text(
+        f'⏳ Создаю канал «{new_channel_name}»…')
+
+    async def reply(text):
+        await new_message.edit_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(
+                buttons.get_fixed(Path(callback_query.data), back_title='Назад')),
+            disable_web_page_preview=True)
+
+    if len(message.text) > 80:
+        await reply(
+            f'❌ Название категории не должно превышать 80 символов')
+        return
+
+    new_channel: Chat = await user.create_channel(
+        new_channel_name, f'Создан ботом {client.me.username}')
+
+    await new_channel.promote_member(
+        client.me.id, ChatPrivileges(
+            can_manage_chat=True,
+            can_delete_messages=True,
+            can_manage_video_chats=True,
+            can_promote_members=True,
+            can_change_info=True,
+            can_post_messages=True,
+            can_edit_messages=True,
+            can_invite_users=True, ))
+
+    category_obj: Category = Category.create(
+        tg_id=new_channel.id, title=new_channel.title)
+    success_text = (f'✅ Категория '
+                    f'**{await get_channel_formatted_link(category_obj.tg_id)}** '
+                    f'создана')
+
+    await reply(success_text)
+
+
+@Client.on_callback_query(filters.regex(
+    r'^/c_\d+/:edit/$') & custom_filters.admin_only)
+async def edit_category(client: Client, callback_query: CallbackQuery):
+    logger.debug(callback_query.data)
+
+    await callback_query.answer()
+    await callback_query.message.reply(
+        'ОК. Ты меняешь канал для категории, '
+        'в который будут пересылаться сообщения из источников. '
+        'Этот бот должен быть администратором канала '
+        'с возможностью публиковать записи.\n\n'
+        '**Введи публичное имя канала или ссылку на канал:**')
+
+    input_wait_manager.add(
+        callback_query.message.chat.id, edit_category_waiting_input,
+        client, callback_query)
+
+
+async def edit_category_waiting_input(
         client: Client, message: Message, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
@@ -124,8 +182,8 @@ async def add_edit_category_waiting_input(
 
     try:
         chat = await user.get_chat(input_text)
-    except (exceptions.BadRequest, exceptions.NotAcceptable) as err:
-        await reply(f'❌ Что-то пошло не так\n\n{err}')
+    except RPCError as e:
+        await reply(f'❌ Что-то пошло не так\n\n{e}')
         return
 
     if chat.type != ChatType.CHANNEL:
@@ -142,28 +200,21 @@ async def add_edit_category_waiting_input(
         return
 
     try:
-        await user.join_chat(input_text)
-    except Exception as err:
+        await user.join_chat(chat.username if chat.username else chat.id)
+    except RPCError as e:
         await reply(f'❌ Основной клиент не может подписаться на канал\n\n'
-                    f'{err}')
+                    f'{e}')
         return
 
     try:
-        if path.action == 'add':
-            category_obj: Category = Category.create(
-                tg_id=chat.id, title=chat.title)
-            success_text = (f'✅ Категория '
-                            f'**{await category_obj.get_formatted_link()}** '
-                            f'добавлена')
-        else:
-            category_id = int(path.get_value('c'))
-            q = (Category
-                 .update({Category.tg_id: chat.id,
-                          Category.title: chat.title})
-                 .where(Category.id == category_id))
-            q.execute()
-            success_text = (f'✅ Категория {category_id} '
-                            f'изменена на **{chat.title}**')
+        category_id = int(path.get_value('c'))
+        q = (Category
+             .update({Category.tg_id: chat.id,
+                      Category.title: chat.title})
+             .where(Category.id == category_id))
+        q.execute()
+        success_text = (f'✅ Категория {category_id} '
+                        f'изменена на **{chat.title}**')
         Category.clear_actual_cache()
     except peewee.IntegrityError:
         await reply('❗️Этот канал уже используется')
@@ -171,7 +222,7 @@ async def add_edit_category_waiting_input(
 
     await reply(success_text)
 
-    await send_message_to_main_user(client, callback_query, success_text)
+    await send_message_to_admins(client, callback_query, success_text)
 
     callback_query.data = path.get_prev()
     if path.action == 'add':
@@ -197,14 +248,14 @@ async def delete_category(client: Client, callback_query: CallbackQuery):
         await callback_query.answer('Категория удалена')
         await set_main_menu(client, callback_query)
 
-        await send_message_to_main_user(
+        await send_message_to_admins(
             client, callback_query,
-            f'Удалена категория **{await category_obj.get_formatted_link()}**')
+            f'❌ Удалена категория **{await get_channel_formatted_link(category_obj.tg_id)}**')
         return
 
     await callback_query.answer()
     await callback_query.message.edit_text(
-        f'Категория: **{await category_obj.get_formatted_link()}**\n\n'
+        f'Категория: **{await get_channel_formatted_link(category_obj.tg_id)}**\n\n'
         'Ты **удаляешь** категорию!',
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
             '❌ Подтвердить удаление',

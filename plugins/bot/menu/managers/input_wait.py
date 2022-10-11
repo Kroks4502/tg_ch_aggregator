@@ -1,6 +1,7 @@
 from typing import Callable
 
 from pyrogram import Client
+from pyrogram.errors import RPCError
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 
@@ -38,10 +39,12 @@ class InputWaitManager:
         try:
             await input_chat['func'](
                 client, message, *input_chat['args'], **input_chat['kwargs'])
-        except Exception as err:
-            logger.error(f'Во время выполнения функции '
-                         f'{input_chat["func"].__name__} '
-                         f'было перехвачено исключение: {err}')
+        except Exception as e:
+            msg = (f'Во время выполнения функции '
+                   f'{input_chat["func"].__name__} '
+                   f'было перехвачено исключение')
+            logger.error(f'{msg}: {e}', exc_info=True)
+            await message.reply(f'❌ {msg}')
 
 
 input_wait_manager = InputWaitManager()

@@ -3,17 +3,18 @@ import os
 import peewee
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
-from pyrogram.errors import exceptions
+from pyrogram.errors import RPCError
 from pyrogram.types import (CallbackQuery, InlineKeyboardMarkup,
                             InlineKeyboardButton, Message)
 
 from initialization import user
 from log import logger
-from models import Admin, History
+from models import Admin, CategoryMessageHistory, Source, FilterMessageHistory
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
+from plugins.bot.menu.helpers.links import get_user_formatted_link
 from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_main_user
+from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager
 from settings import LOGS_DIR, BASE_DIR
 
@@ -114,7 +115,7 @@ async def detail_admin(_, callback_query: CallbackQuery):
 
     admin_id = int(path.get_value('u'))
     admin_obj: Admin = Admin.get(id=admin_id)
-    text = f'**{await admin_obj.get_formatted_link()}**\n\n'
+    text = f'**{await get_user_formatted_link(admin_obj.tg_id)}**\n\n'
 
     inline_keyboard = []
     if admin_obj.tg_id != user.me.id:
@@ -162,8 +163,8 @@ async def add_admin_waiting_input(
 
     try:
         chat = await client.get_chat(message.text)
-    except (exceptions.BadRequest, exceptions.NotAcceptable) as err:
-        await reply(f'❌ Что-то пошло не так\n\n{err}')
+    except RPCError as e:
+        await reply(f'❌ Что-то пошло не так\n\n{e}')
         return
 
     if chat.type != ChatType.PRIVATE:
@@ -183,13 +184,13 @@ async def add_admin_waiting_input(
         return
 
     success_text = (f'✅ Администратор '
-                    f'**{await admin_obj.get_formatted_link()}** добавлен')
+                    f'**{await get_user_formatted_link(admin_obj.tg_id)}** добавлен')
     await reply(success_text)
 
     callback_query.data = path.get_prev()
     await list_admins(client, callback_query)
 
-    await send_message_to_main_user(client, callback_query, success_text)
+    await send_message_to_admins(client, callback_query, success_text)
     return
 
 
@@ -201,7 +202,7 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
     path = Path(callback_query.data)
     admin_id = int(path.get_value('u'))
     admin_obj: Admin = Admin.get(id=admin_id)
-    text = f'**{await admin_obj.get_formatted_link()}**'
+    text = f'**{await get_user_formatted_link(admin_obj.tg_id)}**'
     if path.with_confirmation:
         q = (Admin
              .delete()
@@ -214,8 +215,8 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
         await callback_query.answer('Администратор удален')
         await list_admins(client, callback_query)
 
-        await send_message_to_main_user(
-            client, callback_query, f'Удален администратор {text}')
+        await send_message_to_admins(
+            client, callback_query, f'❌ Удален администратор {text}')
         return
 
     text += '\n\nТы **удаляешь** администратора!'
@@ -246,29 +247,47 @@ async def check_post(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.reply(text)
     input_wait_manager.add(
-        chat_id, check_post_waiting_forwarding, client, callback_query)
+        chat_id, check_post_waiting_forwarding, client)
 
 
 async def check_post_waiting_forwarding(
-        _, message: Message, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
-
+        _, message: Message):
     async def reply(text):
         await message.reply_text(
             text,
             reply_markup=InlineKeyboardMarkup(
                 buttons.get_fixed(
-                    Path(callback_query.data), back_title='Назад')),
+                    Path('/o/:check_post/'), back_title='Назад')),
             disable_web_page_preview=True)
 
     if not message.forward_from_chat:
         await reply('🫥 Это не пересланный пост')
+        return
 
-    history_obj = History.get_or_none(
-        from_chat=message.forward_from_chat.id,
-        message_id=message.forward_from_message_id,)
+    chat_id = message.forward_from_chat.id
+    message_id = message.forward_from_message_id
+    source = Source.get_or_none(tg_id=chat_id)
+    history_obj = None
+    filter_obj = None
+    if source:
+        history_obj = CategoryMessageHistory.get_or_none(
+            source=source,
+            source_message_id=message_id, )
+        filter_obj = FilterMessageHistory.get_or_none(
+            source=source,
+            source_message_id=message_id, )
+
+    if not history_obj:
+        history_obj = CategoryMessageHistory.get_or_none(
+            forward_from_chat_id=chat_id,
+            forward_from_message_id=message_id, )
+
+    if filter_obj:
+        await reply('⚠️ Пост был отфильтрован')
+        return
 
     if not history_obj:
         await reply('❌ Поста нет в истории')
+        return
 
     await reply(f'✅ **{history_obj}**')

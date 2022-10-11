@@ -15,16 +15,15 @@ def add_to_category_history(
         source: Source = None, rewritten: bool = False):
     if not source:
         source = Source.get(tg_id=original_message.chat.id)
-
     CategoryMessageHistory.create(
         source=source,
         source_message_id=original_message.id,
         is_media_group=True if original_message.media_group_id else False,
         forward_from_chat_id=(original_message.forward_from_chat.id
-                              if original_message.forward_from_chat else None),
+                              if original_message.forward_date else None),
         forward_from_message_id=original_message.forward_from_message_id,
         category=source.category,
-        category_message_id=category_message.id,
+        message_id=category_message.id,
         rewritten=rewritten,
     )
 
@@ -173,8 +172,8 @@ class Inspector:
 
     def _get_filters(self, f_type: FilterType):
         return itertools.chain(
-            Filter.get_cache(source=self._source, type=f_type),
-            Filter.get_cache(source=None, type=f_type))
+            Filter.get_cache(source=self._source.id, type=f_type.value),
+            Filter.get_cache(source=None, type=f_type.value))
 
     @staticmethod
     def _search(pattern: str, string: str):

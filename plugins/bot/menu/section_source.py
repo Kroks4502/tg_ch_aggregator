@@ -3,7 +3,7 @@ import re
 import peewee
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
-from pyrogram.errors import exceptions
+from pyrogram.errors import RPCError
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
 
@@ -13,10 +13,11 @@ from models import Source, Filter, Category
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.checks import is_admin
+from plugins.bot.menu.helpers.links import get_channel_formatted_link
 from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_main_user
+from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager
-from plugins.bot.menu.section_filter import list_type_content_filters
+from plugins.bot.menu.section_filter import list_types_filters
 
 
 @Client.on_callback_query(filters.regex(
@@ -29,7 +30,7 @@ async def list_source(_, callback_query: CallbackQuery):
     category_obj: Category = (Category.get(id=category_id)
                               if category_id else None)
 
-    text = (f'Категория: **{await category_obj.get_formatted_link()}**'
+    text = (f'Категория: **{await get_channel_formatted_link(category_obj.tg_id)}**'
             if category_obj else '**Все источники**')
 
     inline_keyboard = []
@@ -83,13 +84,13 @@ async def edit_source_category(client: Client, callback_query: CallbackQuery):
 
     callback_query.data = path.get_prev(2)
     await callback_query.answer('Категория изменена')
-    await list_type_content_filters(client, callback_query)
+    await list_types_filters(client, callback_query)
 
-    await send_message_to_main_user(
+    await send_message_to_admins(
         client, callback_query,
         f'Изменена категория у источника '
-        f'{await source_obj.get_formatted_link()} '
-        f'на {await source_obj.category.get_formatted_link()}')
+        f'{await get_channel_formatted_link(source_obj.tg_id)} '
+        f'на {await get_channel_formatted_link(source_obj.category.tg_id)}')
 
 
 @Client.on_callback_query(filters.regex(
@@ -98,7 +99,8 @@ async def add_source(client: Client, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     text = ('ОК. Ты добавляешь новый источник.\n\n'
-            '**Введи ID канала или ссылку на него:**')
+            '**Введи публичный username канала, ссылку на него '
+            'или перешли мне пост из этого канала:**')
 
     await callback_query.answer()
     await callback_query.message.reply(text)
@@ -126,9 +128,12 @@ async def add_source_waiting_input(
             disable_web_page_preview=True)
 
     try:
-        chat = await user.get_chat(input_text)
-    except (exceptions.BadRequest, exceptions.NotAcceptable) as err:
-        await edit_text(f'❌ Что-то пошло не так\n\n{err}')
+        if message.forward_date:
+            chat = message.forward_from_chat
+        else:
+            chat = await user.get_chat(input_text)
+    except RPCError as e:
+        await edit_text(f'❌ Что-то пошло не так\n\n{e}')
         return
 
     if chat.type != ChatType.CHANNEL:
@@ -136,10 +141,10 @@ async def add_source_waiting_input(
         return
 
     try:
-        await user.join_chat(input_text)
-    except Exception as err:
+        await user.join_chat(chat.username if chat.username else chat.id)
+    except RPCError as e:
         await edit_text(f'❌ Основной клиент не может подписаться на канал\n\n'
-                    f'{err}')
+                        f'{e}')
         return
 
     try:
@@ -153,13 +158,13 @@ async def add_source_waiting_input(
     category_obj: Category = Category.get(id=category_id)
     success_text = (f'✅ Источник [{chat.title}](https://{chat.username}.t.me) '
                     f'добавлен в категорию '
-                    f'{await category_obj.get_formatted_link()}')
+                    f'{await get_channel_formatted_link(category_obj.tg_id)}')
     await edit_text(success_text)
 
     callback_query.data = path.get_prev()
     await list_source(client, callback_query)
 
-    await send_message_to_main_user(client, callback_query, success_text)
+    await send_message_to_admins(client, callback_query, success_text)
 
 
 @Client.on_callback_query(filters.regex(
@@ -177,14 +182,14 @@ async def delete_source(client: Client, callback_query: CallbackQuery):
         await callback_query.answer('Источник удален')
         await list_source(client, callback_query)
 
-        await send_message_to_main_user(
+        await send_message_to_admins(
             client, callback_query,
-            f'Удален источник **{await source_obj.get_formatted_link()}**')
+            f'❌ Удален источник **{await get_channel_formatted_link(source_obj.tg_id)}**')
         return
 
     await callback_query.answer()
     await callback_query.message.edit_text(
-        f'Источник: **{await source_obj.get_formatted_link()}**\n\n'
+        f'Источник: **{await get_channel_formatted_link(source_obj.tg_id)}**\n\n'
         'Ты **удаляешь** источник!',
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
             '❌ Подтвердить удаление',

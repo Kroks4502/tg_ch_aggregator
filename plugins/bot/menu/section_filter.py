@@ -4,18 +4,22 @@ from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
 
 from log import logger
-from models import Source, Filter, FILTER_CONTENT_TYPES
+from models import Source, Filter
+from models_types import (FilterType, FILTER_TYPES_BY_ID, FilterEntityType, FilterMessageType,
+                          FILTER_ENTITY_TYPES_BY_ID,
+                          FILTER_MESSAGE_TYPES_BY_ID)
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.checks import is_admin
+from plugins.bot.menu.helpers.links import get_channel_formatted_link
 from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_main_user
+from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager
 
 
 @Client.on_callback_query(filters.regex(
     r'/s_\d+/$'))
-async def list_type_content_filters(_, callback_query: CallbackQuery):
+async def list_types_filters(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
@@ -26,9 +30,9 @@ async def list_type_content_filters(_, callback_query: CallbackQuery):
     text = '**Общие фильтры**'
     inline_keyboard = []
     if source_obj:
-        text = (f'Источник: **{await source_obj.get_formatted_link()}**'
+        text = (f'Источник: **{await get_channel_formatted_link(source_obj.tg_id)}**'
                 f'\nКатегория: '
-                f'**{await source_obj.category.get_formatted_link()}**')
+                f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**')
         if is_admin(callback_query.from_user.id):
             inline_keyboard.append(
                 [InlineKeyboardButton(
@@ -43,14 +47,14 @@ async def list_type_content_filters(_, callback_query: CallbackQuery):
     source_where = None if source_id else Filter.source.is_null(True)
     query = (
         Filter
-        .select(Filter.content_type,
+        .select(Filter.type,
                 peewee.fn.Count(Filter.id).alias('count'))
         .where(source_where if source_where else Filter.source == source_id)
-        .group_by(Filter.content_type)
+        .group_by(Filter.type)
     )
-    data = {content_type: (content_type, 0)
-            for content_type in FILTER_CONTENT_TYPES}
-    data.update({item.content_type: (item.content_type, item.count)
+    data = {filter_type.value: (filter_type.name, 0)
+            for filter_type in FilterType}
+    data.update({item.type: (FILTER_TYPES_BY_ID.get(item.type), item.count)
                  for item in query})
     inline_keyboard += buttons.get_list_model(
         data=data,
@@ -73,15 +77,15 @@ async def list_filters(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
-    content_type = path.get_value('t')
+    filter_type = int(path.get_value('t'))
     source_id = int(path.get_value('s'))
     source_obj: Source = Source.get(id=source_id) if source_id else None
 
     if source_obj:
-        text = f'Источник: **{await source_obj.get_formatted_link()}**'
+        text = f'Источник: **{await get_channel_formatted_link(source_obj.tg_id)}**'
     else:
         text = '**Общие фильтры**'
-    text += f'\nФильтр: **{content_type}**'
+    text += f'\nФильтр: **{FILTER_TYPES_BY_ID.get(filter_type)}**'
 
     inline_keyboard = []
     if is_admin(callback_query.from_user.id):
@@ -95,7 +99,7 @@ async def list_filters(_, callback_query: CallbackQuery):
         Filter
         .select()
         .where((source_where if source_where else Filter.source == source_id)
-               & (Filter.content_type == content_type))
+               & (Filter.type == filter_type))
     )
     inline_keyboard += buttons.get_list_model(
         data={f'{item.id}': (item.pattern, 0) for item in query},
@@ -121,20 +125,27 @@ async def detail_filter(_, callback_query: CallbackQuery):
 
     inline_keyboard = []
     if is_admin(callback_query.from_user.id):
-        inline_keyboard.append([InlineKeyboardButton(
-            f'📝',
-            callback_data=path.add_action('edit')
-        ), InlineKeyboardButton(
-            '✖️',
-            callback_data=path.add_action('delete')
-        ), ], )
+        if filter_obj.type in (FilterType.ENTITY_TYPE.value,
+                               FilterType.MESSAGE_TYPE.value):
+            inline_keyboard.append([InlineKeyboardButton(
+                '✖️',
+                callback_data=path.add_action('delete')
+            ), ], )
+        else:
+            inline_keyboard.append([InlineKeyboardButton(
+                f'📝',
+                callback_data=path.add_action('edit')
+            ), InlineKeyboardButton(
+                '✖️',
+                callback_data=path.add_action('delete')
+            ), ], )
     inline_keyboard += buttons.get_fixed(path)
 
     if filter_obj.source:
-        text = f'Источник: **{await filter_obj.source.get_formatted_link()}**'
+        text = f'Источник: **{await get_channel_formatted_link(filter_obj.source.tg_id)}**'
     else:
         text = '**Общий фильтр**'
-    text += (f'\nТип фильтра: **{filter_obj.content_type}**'
+    text += (f'\nТип фильтра: **{FILTER_TYPES_BY_ID.get(filter_obj.type)}**'
              f'\nПаттерн: `{filter_obj.pattern}`')
 
     await callback_query.answer()
@@ -154,25 +165,102 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
     chat_id = callback_query.message.chat.id
     source_id = int(path.get_value('s'))
     source_obj: Source = Source.get_or_none(id=source_id)
-    content_type = path.get_value('t')
+    filter_type = int(path.get_value('t'))
 
-    text = 'ОК. Ты добавляешь '
-    text += (f'фильтр для источника {await source_obj.get_formatted_link()} '
-             if source_obj else 'общий фильтр ')
-    text += (f'типа **{content_type}**. Паттерн является регулярным выражением '
-             f'с игнорированием регистра.\n\n'
-             '**Введи паттерн нового фильтра:**')
+    if filter_type in (FilterType.HASHTAG.value,
+                       FilterType.URL.value,
+                       FilterType.TEXT.value,
+                       FilterType.ONLY_WHITE_TEXT.value):
+        text = 'ОК. Ты добавляешь '
+        text += (f'фильтр для источника {await get_channel_formatted_link(source_obj.tg_id)} '
+                 if source_obj else 'общий фильтр ')
+        text += (f'типа **{FILTER_TYPES_BY_ID.get(filter_type)}**. Паттерн является регулярным выражением '
+                 f'с игнорированием регистра.\n\n'
+                 '**Введи паттерн нового фильтра:**')
+
+        await callback_query.answer()
+        await callback_query.message.reply(text, disable_web_page_preview=True)
+        input_wait_manager.add(
+            chat_id, add_filter_waiting_input, client, callback_query,
+            filter_type, source_obj)
+        return
+
+    if source_obj:
+        text = f'Источник: **{await get_channel_formatted_link(source_obj.tg_id)}**'
+    else:
+        text = '**Общие фильтры**'
+    text += (f'\nТип: **{FILTER_TYPES_BY_ID.get(filter_type)}**\n\n'
+             f'Выбери паттерн для фильтра:')
+
+    query = (Filter
+             .select()
+             .where((Filter.type == filter_type) & (Filter.source == source_obj)))
+    existing_filters_patterns = {filter_obj.pattern
+                                 for filter_obj in query}
+    data = {}
+    if filter_type == FilterType.ENTITY_TYPE.value:
+        for entity_type in FilterEntityType:
+            if entity_type.name not in existing_filters_patterns:
+                data.update({entity_type.value: (entity_type.name, 0)})
+    else:
+        for entity_type in FilterMessageType:
+            if entity_type.name not in existing_filters_patterns:
+                data.update({entity_type.value[0]: (entity_type.name, 0)})
+
+    inline_keyboard = buttons.get_list_model(
+        data=data,
+        path=path,
+        prefix_path='v',
+    )
 
     await callback_query.answer()
-    await callback_query.message.reply(text, disable_web_page_preview=True)
-    input_wait_manager.add(
-        chat_id, add_filter_waiting_input, client, callback_query,
-        content_type, source_obj)
+    await callback_query.message.edit_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard + buttons.get_fixed(path)),
+        disable_web_page_preview=True
+    )
+
+
+@Client.on_callback_query(filters.regex(
+    r'/s_\d+/t_\w+/:add/v_\w+/$') & custom_filters.admin_only)
+async def add_filter_choice_value(client: Client, callback_query: CallbackQuery):
+    logger.debug(callback_query.data)
+
+    path = Path(callback_query.data)
+    source_id = int(path.get_value('s'))
+    source_obj: Source = Source.get_or_none(id=source_id)
+    filter_type = int(path.get_value('t'))
+    value = int(path.get_value('v', after_action=True))
+
+    if filter_type == FilterType.ENTITY_TYPE.value:
+        pattern = FILTER_ENTITY_TYPES_BY_ID.get(value)
+    else:
+        pattern = FILTER_MESSAGE_TYPES_BY_ID.get(value)
+
+    filter_obj = Filter.create(
+        pattern=pattern, type=filter_type,
+        source=source_obj)
+    Filter.clear_actual_cache()
+
+    if source_obj:
+        success_text = (f'✅ Фильтр для источника '
+                        f'{await get_channel_formatted_link(filter_obj.source.tg_id)} ')
+    else:
+        success_text = '✅ Общий фильтр '
+    success_text += (f'типа **{FILTER_TYPES_BY_ID.get(filter_obj.type)}** '
+                     f'со значением `{filter_obj.pattern}` добавлен')
+
+    await callback_query.answer(success_text)
+    callback_query.data = path.get_prev(2)
+    await list_filters(client, callback_query)
+
+    await send_message_to_admins(client, callback_query, success_text)
 
 
 async def add_filter_waiting_input(
         client: Client, message: Message, callback_query,
-        content_type, source_obj):
+        filter_type, source_obj):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
@@ -185,16 +273,16 @@ async def add_filter_waiting_input(
             disable_web_page_preview=True)
 
     filter_obj = Filter.create(
-        pattern=message.text, content_type=content_type,
-        source=source_obj.id if source_obj else None)
+        pattern=message.text, type=filter_type,
+        source=source_obj)
     Filter.clear_actual_cache()
 
     if source_obj:
         success_text = (f'✅ Фильтр для источника '
-                        f'{await filter_obj.source.get_formatted_link()} ')
+                        f'{await get_channel_formatted_link(filter_obj.source.tg_id)} ')
     else:
         success_text = '✅ Общий фильтр '
-    success_text += (f'типа **{filter_obj.content_type}** '
+    success_text += (f'типа **{FILTER_TYPES_BY_ID.get(filter_obj.type)}** '
                      f'с паттерном `{filter_obj.pattern}` добавлен')
 
     await reply(success_text)
@@ -202,7 +290,7 @@ async def add_filter_waiting_input(
     callback_query.data = path.get_prev()
     await list_filters(client, callback_query)
 
-    await send_message_to_main_user(client, callback_query, success_text)
+    await send_message_to_admins(client, callback_query, success_text)
 
 
 @Client.on_callback_query(filters.regex(
@@ -217,9 +305,9 @@ async def edit_body_filter(client: Client, callback_query: CallbackQuery):
 
     text = 'ОК. Ты изменяешь '
     text += (f'фильтр для источника '
-             f'{await filter_obj.source.get_formatted_link()} '
+             f'{await get_channel_formatted_link(filter_obj.source.tg_id)} '
              if filter_obj.source else 'общий фильтр ')
-    text += (f'типа **{filter_obj.content_type}** с паттерном '
+    text += (f'типа **{FILTER_TYPES_BY_ID.get(filter_obj.type)}** с паттерном '
              f'`{filter_obj.pattern}`.\n\n'
              f'**Введи новый паттерн фильтра:**')
 
@@ -250,10 +338,10 @@ async def edit_body_filter_wait_input(
 
     if filter_obj.source:
         success_text = (f'✅ Фильтр для источника '
-                        f'{await filter_obj.source.get_formatted_link()} ')
+                        f'{await get_channel_formatted_link(filter_obj.source.tg_id)} ')
     else:
         success_text = '✅ Общий фильтр '
-    success_text += (f'типа **{filter_obj.content_type}** '
+    success_text += (f'типа **{FILTER_TYPES_BY_ID.get(filter_obj.type)}** '
                      f'с паттерном `{filter_obj.pattern}` изменен')
 
     await reply(success_text)
@@ -261,7 +349,7 @@ async def edit_body_filter_wait_input(
     callback_query.data = path.get_prev()
     await detail_filter(client, callback_query)
 
-    await send_message_to_main_user(client, callback_query, success_text)
+    await send_message_to_admins(client, callback_query, success_text)
 
 
 @Client.on_callback_query(filters.regex(
@@ -273,10 +361,10 @@ async def delete_filter(client: Client, callback_query: CallbackQuery):
     filter_id = int(path.get_value('f'))
     filter_obj: Filter = Filter.get(id=filter_id)
     if filter_obj.source:
-        text = f'Источник: **{await filter_obj.source.get_formatted_link()}**'
+        text = f'Источник: **{await get_channel_formatted_link(filter_obj.source.tg_id)}**'
     else:
         text = '**Общий фильтр**'
-    text += (f'\nТип фильтра: **{filter_obj.content_type}**'
+    text += (f'\nТип фильтра: **{FILTER_TYPES_BY_ID.get(filter_obj.type)}**'
              f'\nПаттерн: `{filter_obj.pattern}`')
 
     if path.with_confirmation:
@@ -288,11 +376,11 @@ async def delete_filter(client: Client, callback_query: CallbackQuery):
         Filter.clear_actual_cache()
 
         callback_query.data = path.get_prev(3)
-        await callback_query.answer('Паттерн удален')
+        await callback_query.answer('Фильтр удален')
         await list_filters(client, callback_query)
 
-        await send_message_to_main_user(
-            client, callback_query, f'Удален фильтр:\n{text}')
+        await send_message_to_admins(
+            client, callback_query, f'❌ Удален фильтр:\n{text}')
         return
 
     text += '\n\nТы **удаляешь** фильтр!'

@@ -3,7 +3,6 @@ from pyrogram.types import Message
 
 from log import logger
 from models import Source
-from settings import AGGREGATOR_CHANNEL
 from plugins.user import custom_filters
 from plugins.user.helpers import (add_to_filter_history,
                                   add_to_category_history,
@@ -70,10 +69,11 @@ async def new_post_with_media_group(client: Client, message: Message):
             return
 
     forwarded_messages = await client.forward_messages(
-        AGGREGATOR_CHANNEL, message.chat.id,
+        source.category.tg_id, message.chat.id,
         [item.id for item in media_group_messages])
     await client.read_chat_history(message.chat.id)
-    add_to_category_history(message, forwarded_messages[0], source)
+    for original_message, forward_message in zip(media_group_messages, forwarded_messages):
+        add_to_category_history(original_message, forward_message, source)
 
 
 @Client.on_message(

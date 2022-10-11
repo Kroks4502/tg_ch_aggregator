@@ -11,6 +11,9 @@ class FilterType(enum.Enum):
     ONLY_WHITE_TEXT = 6
 
 
+FILTER_TYPES_BY_ID = {item.value: item.name for item in FilterType}
+
+
 @enum.unique
 class FilterEntityType(enum.Enum):
     MENTION = 1
@@ -33,6 +36,9 @@ class FilterEntityType(enum.Enum):
     BANK_CARD = 18
     CUSTOM_EMOJI = 19
     UNKNOWN = 20
+
+
+FILTER_ENTITY_TYPES_BY_ID = {item.value: item.name for item in FilterEntityType}
 
 
 @enum.unique
@@ -60,3 +66,6 @@ class FilterMessageType(enum.Enum):
     MENTIONED = (21, 'mentioned')
     MEDIA = (22, 'media')
     WITH_REPLY_MARKUP = (23, 'reply_markup')
+
+
+FILTER_MESSAGE_TYPES_BY_ID = {item.value[0]: item.name for item in FilterMessageType}
