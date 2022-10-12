@@ -18,7 +18,7 @@ def add_to_category_history(
     CategoryMessageHistory.create(
         source=source,
         source_message_id=original_message.id,
-        is_media_group=True if original_message.media_group_id else False,
+        media_group=original_message.media_group_id if original_message.media_group_id else '',
         forward_from_chat_id=(original_message.forward_from_chat.id
                               if original_message.forward_date else None),
         forward_from_message_id=original_message.forward_from_message_id,
@@ -37,7 +37,7 @@ def add_to_filter_history(
     FilterMessageHistory.create(
         source=source,
         source_message_id=original_message.id,
-        is_media_group=True if original_message.media_group_id else False,
+        media_group=original_message.media_group_id if original_message.media_group_id else '',
         filter=filter
     )
 
@@ -53,14 +53,16 @@ def perform_check_history(message: Message, source: Source) -> CategoryMessageHi
             if h_obj := CategoryMessageHistory.get_or_none(
                     category=source.category,
                     source=forward_source,
-                    source_message_id=message.forward_from_message_id
+                    source_message_id=message.forward_from_message_id,
+                    deleted=False
             ):
                 return h_obj
 
         if h_obj := CategoryMessageHistory.get_or_none(
                 category=source.category,
                 forward_from_chat_id=message.forward_from_chat.id,
-                forward_from_message_id=message.forward_from_message_id
+                forward_from_message_id=message.forward_from_message_id,
+                deleted=False
         ):
             return h_obj
 
@@ -68,14 +70,16 @@ def perform_check_history(message: Message, source: Source) -> CategoryMessageHi
         if h_obj := CategoryMessageHistory.get_or_none(
                 category=source.category,
                 source=source,
-                source_message_id=message.id
+                source_message_id=message.id,
+                deleted=False
         ):
             return h_obj
 
         if h_obj := CategoryMessageHistory.get_or_none(
                 category=source.category,
                 forward_from_chat_id=message.chat.id,
-                forward_from_message_id=message.id
+                forward_from_message_id=message.id,
+                deleted=False
         ):
             return h_obj
 

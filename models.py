@@ -99,7 +99,10 @@ class MessageHistoryModel(BaseModel):
     date = DateTimeField(default=datetime.now)
     source = ForeignKeyField(Source)
     source_message_id = IntegerField()
-    is_media_group = BooleanField()
+    source_message_edited = BooleanField(default=False)
+    source_message_deleted = BooleanField(default=False)
+    media_group = CharField()
+    # is_media_group = BooleanField()
 
 
 class FilterMessageHistory(MessageHistoryModel):
