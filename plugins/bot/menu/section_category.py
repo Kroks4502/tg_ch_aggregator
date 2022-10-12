@@ -5,7 +5,8 @@ from pyrogram import Client, filters
 from pyrogram.enums import ChatType
 from pyrogram.errors import exceptions, RPCError
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
-                            InlineKeyboardMarkup, Message, Chat, ChatPrivileges)
+                            InlineKeyboardMarkup, Message, Chat,
+                            ChatPrivileges)
 
 from initialization import user
 from log import logger
@@ -77,8 +78,8 @@ async def choice_source_category(_, callback_query: CallbackQuery):
 
     path = Path(callback_query.data)
     source_obj: Source = Source.get(id=int(path.get_value('s')))
-    text = (f'Источник: {await get_channel_formatted_link(source_obj.tg_id)}\n\n'
-            f'Ты **меняешь категорию** у источника.\n'
+    text = (f'Источник: {await get_channel_formatted_link(source_obj.tg_id)}'
+            f'\n\nТы **меняешь категорию** у источника.\n'
             f'Выбери новую категорию:')
 
     inline_keyboard = list_category_buttons(path) + buttons.get_fixed(path)
@@ -117,7 +118,8 @@ async def add_category_waiting_input(
         await new_message.edit_text(
             text,
             reply_markup=InlineKeyboardMarkup(
-                buttons.get_fixed(Path(callback_query.data), back_title='Назад')),
+                buttons.get_fixed(Path(callback_query.data),
+                                  back_title='Назад')),
             disable_web_page_preview=True)
 
     if len(message.text) > 80:
@@ -142,8 +144,8 @@ async def add_category_waiting_input(
     category_obj: Category = Category.create(
         tg_id=new_channel.id, title=new_channel.title)
     success_text = (f'✅ Категория '
-                    f'**{await get_channel_formatted_link(category_obj.tg_id)}** '
-                    f'создана')
+                    f'**{await get_channel_formatted_link(category_obj.tg_id)}'
+                    f'** создана')
 
     await reply(success_text)
 
@@ -250,12 +252,14 @@ async def delete_category(client: Client, callback_query: CallbackQuery):
 
         await send_message_to_admins(
             client, callback_query,
-            f'❌ Удалена категория **{await get_channel_formatted_link(category_obj.tg_id)}**')
+            f'❌ Удалена категория '
+            f'**{await get_channel_formatted_link(category_obj.tg_id)}**')
         return
 
     await callback_query.answer()
     await callback_query.message.edit_text(
-        f'Категория: **{await get_channel_formatted_link(category_obj.tg_id)}**\n\n'
+        f'Категория: '
+        f'**{await get_channel_formatted_link(category_obj.tg_id)}**\n\n'
         'Ты **удаляешь** категорию!',
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
             '❌ Подтвердить удаление',

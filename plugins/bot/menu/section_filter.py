@@ -5,8 +5,8 @@ from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
 
 from log import logger
 from models import Source, Filter
-from models_types import (FilterType, FILTER_TYPES_BY_ID, FilterEntityType, FilterMessageType,
-                          FILTER_ENTITY_TYPES_BY_ID,
+from models_types import (FilterType, FILTER_TYPES_BY_ID, FilterEntityType,
+                          FilterMessageType, FILTER_ENTITY_TYPES_BY_ID,
                           FILTER_MESSAGE_TYPES_BY_ID)
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
@@ -30,7 +30,8 @@ async def list_types_filters(_, callback_query: CallbackQuery):
     text = '**Общие фильтры**'
     inline_keyboard = []
     if source_obj:
-        text = (f'Источник: **{await get_channel_formatted_link(source_obj.tg_id)}**'
+        text = (f'Источник: '
+                f'**{await get_channel_formatted_link(source_obj.tg_id)}**'
                 f'\nКатегория: '
                 f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**')
         if is_admin(callback_query.from_user.id):
@@ -82,7 +83,8 @@ async def list_filters(_, callback_query: CallbackQuery):
     source_obj: Source = Source.get(id=source_id) if source_id else None
 
     if source_obj:
-        text = f'Источник: **{await get_channel_formatted_link(source_obj.tg_id)}**'
+        text = (f'Источник: '
+                f'**{await get_channel_formatted_link(source_obj.tg_id)}**')
     else:
         text = '**Общие фильтры**'
     text += f'\nФильтр: **{FILTER_TYPES_BY_ID.get(filter_type)}**'
@@ -142,7 +144,8 @@ async def detail_filter(_, callback_query: CallbackQuery):
     inline_keyboard += buttons.get_fixed(path)
 
     if filter_obj.source:
-        text = f'Источник: **{await get_channel_formatted_link(filter_obj.source.tg_id)}**'
+        text = (f'Источник: '
+                f'**{await get_channel_formatted_link(filter_obj.source.tg_id)}**')
     else:
         text = '**Общий фильтр**'
     text += (f'\nТип фильтра: **{FILTER_TYPES_BY_ID.get(filter_obj.type)}**'
@@ -172,9 +175,11 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
                        FilterType.TEXT.value,
                        FilterType.ONLY_WHITE_TEXT.value):
         text = 'ОК. Ты добавляешь '
-        text += (f'фильтр для источника {await get_channel_formatted_link(source_obj.tg_id)} '
+        text += (f'фильтр для источника '
+                 f'{await get_channel_formatted_link(source_obj.tg_id)} '
                  if source_obj else 'общий фильтр ')
-        text += (f'типа **{FILTER_TYPES_BY_ID.get(filter_type)}**. Паттерн является регулярным выражением '
+        text += (f'типа **{FILTER_TYPES_BY_ID.get(filter_type)}**. '
+                 f'Паттерн является регулярным выражением '
                  f'с игнорированием регистра.\n\n'
                  '**Введи паттерн нового фильтра:**')
 
@@ -186,7 +191,8 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
         return
 
     if source_obj:
-        text = f'Источник: **{await get_channel_formatted_link(source_obj.tg_id)}**'
+        text = (f'Источник: '
+                f'**{await get_channel_formatted_link(source_obj.tg_id)}**')
     else:
         text = '**Общие фильтры**'
     text += (f'\nТип: **{FILTER_TYPES_BY_ID.get(filter_type)}**\n\n'
@@ -224,7 +230,8 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(
     r'/s_\d+/t_\w+/:add/v_\w+/$') & custom_filters.admin_only)
-async def add_filter_choice_value(client: Client, callback_query: CallbackQuery):
+async def add_filter_choice_value(
+        client: Client, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
@@ -361,7 +368,8 @@ async def delete_filter(client: Client, callback_query: CallbackQuery):
     filter_id = int(path.get_value('f'))
     filter_obj: Filter = Filter.get(id=filter_id)
     if filter_obj.source:
-        text = f'Источник: **{await get_channel_formatted_link(filter_obj.source.tg_id)}**'
+        text = (f'Источник: '
+                f'**{await get_channel_formatted_link(filter_obj.source.tg_id)}**')
     else:
         text = '**Общий фильтр**'
     text += (f'\nТип фильтра: **{FILTER_TYPES_BY_ID.get(filter_obj.type)}**'

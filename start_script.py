@@ -7,7 +7,8 @@ from pyrogram.types import Dialog
 from log import logger
 from initialization import user, bot
 from models import Admin, Category, Source
-from plugins.user.news_forwarding import message_with_media_group, message_without_media_group
+from plugins.user.news_forwarding import (message_with_media_group,
+                                          message_without_media_group)
 
 
 async def startup():
@@ -52,14 +53,16 @@ async def update_admin_usernames(user_bot_tg_id: int):
         if (username and username != db_data[tg_id]
                 or not username and f'…{str(tg_id)[-5:]}' != db_data[tg_id]):
             q = (Admin
-                 .update({Admin.username: username if username else f'…{str(tg_id)[-5:]}'})
+                 .update({Admin.username:
+                          username if username else f'…{str(tg_id)[-5:]}'})
                  .where(Admin.tg_id == tg_id))
             q.execute()
 
 
 async def get_unread_messages() -> list:
     def get_db_titles(model):
-        return {item.tg_id: [model, item.title, False] for item in model.select()}
+        return {item.tg_id: [model, item.title, False]
+                for item in model.select()}
     db_channels = get_db_titles(Category)
     db_channels.update(get_db_titles(Source))
 

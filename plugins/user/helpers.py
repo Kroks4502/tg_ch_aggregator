@@ -18,7 +18,8 @@ def add_to_category_history(
     CategoryMessageHistory.create(
         source=source,
         source_message_id=original_message.id,
-        media_group=original_message.media_group_id if original_message.media_group_id else '',
+        media_group=(original_message.media_group_id
+                     if original_message.media_group_id else ''),
         forward_from_chat_id=(original_message.forward_from_chat.id
                               if original_message.forward_date else None),
         forward_from_message_id=original_message.forward_from_message_id,
@@ -37,7 +38,8 @@ def add_to_filter_history(
     FilterMessageHistory.create(
         source=source,
         source_message_id=original_message.id,
-        media_group=original_message.media_group_id if original_message.media_group_id else '',
+        media_group=(original_message.media_group_id
+                     if original_message.media_group_id else ''),
         filter=filter
     )
 
@@ -46,7 +48,8 @@ def get_message_link(chat_id: int, message_id: int):
     return f'https://t.me/c/{utils.get_channel_id(chat_id)}/{message_id}'
 
 
-def perform_check_history(message: Message, source: Source) -> CategoryMessageHistory | None:
+def perform_check_history(
+        message: Message, source: Source) -> CategoryMessageHistory | None:
     if message.forward_from_chat:
         forward_source = Source.get_or_none(tg_id=message.forward_from_chat.id)
         if forward_source:
@@ -114,7 +117,9 @@ class Inspector:
     def check_message_type(self) -> int | None:
         for data in self._get_filters(FilterType.MESSAGE_TYPE):
             try:
-                if getattr(self._message, getattr(FilterMessageType, data['pattern']).value[1]):
+                if getattr(self._message,
+                           getattr(
+                               FilterMessageType, data['pattern']).value[1]):
                     return data['id']
             except AttributeError as e:
                 logger.error(e, exc_info=True)

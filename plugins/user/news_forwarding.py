@@ -2,9 +2,10 @@ import inspect
 import re
 from typing import Match
 
-from pyrogram import Client, filters, raw
-from pyrogram.enums import ParseMode, MessageEntityType
-from pyrogram.types import Message, InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, MessageEntity
+from pyrogram import Client, filters
+from pyrogram.enums import MessageEntityType
+from pyrogram.types import (Message, InputMediaPhoto, InputMediaVideo,
+                            InputMediaAudio, InputMediaDocument, MessageEntity)
 
 from log import logger
 from models import Source, CategoryMessageHistory
@@ -22,7 +23,8 @@ media_group_ids = {}  # chat_id: [media_group_id ...]
 def is_new_and_valid_post(message: Message, source: Source) -> bool:
     if h_obj := perform_check_history(message, source):
         logger.info(
-            f'Сообщение {message.id} из чата {message.chat.id} ({message.link}) '
+            f'Сообщение {message.id} из чата '
+            f'{message.chat.id} ({message.link}) '
             f'уже есть в канале категории {source.category} '
             f'({get_message_link(h_obj.category.tg_id, h_obj.message_id)})')
         return False
@@ -30,7 +32,8 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
     if filter_id := perform_filtering(message, source):
         add_to_filter_history(message, filter_id, source)
         logger.info(
-            f'Сообщение {message.id} из чата {message.chat.id} ({message.link}) '
+            f'Сообщение {message.id} из чата '
+            f'{message.chat.id} ({message.link}) '
             f'отфильтровано. ID фильтра: {filter_id}')
         return False
 
@@ -48,14 +51,17 @@ async def message_without_media_group(client: Client, message: Message):
     if not is_new_and_valid_post(message, source):
         return
 
-    search_result = re.search(PATTERN_AGENT, message.text or message.caption or '')
+    search_result = re.search(
+        PATTERN_AGENT, message.text or message.caption or '')
     if search_result:
         delete_agent_text_in_message(search_result, message)
         forwarded_message = await message.copy(source.category.tg_id)
     else:
         forwarded_message = await message.forward(source.category.tg_id)
 
-    add_to_category_history(message, forwarded_message, source, rewritten=True if search_result else False)
+    add_to_category_history(
+        message, forwarded_message, source,
+        rewritten=True if search_result else False)
 
     await client.read_chat_history(message.chat.id)
     logger.debug(f'Сообщение {message.id} '
@@ -104,7 +110,8 @@ async def message_with_media_group(client: Client, message: Message):
                     'document_id': entity.custom_emoji_id
                 }
                 entity_params = {}
-                for key in [*inspect.signature(entity.type.value).parameters.keys()]:
+                for key in [*inspect.signature(
+                        entity.type.value).parameters.keys()]:
                     entity_params.update({key: possible_entity_params[key]})
                 raw_caption_entities.append(entity.type.value(**entity_params))
             if m.photo:
@@ -151,8 +158,11 @@ async def message_with_media_group(client: Client, message: Message):
             source.category.tg_id, message.chat.id,
             [item.id for item in media_group_messages])
 
-    for original_message, forward_message in zip(media_group_messages, forwarded_messages):
-        add_to_category_history(original_message, forward_message, source, rewritten=True if search_result else False)
+    for original_message, forward_message in zip(
+            media_group_messages, forwarded_messages):
+        add_to_category_history(
+            original_message, forward_message, source,
+            rewritten=True if search_result else False)
 
     await client.read_chat_history(message.chat.id)
     logger.debug(f'Сообщение {message.id} '
@@ -166,9 +176,11 @@ def delete_agent_text_in_message(search_result: Match, message: Message):
     if message.forward_date:
         author = f'💬 Источник: {message.forward_from_chat.title}\n\n'
     if message.text:
-        message.text = author + message.text[:search_result.start()] + separator + message.text[search_result.end():]
+        message.text = (author + message.text[:search_result.start()]
+                        + separator + message.text[search_result.end():])
     elif message.caption:
-        message.caption = author + message.caption[:search_result.start()] + separator + message.caption[search_result.end():]
+        message.caption = (author + message.caption[:search_result.start()]
+                           + separator + message.caption[search_result.end():])
 
     cut_text_len = search_result.end() - search_result.start() - len(separator)
     for entity in (message.entities or message.caption_entities or []):
@@ -179,11 +191,15 @@ def delete_agent_text_in_message(search_result: Match, message: Message):
     for entity in (message.entities or message.caption_entities or []):
         entity.offset += add_author_len
 
-    bold = MessageEntity(type=MessageEntityType.BOLD, offset=0, length=add_author_len)
+    bold = MessageEntity(
+        type=MessageEntityType.BOLD, offset=0, length=add_author_len)
     url = message.link
     if message.forward_date and message.forward_from_chat.username:
-        url = f'https://t.me/{message.forward_from_chat.username}/{message.forward_from_message_id}'
-    text_link = MessageEntity(type=MessageEntityType.TEXT_LINK, offset=0, length=add_author_len, url=url)
+        url = (f'https://t.me/{message.forward_from_chat.username}/'
+               f'{message.forward_from_message_id}')
+    text_link = MessageEntity(
+        type=MessageEntityType.TEXT_LINK, offset=0, length=add_author_len,
+        url=url)
     if message.text:
         if not message.entities:
             message.entities = []
@@ -218,12 +234,14 @@ async def edited_message(client: Client, message: Message):
 
     if history_obj.media_group:
         messages_to_delete = []
-        for m in await client.get_media_group(history_obj.category.tg_id, history_obj.message_id):
+        for m in await client.get_media_group(
+                history_obj.category.tg_id, history_obj.message_id):
             messages_to_delete.append(m.id)
     else:
         messages_to_delete = [history_obj.message_id]
 
-    await client.delete_messages(history_obj.category.tg_id, messages_to_delete)
+    await client.delete_messages(
+        history_obj.category.tg_id, messages_to_delete)
 
     query = ((CategoryMessageHistory
              .select()
@@ -255,7 +273,8 @@ async def deleted_messages(client: Client, messages: list[Message]):
             source_message_id=message.id,
             deleted=False, )
         if history_obj:
-            await client.delete_messages(history_obj.category.tg_id, history_obj.message_id)
+            await client.delete_messages(
+                history_obj.category.tg_id, history_obj.message_id)
             history_obj.source_message_deleted = True
             history_obj.deleted = True
             history_obj.save()

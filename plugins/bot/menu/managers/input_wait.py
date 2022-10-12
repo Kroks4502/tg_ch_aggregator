@@ -1,7 +1,6 @@
 from typing import Callable
 
 from pyrogram import Client
-from pyrogram.errors import RPCError
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 

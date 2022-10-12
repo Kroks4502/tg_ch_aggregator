@@ -11,11 +11,13 @@ from pyrogram.types import (CallbackQuery, InlineKeyboardMarkup,
 
 from initialization import user
 from log import logger
-from models import Admin, CategoryMessageHistory, Source, FilterMessageHistory, Category, Filter
+from models import (Admin, CategoryMessageHistory, Source,
+                    FilterMessageHistory, Category, Filter)
 from models_types import FILTER_TYPES_BY_ID
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
-from plugins.bot.menu.helpers.links import get_user_formatted_link, get_channel_formatted_link
+from plugins.bot.menu.helpers.links import (get_user_formatted_link,
+                                            get_channel_formatted_link)
 from plugins.bot.menu.helpers.path import Path
 from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager

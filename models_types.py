@@ -38,7 +38,8 @@ class FilterEntityType(enum.Enum):
     UNKNOWN = 20
 
 
-FILTER_ENTITY_TYPES_BY_ID = {item.value: item.name for item in FilterEntityType}
+FILTER_ENTITY_TYPES_BY_ID = {item.value: item.name
+                             for item in FilterEntityType}
 
 
 @enum.unique
@@ -68,4 +69,5 @@ class FilterMessageType(enum.Enum):
     WITH_REPLY_MARKUP = (23, 'reply_markup')
 
 
-FILTER_MESSAGE_TYPES_BY_ID = {item.value[0]: item.name for item in FilterMessageType}
+FILTER_MESSAGE_TYPES_BY_ID = {item.value[0]: item.name
+                              for item in FilterMessageType}

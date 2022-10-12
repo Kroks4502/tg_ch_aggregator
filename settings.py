@@ -16,4 +16,6 @@ LOG_FORMAT = ('%(asctime)s : %(levelname)s : %(module)s : '
               '%(funcName)s : %(message)s')
 
 DEVELOP_MODE = os.getenv('develop_mode')
-PATTERN_AGENT = re.compile(r'\n*ДАННОЕ СООБЩЕНИЕ[\w ().,]+ИНОСТРАННОГО АГЕНТА[ .]*\n*', flags=re.IGNORECASE)
+PATTERN_AGENT = re.compile(
+    r'\n*ДАННОЕ СООБЩЕНИЕ[\w ().,]+ИНОСТРАННОГО АГЕНТА[ .]*\n*',
+    flags=re.IGNORECASE)
