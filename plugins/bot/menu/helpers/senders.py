@@ -9,9 +9,7 @@ from models import Admin
 async def send_message_to_admins(
         client: Client, callback_query: CallbackQuery, text):
     f_user = callback_query.from_user
-    # todo: вернуть на место
-    # for admin in Admin.select().where(Admin.tg_id != f_user.id):
-    for admin in Admin.select():
+    for admin in Admin.select().where(Admin.tg_id != f_user.id):
         if f_user.username:
             b_text = f'@{f_user.username}'
         else:
