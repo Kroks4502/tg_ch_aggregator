@@ -67,6 +67,7 @@ class FilterMessageType(enum.Enum):
     MENTIONED = (21, 'mentioned')
     MEDIA = (22, 'media')
     WITH_REPLY_MARKUP = (23, 'reply_markup')
+    VIA_BOT = (24, 'via_bot')
 
 
 FILTER_MESSAGE_TYPES_BY_ID = {item.value[0]: item.name
