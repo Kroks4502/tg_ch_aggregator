@@ -6,7 +6,7 @@ from plugins.bot.menu.section_category import main_menu
 from plugins.bot.menu.section_option import check_post_waiting_forwarding
 
 
-@Client.on_message(filters.command('go'))
+@Client.on_message(filters.command(['start', 'go']))
 async def send_main_menu(_, message: Message):
     text, inline_keyboard = main_menu(message)
     await message.reply(

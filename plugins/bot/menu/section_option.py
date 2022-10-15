@@ -406,7 +406,7 @@ async def check_post_waiting_forwarding(
             text,
             reply_markup=InlineKeyboardMarkup(
                 b + buttons.get_fixed(
-                    Path('/o/:check_post/'), back_title='Назад')),
+                    Path('/o/'), back_title='Назад')),
             disable_web_page_preview=True)
 
     if not message.forward_from_chat:
