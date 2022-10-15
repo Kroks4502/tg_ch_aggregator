@@ -255,9 +255,9 @@ async def edited_message(client: Client, message: Message):
         h.source_message_edited = True
         h.deleted = True
         h.save()
-        logger.debug(f'Сообщение {h.source_message_id} '
-                     f'из источника {h.source.title} было изменено. '
-                     f'Оно удалено из категории {h.category.title}')
+        logger.info(f'Сообщение {h.source_message_id} '
+                    f'из источника {h.source.title} было изменено. '
+                    f'Оно удалено из категории {h.category.title}')
 
     if message.media_group_id:
         media_group_ids.clear()
@@ -281,6 +281,6 @@ async def deleted_messages(client: Client, messages: list[Message]):
             history_obj.source_message_deleted = True
             history_obj.deleted = True
             history_obj.save()
-            logger.debug(f'Сообщение {history_obj.source_message_id} '
-                         f'из источника {history_obj.source.title} было удалено. '
-                         f'Оно удалено из категории {history_obj.category.title}')
+            logger.info(f'Сообщение {history_obj.source_message_id} '
+                        f'из источника {history_obj.source.title} было удалено. '
+                        f'Оно удалено из категории {history_obj.category.title}')
