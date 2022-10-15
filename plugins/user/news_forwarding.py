@@ -49,6 +49,7 @@ async def message_without_media_group(client: Client, message: Message):
     source = Source.get(tg_id=message.chat.id)
 
     if not is_new_and_valid_post(message, source):
+        await client.read_chat_history(message.chat.id)
         return
 
     search_result = re.search(
@@ -90,6 +91,7 @@ async def message_with_media_group(client: Client, message: Message):
     is_agent = False
     for m in media_group_messages:
         if not is_new_and_valid_post(m, source):
+            await client.read_chat_history(message.chat.id)
             return
         if m.caption:
             search_result = re.search(PATTERN_AGENT, m.caption)
