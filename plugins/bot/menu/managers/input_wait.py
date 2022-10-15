@@ -43,7 +43,7 @@ class InputWaitManager:
                    f'{input_chat["func"].__name__} '
                    f'было перехвачено исключение')
             logger.error(f'{msg}: {e}', exc_info=True)
-            await message.reply(f'❌ {msg}')
+            await message.reply(f'❌ {msg}:\n{e}')
 
 
 input_wait_manager = InputWaitManager()
