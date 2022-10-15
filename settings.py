@@ -20,5 +20,8 @@ DEVELOP_MODE = os.getenv('develop_mode')
 PATTERN_AGENT = re.compile(
     r'\n*ДАННОЕ СООБЩЕНИЕ[\w ().,]+ИНОСТРАННОГО АГЕНТА[ .]*\n*',
     flags=re.IGNORECASE)
+PATTERN_WITHOUT_SMILE = re.compile(
+    r'[^а-яА-ЯЁёa-zA-z0-9 |-]+',
+    flags=re.IGNORECASE)
 
 DATABASE = SqliteDatabase('.db', pragmas={'foreign_keys': 1})

@@ -15,7 +15,7 @@ from plugins.user.helpers import (add_to_filter_history,
                                   get_message_link,
                                   perform_check_history, perform_filtering)
 from send_media_group import send_media_group
-from settings import PATTERN_AGENT
+from settings import PATTERN_AGENT, PATTERN_WITHOUT_SMILE
 
 media_group_ids = {}  # chat_id: [media_group_id ...]
 
@@ -173,9 +173,11 @@ async def message_with_media_group(client: Client, message: Message):
 
 def delete_agent_text_in_message(search_result: Match, message: Message):
     separator = '\n\n'
-    author = f'💬 Источник: {message.chat.title}\n\n'
-    if message.forward_date:
-        author = f'💬 Источник: {message.forward_from_chat.title}\n\n'
+    title = re.sub(PATTERN_WITHOUT_SMILE, "",
+                   message.forward_from_chat.title if message.forward_date else message.chat.title)
+    author = (f'💬 Источник: '
+              f'{title if title else message.chat.id}'
+              f'\n\n')
     if message.text:
         message.text = (author + message.text[:search_result.start()]
                         + separator + message.text[search_result.end():])
