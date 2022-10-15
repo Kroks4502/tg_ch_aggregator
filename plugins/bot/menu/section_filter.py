@@ -30,10 +30,10 @@ async def list_types_filters(_, callback_query: CallbackQuery):
     text = '**Общие фильтры**'
     inline_keyboard = []
     if source_obj:
-        text = (f'Источник: '
-                f'**{await get_channel_formatted_link(source_obj.tg_id)}**'
-                f'\nКатегория: '
-                f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**')
+        text = (f'\nКатегория: '
+                f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**'
+                f'Источник: '
+                f'**{await get_channel_formatted_link(source_obj.tg_id)}**')
         if is_admin(callback_query.from_user.id):
             inline_keyboard.append(
                 [InlineKeyboardButton(
@@ -83,7 +83,9 @@ async def list_filters(_, callback_query: CallbackQuery):
     source_obj: Source = Source.get(id=source_id) if source_id else None
 
     if source_obj:
-        text = (f'Источник: '
+        text = (f'\nКатегория: '
+                f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**'
+                f'Источник: '
                 f'**{await get_channel_formatted_link(source_obj.tg_id)}**')
     else:
         text = '**Общие фильтры**'
