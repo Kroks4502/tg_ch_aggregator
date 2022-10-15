@@ -118,7 +118,7 @@ async def statistics(_, callback_query: CallbackQuery):
         hm_query = CategoryMessageHistory.select().where((CategoryMessageHistory.deleted == False)
                                                          & (CategoryMessageHistory.source == source))
         total_count = query_count + hm_query.count()
-        text += (f'— {await get_channel_formatted_link(source.tg_id)}: {query_count} шт. '
+        text += (f'— {source.title}: {query_count} шт. '
                  f'({total_count / 100 * query_count:0.1f}%)\n')
     query = FilterMessageHistory.select()
     query_count = query.count()
