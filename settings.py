@@ -2,6 +2,7 @@ import os
 import re
 
 from dotenv import load_dotenv
+from peewee import SqliteDatabase
 
 load_dotenv()
 
@@ -19,3 +20,5 @@ DEVELOP_MODE = os.getenv('develop_mode')
 PATTERN_AGENT = re.compile(
     r'\n*ДАННОЕ СООБЩЕНИЕ[\w ().,]+ИНОСТРАННОГО АГЕНТА[ .]*\n*',
     flags=re.IGNORECASE)
+
+DATABASE = SqliteDatabase('.db', pragmas={'foreign_keys': 1})

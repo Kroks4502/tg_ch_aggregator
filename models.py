@@ -3,8 +3,7 @@ from datetime import datetime
 from peewee import *
 
 from models_types import FilterType
-
-db = SqliteDatabase('.db', pragmas={'foreign_keys': 1})
+from settings import DATABASE
 
 
 class BaseModel(Model):
@@ -12,7 +11,7 @@ class BaseModel(Model):
     _cache = None
 
     class Meta:
-        database = db
+        database = DATABASE
 
     @classmethod
     def get_cache(cls, **where) -> dict:
@@ -118,9 +117,4 @@ class CategoryMessageHistory(MessageHistoryModel):
     deleted = BooleanField(default=False)
 
 
-db.create_tables(
-    [
-        Category, Source, Filter, Admin,
-        FilterMessageHistory, CategoryMessageHistory
-    ]
-)
+

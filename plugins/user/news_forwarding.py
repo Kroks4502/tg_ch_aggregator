@@ -61,7 +61,7 @@ async def message_without_media_group(client: Client, message: Message):
 
     add_to_category_history(
         message, forwarded_message, source,
-        rewritten=True if search_result else False)
+        rewritten=bool(search_result))
 
     await client.read_chat_history(message.chat.id)
     logger.debug(f'Сообщение {message.id} '
@@ -87,16 +87,17 @@ async def message_with_media_group(client: Client, message: Message):
 
     source = Source.get(tg_id=message.chat.id)
     media_group_messages = await message.get_media_group()
-    search_result = None
+    is_agent = False
     for m in media_group_messages:
         if not is_new_and_valid_post(m, source):
             return
         if m.caption:
             search_result = re.search(PATTERN_AGENT, m.caption)
             if search_result:
+                is_agent = True
                 delete_agent_text_in_message(search_result, m)
 
-    if search_result:
+    if is_agent:
         media = []
         for m in media_group_messages:
             raw_caption_entities = []
@@ -162,12 +163,12 @@ async def message_with_media_group(client: Client, message: Message):
             media_group_messages, forwarded_messages):
         add_to_category_history(
             original_message, forward_message, source,
-            rewritten=True if search_result else False)
+            rewritten=is_agent)
 
     await client.read_chat_history(message.chat.id)
-    logger.debug(f'Сообщение {message.id} '
+    logger.debug(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
                  f'из источника {source.title} '
-                 f'переслано в категорию {source.category.title}')
+                 f'пересланы в категорию {source.category.title}')
 
 
 def delete_agent_text_in_message(search_result: Match, message: Message):
@@ -189,7 +190,7 @@ def delete_agent_text_in_message(search_result: Match, message: Message):
 
     add_author_len = len(author)
     for entity in (message.entities or message.caption_entities or []):
-        entity.offset += add_author_len
+        entity.offset += add_author_len + 1
 
     bold = MessageEntity(
         type=MessageEntityType.BOLD, offset=0, length=add_author_len)

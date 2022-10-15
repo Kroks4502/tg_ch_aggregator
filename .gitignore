@@ -133,4 +133,4 @@ dmypy.json
 *.db
 /probe*.py
 /logs/
-/create_db.py
+/create_db_old.py
