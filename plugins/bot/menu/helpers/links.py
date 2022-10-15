@@ -5,7 +5,7 @@ from initialization import user
 from log import logger
 
 
-@alru_cache(maxsize=32)
+@alru_cache(maxsize=128)
 async def get_user_formatted_link(tg_id: int) -> str:
     try:
         chat = await user.get_chat(tg_id)
@@ -20,7 +20,7 @@ async def get_user_formatted_link(tg_id: int) -> str:
     return str(tg_id)
 
 
-@alru_cache(maxsize=32)
+@alru_cache(maxsize=128)
 async def get_channel_formatted_link(tg_id: int) -> str:
     try:
         chat = await user.get_chat(tg_id)
