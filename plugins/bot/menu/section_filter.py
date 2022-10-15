@@ -31,7 +31,7 @@ async def list_types_filters(_, callback_query: CallbackQuery):
     inline_keyboard = []
     if source_obj:
         text = (f'\nКатегория: '
-                f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**'
+                f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**\n'
                 f'Источник: '
                 f'**{await get_channel_formatted_link(source_obj.tg_id)}**')
         if is_admin(callback_query.from_user.id):
@@ -83,8 +83,8 @@ async def list_filters(_, callback_query: CallbackQuery, needs_an_answer: bool =
     source_obj: Source = Source.get(id=source_id) if source_id else None
 
     if source_obj:
-        text = (f'\nКатегория: '
-                f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**'
+        text = (f'Категория: '
+                f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**\n'
                 f'Источник: '
                 f'**{await get_channel_formatted_link(source_obj.tg_id)}**')
     else:
