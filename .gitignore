@@ -134,3 +134,5 @@ dmypy.json
 /probe*.py
 /logs/
 /create_db_old.py
+/filters_test.py
+/test_data/
