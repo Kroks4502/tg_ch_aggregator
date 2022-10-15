@@ -100,8 +100,8 @@ async def statistics(_, callback_query: CallbackQuery):
         query = CategoryMessageHistory.select().where((CategoryMessageHistory.deleted == False)
                                                       & (CategoryMessageHistory.category == category))
         text += f'— {await get_channel_formatted_link(category.tg_id)}: {query.count()} шт.\n'
-    query = CategoryMessageHistory.select()
-    text += f'Всего за всё время {query.count()} шт.\n\n'
+    query = CategoryMessageHistory.select(CategoryMessageHistory.deleted == False)
+    text += f'__Всего за всё время переслано {query.count()} шт.__\n\n'
 
     text += f'🗑 **Отфильтровано сообщений за последний период**\n'
     query = FilterMessageHistory.select().where(FilterMessageHistory.date > day_ago)
@@ -126,8 +126,8 @@ async def statistics(_, callback_query: CallbackQuery):
     hm_query = CategoryMessageHistory.select().where(CategoryMessageHistory.deleted == False)
     total_count = query_count + hm_query.count()
     p = query_count / total_count * 100 if total_count else 0
-    text += (f'Всего за всё время {query_count} шт. '
-             f'({p:0.1f}%)\n\n')
+    text += (f'__Всего за всё время отфильтровано {query_count} шт. '
+             f'({p:0.1f}%)__\n\n')
 
     await callback_query.answer()
     await callback_query.message.edit_text(
