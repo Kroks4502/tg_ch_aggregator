@@ -195,7 +195,9 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
         return
 
     if source_obj:
-        text = (f'Источник: '
+        text = (f'Категория: '
+                f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**\n'
+                f'Источник: '
                 f'**{await get_channel_formatted_link(source_obj.tg_id)}**')
     else:
         text = '**Общие фильтры**'
