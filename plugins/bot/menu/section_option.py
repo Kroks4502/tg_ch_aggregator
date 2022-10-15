@@ -118,9 +118,9 @@ async def statistics(_, callback_query: CallbackQuery):
         hm_query = CategoryMessageHistory.select().where((CategoryMessageHistory.deleted == False)
                                                          & (CategoryMessageHistory.source == source))
         total_count = query_count + hm_query.count()
-        p = query_count / total_count * 100 if total_count else 0
-        text += (f'— {source.title[:30]}: {query_count} шт. '
-                 f'({p:0.1f}%)\n')
+        if p := query_count / total_count * 100 if total_count else 0:
+            text += (f'— {source.title[:30]}: {query_count} шт. '
+                     f'({p:0.1f}%)\n')
     query = FilterMessageHistory.select()
     query_count = query.count()
     hm_query = CategoryMessageHistory.select().where(CategoryMessageHistory.deleted == False)
