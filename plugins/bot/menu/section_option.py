@@ -119,13 +119,13 @@ async def statistics(_, callback_query: CallbackQuery):
                                                          & (CategoryMessageHistory.source == source))
         total_count = query_count + hm_query.count()
         text += (f'— {source.title[:30]}: {query_count} шт. '
-                 f'({total_count / 100 * query_count:0.1f}%)\n')
+                 f'({100 / total_count * query_count:0.1f}%)\n')
     query = FilterMessageHistory.select()
     query_count = query.count()
     hm_query = CategoryMessageHistory.select().where(CategoryMessageHistory.deleted == False)
     total_count = query_count + hm_query.count()
     text += (f'Всего за всё время {query_count} шт. '
-             f'({total_count / 100 * query_count:0.1f}%)\n\n')
+             f'({100 / total_count * query_count:0.1f}%)\n\n')
 
     await callback_query.answer()
     await callback_query.message.edit_text(
