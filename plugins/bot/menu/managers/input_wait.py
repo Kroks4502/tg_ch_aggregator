@@ -39,9 +39,11 @@ class InputWaitManager:
             await input_chat['func'](
                 client, message, *input_chat['args'], **input_chat['kwargs'])
         except Exception as e:
-            logger.error(f'Во время выполнения функции '
-                         f'{input_chat["func"].__name__} '
-                         f'было перехвачено исключение: {e}', exc_info=True)
+            msg = (f'Во время выполнения функции '
+                   f'{input_chat["func"].__name__} '
+                   f'было перехвачено исключение')
+            logger.error(f'{msg}: {e}', exc_info=True)
+            await message.reply(f'❌ {msg}')
 
 
 input_wait_manager = InputWaitManager()

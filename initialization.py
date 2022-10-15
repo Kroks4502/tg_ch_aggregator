@@ -4,7 +4,7 @@ from settings import API_ID, API_HASH, BOT_TOKEN
 
 user = Client(
     'user', API_ID, API_HASH,
-    plugins=dict(root='plugins.user',)
+    plugins=dict(root='plugins.user',),
 )
 
 bot = Client(

@@ -1,129 +1,107 @@
 from asyncio import sleep
-from operator import itemgetter
+from operator import attrgetter
+
+from pyrogram.errors import RPCError
+from pyrogram.types import Dialog
 
 from log import logger
-from plugins.user.helpers import save_history
-from settings import AGGREGATOR_CHANNEL, DEVELOP_MODE
 from initialization import user, bot
 from models import Admin, Category, Source
+from plugins.user.news_forwarding import (message_with_media_group,
+                                          message_without_media_group)
 
 
 async def startup():
     while not user.is_connected or not bot.is_connected:
         await sleep(0.1)
-
-    msg = 'Запущен начальный #скрипт'
-    logger.debug(msg)
+    msg = 'Запущен начальный скрипт'
+    logger.info(msg)
     me = await user.get_me()
-    if not DEVELOP_MODE:
-        await bot.send_message(me.id, msg)
-
-    # await update_admin_usernames()
+    await bot.send_message(me.id, msg)
 
     if not Admin.select().where(Admin.tg_id == me.id).exists():
-        Admin.create(tg_id=me.id, username=me.username if me.username else me.id)
+        Admin.create(tg_id=me.id, username=f'UserBot')
+    await update_admin_usernames(me.id)
 
-    def get_db_titles(model):
-        return {item.tg_id: (model, item.title) for item in model.select()}
+    new_messages = await get_unread_messages()
+    for message in sorted(new_messages, key=attrgetter('date')):
+        if message.media_group_id:
+            await message_with_media_group(user, message)
+        else:
+            await message_without_media_group(user, message)
 
-    db_channel_titles = get_db_titles(Category)
-    db_channel_titles.update(get_db_titles(Source))
+    logger.info(
+        f'Начальный скрипт завершил работу. '
+        f'Обработано сообщений: {len(new_messages)}.')
+    await bot.send_message(
+        me.id, f'Начальный скрипт завершил работу.\n'
+               f'Обработано сообщений: **{len(new_messages)}**.')
 
-    dialogs = user.get_dialogs()
-    new_messages = []
-    async for dialog in dialogs:
-        update_channel_titles(dialog, db_channel_titles)
 
-        if (
-                dialog.unread_messages_count != 0
-                and dialog.chat.id in Source.get_cache_all_field('tg_id')
-        ):
-            dialog_messages = user.get_chat_history(
-                dialog.chat.id, dialog.unread_messages_count)
+async def update_admin_usernames(user_bot_tg_id: int):
+    db_data = {admin.tg_id: admin.username for admin in Admin.select()}
 
-            next_message = None
-            messages_group = []
-            while True:
-                try:
-                    if next_message:
-                        messages_group = [next_message]
-                    else:
-                        messages_group = [await anext(dialog_messages)]
-                    next_message = await anext(dialog_messages)
-                    while (
-                            messages_group[0].media_group_id
-                            and next_message.media_group_id
-                            and messages_group[0].media_group_id
-                            == next_message.media_group_id
-                    ):
-                        messages_group.append(next_message)
-                        next_message = await anext(dialog_messages)
-
-                    # Добавляем новые сообщения
-                    message_ids = [item.id for item in messages_group]
-                    new_messages.append(
-                        [
-                            messages_group[0].chat.id,
-                            message_ids,
-                            messages_group[0].date
-                        ]
-                    )
-                    messages_group = None
-                except StopAsyncIteration:
-                    message_ids = [item.id for item in messages_group]
-                    new_messages.append(
-                        [
-                            messages_group[0].chat.id,
-                            message_ids,
-                            messages_group[0].date
-                        ]
-                    )
-                    break
-
-    msg = 'Начальный #скрипт завершил работу'
-    if new_messages:
-        for message in sorted(new_messages, key=itemgetter(2)):
-            chat_id = message[0]
-            msg_ids = message[1]
+    actual = {}
+    for admin_tg_id in db_data:
+        if admin_tg_id != user_bot_tg_id:
             try:
-                new_message = await user.forward_messages(
-                    AGGREGATOR_CHANNEL,
-                    chat_id, msg_ids
-                )
-                await user.read_chat_history(chat_id)
-                await new_message[0].reply(f'/sent_from {chat_id}')
-                for msg_ig in msg_ids:
-                    save_history([chat_id, msg_ig, '?'], 'OK')
-            except Exception:
-                for msg_ig in msg_ids:
-                    save_history([chat_id, msg_ig, '?'], 'start_script failed')
-                # Сервисные сообщения не пересылаются
-                ...
-        msg += f'.\nОбработано сообщений: **{len(new_messages)}**'
-
-    logger.debug(msg)
-
-    if not DEVELOP_MODE:
-        await bot.send_message(user.me.id, msg)
+                admin = await user.get_users(admin_tg_id)
+                actual.update({admin.id: admin.username})
+            except RPCError as e:
+                logger.warning(e, exc_info=True)
+    for tg_id, username in actual.items():
+        if (username and username != db_data[tg_id]
+                or not username and f'…{str(tg_id)[-5:]}' != db_data[tg_id]):
+            q = (Admin
+                 .update({Admin.username:
+                          username if username else f'…{str(tg_id)[-5:]}'})
+                 .where(Admin.tg_id == tg_id))
+            q.execute()
 
 
-# async def update_admin_usernames():
-#     db_data = {admin.tg_id: admin.username for admin in Admin.select()}
-#     actual = {admin.id: admin.username if admin.username else admin.id
-#               for admin in await user.get_users(list(db_data.keys()))}
-#     for tg_id in actual:
-#         if actual[tg_id] != db_data[tg_id]:
-#             q = (Admin
-#                  .update({Admin.username: actual[tg_id]})
-#                  .where(Admin.tg_id == tg_id))
-#             q.execute()
+async def get_unread_messages() -> list:
+    def get_db_titles(model):
+        return {item.tg_id: [model, item.title, False]
+                for item in model.select()}
+    db_channels = get_db_titles(Category)
+    db_channels.update(get_db_titles(Source))
+
+    new_messages = []
+    async for dialog in user.get_dialogs():
+        update_source_title(dialog, db_channels)
+        if (dialog.unread_messages_count != 0
+                and dialog.chat.id in Source.get_cache_monitored_channels()):
+            media_group_ids = set()  # {media_group_id ...}
+            async for message in user.get_chat_history(
+                    dialog.chat.id, dialog.unread_messages_count):
+                if message.media_group_id:
+                    if message.media_group_id not in media_group_ids:
+                        media_group_ids.update({message.media_group_id})
+                        new_messages.append(message)
+                else:
+                    new_messages.append(message)
+    await check_sources_in_dialogs(db_channels)
+    return new_messages
 
 
-def update_channel_titles(dialog, db_channel_titles):
-    if dialog.chat.id in db_channel_titles:
-        if db_channel_titles[dialog.chat.id][1] != dialog.chat.title:
-            model = db_channel_titles[dialog.chat.id][0]
+def update_source_title(dialog: Dialog, db_channels: dict):
+    if dialog.chat.id in db_channels:
+        db_channels[dialog.chat.id][2] = True
+        if db_channels[dialog.chat.id][1] != dialog.chat.title:
+            model = db_channels[dialog.chat.id][0]
             q = (model
                  .update({model.title: dialog.chat.title})
                  .where(model.tg_id == dialog.chat.id))
             q.execute()
+
+
+async def check_sources_in_dialogs(db_channels: dict):
+    for tg_id, data in db_channels.items():
+        if data[2] is False:
+            mgs = f'Источника {tg_id} {data[1]} нет в диалогах UserBot'
+            logger.warning(mgs)
+            for admin in Admin.select():
+                try:
+                    await bot.send_message(admin.tg_id, mgs)
+                except RPCError as e:
+                    logger.error(e, exc_info=True)

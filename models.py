@@ -1,66 +1,48 @@
+from datetime import datetime
+
 from peewee import *
 
-from initialization import user
-
-db = SqliteDatabase('.db', pragmas={'foreign_keys': 1})
+from models_types import FilterType
+from settings import DATABASE
 
 
 class BaseModel(Model):
-    __is_actual_cache = False
-    __cache = {}
+    _is_actual_cache = False
+    _cache = None
 
     class Meta:
-        database = db
+        database = DATABASE
 
     @classmethod
-    def get_cache(cls, *fields, **where):
-        cls.__update_cache()
+    def get_cache(cls, **where) -> dict:
+        cls._update_cache()
 
-        if 'id' in where:
-            db_id = where.pop('id')
-            data = cls.__cache[db_id]
-            if not all([data[key] == value for key, value in where.items()]):
-                return {}
-            return {db_id: {field: data[field] for field in fields}
-                    if fields else data}
+        conditions = {}
+        if where:
+            for i, field_name in enumerate(cls._meta.sorted_field_names):
+                if field_name in where:
+                    conditions[i] = where[field_name]
+            if len(where) != len(conditions):
+                raise Exception(f'Одного из имен полей нет в модели {cls.__name__}')
 
-        selections_from_data = {}
-        for db_id, data in cls.__cache.items():
-            if all([data[key] == value for key, value in where.items()]):
-                selections_from_data.update({
-                    db_id: {field: data[field] for field in fields}
-                    if fields else data
-                })
-        return selections_from_data
+        for row in cls._cache:
+            if all(True if row[i] == value else False for i, value in conditions.items()):
+                yield {field_name: row[i] for i, field_name in enumerate(cls._meta.sorted_field_names)}
 
     @classmethod
-    def get_cache_all_field(cls, field, **where):
-        cls.__update_cache()
-        return {value[field] for key, value in cls.get_cache(**where).items()}
-
-    @classmethod
-    def __update_cache(cls):
-        if not cls.__is_actual_cache:
-            cls.__cache = {item.pop('id'): item
-                           for item in Source.select().dicts()}
-            cls.__is_actual_cache = True
+    def _update_cache(cls):
+        if not cls._is_actual_cache:
+            cls._cache = tuple(cls.select().tuples())
+            cls._is_actual_cache = True
 
     @classmethod
     def clear_actual_cache(cls):
-        cls.__is_actual_cache = False
+        cls._is_actual_cache = False
 
 
 class ChannelModel(BaseModel):
     tg_id = IntegerField(unique=True)
     title = CharField()
-
-    async def get_formatted_link(self) -> str:
-        chat = await user.get_chat(self.tg_id)
-        if chat.username:
-            return f'[{chat.title}](https://{chat.username}.t.me)'
-        if chat.invite_link:
-            return f'[{chat.title}]({chat.invite_link})'
-        return chat.title
 
     def __str__(self):
         return self.title
@@ -73,54 +55,32 @@ class Category(ChannelModel):
 class Source(ChannelModel):
     category = ForeignKeyField(
         Category, backref='sources', on_delete='CASCADE')
+    _cache_monitored_channels = None
 
-    def get_filter_patterns(self, content_type):
-        query = Filter.filter(content_type=content_type, source=self)
-        return [f.pattern for f in query]
+    @classmethod
+    def get_cache_monitored_channels(cls):
+        cls._update_cache()
+        return cls._cache_monitored_channels
 
-    def get_filter_hashtag(self) -> list:
-        return self.get_filter_patterns('hashtag')
-
-    def get_filter_part_of_url(self) -> list:
-        return self.get_filter_patterns('part_of_url')
-
-    def get_filter_part_of_text(self) -> list:
-        return self.get_filter_patterns('part_of_text')
-
-    def get_filter_reply_markup(self) -> list:
-        return self.get_filter_patterns('reply_markup')
-
-
-FILTER_CONTENT_TYPES = ('hashtag', 'part_of_url', 'part_of_text',
-                        'reply_markup')
+    @classmethod
+    def _update_cache(cls):
+        if not cls._is_actual_cache:
+            cls._cache = tuple(cls.select().tuples())
+            index = 0
+            for field_name in cls._meta.sorted_field_names:
+                if field_name == 'tg_id':
+                    break
+                index += 1
+            cls._cache_monitored_channels = {row[index] for row in cls._cache}
+            cls._is_actual_cache = True
 
 
 class Filter(BaseModel):
     pattern = CharField()
-    content_type = CharField()
+    type = IntegerField(choices=[(filter_type.name, filter_type.value)
+                                 for filter_type in FilterType])
     source = ForeignKeyField(
         Source, null=True, backref='filters', on_delete='CASCADE')
-
-    @classmethod
-    def get_global_patterns(cls, content_type) -> list:
-        query = cls.filter(content_type=content_type, source=None)
-        return [f.pattern for f in query]
-
-    @classmethod
-    def global_hashtag_patterns(cls) -> list:
-        return cls.get_global_patterns('hashtag')
-
-    @classmethod
-    def global_part_of_url_patterns(cls) -> list:
-        return cls.get_global_patterns('part_of_url')
-
-    @classmethod
-    def global_part_of_text_patterns(cls) -> list:
-        return cls.get_global_patterns('part_of_text')
-
-    @classmethod
-    def global_reply_markup_patterns(cls) -> list:
-        return cls.get_global_patterns('reply_markup')
 
     def __str__(self):
         return self.pattern
@@ -130,33 +90,31 @@ class Admin(BaseModel):
     tg_id = IntegerField(unique=True)
     username = CharField()
 
-    async def get_formatted_link(self) -> str:
-        chat = await user.get_chat(self.tg_id)
-        if chat.username:
-            return f'[{chat.username}](https://{chat.username}.t.me)'
-        full_name = (f'{chat.first_name + " " if chat.first_name else ""}'
-                     f'{chat.last_name + " " if chat.last_name else ""}')
-        if full_name:
-            return (f'{full_name} ({self.tg_id})'
-                    if full_name else f'{self.tg_id}')
-        return str(self.tg_id)
-
     def __str__(self):
         return self.username
 
 
-class History(BaseModel):
-    from_chat = IntegerField()
+class MessageHistoryModel(BaseModel):
+    date = DateTimeField(default=datetime.now)
+    source = ForeignKeyField(Source)
+    source_message_id = IntegerField()
+    source_message_edited = BooleanField(default=False)
+    source_message_deleted = BooleanField(default=False)
+    media_group = CharField()
+    # is_media_group = BooleanField()
+
+
+class FilterMessageHistory(MessageHistoryModel):
+    filter = ForeignKeyField(Filter, backref='history', on_delete='CASCADE')
+
+
+class CategoryMessageHistory(MessageHistoryModel):
+    forward_from_chat_id = IntegerField(null=True)
+    forward_from_message_id = IntegerField(null=True)
+    category = ForeignKeyField(Category, on_delete='CASCADE')
     message_id = IntegerField()
-    media_group_id = CharField()
-    status = TextField()
-
-    def __str__(self):
-        return f'{self.from_chat} {self.message_id} {self.status}'
+    rewritten = BooleanField()
+    deleted = BooleanField(default=False)
 
 
-db.create_tables(
-    [
-        Category, Source, Filter, Admin, History
-    ]
-)
+

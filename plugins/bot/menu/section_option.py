@@ -1,20 +1,27 @@
+import math
 import os
+import datetime as dt
 
 import peewee
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
-from pyrogram.errors import exceptions
+from pyrogram.errors import RPCError
 from pyrogram.types import (CallbackQuery, InlineKeyboardMarkup,
                             InlineKeyboardButton, Message)
 
 from initialization import user
 from log import logger
-from models import Admin, History
+from models import (Admin, CategoryMessageHistory, Source,
+                    FilterMessageHistory, Category, Filter)
+from models_types import FILTER_TYPES_BY_ID
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
+from plugins.bot.menu.helpers.links import (get_user_formatted_link,
+                                            get_channel_formatted_link)
 from plugins.bot.menu.helpers.path import Path
 from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager
+from plugins.user.helpers import get_message_link
 from settings import LOGS_DIR, BASE_DIR
 
 
@@ -23,29 +30,173 @@ from settings import LOGS_DIR, BASE_DIR
 async def options(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
-    path = Path(callback_query.data)
+    await callback_query.answer()
+    await callback_query.message.edit_text(
+        '**Параметры**',
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton(
+                    'Администраторы',
+                    callback_data='/o/a/'
+                ), ],
+                [InlineKeyboardButton(
+                    'История фильтра',
+                    callback_data='/o/fh/'
+                ), ],
+                [InlineKeyboardButton(
+                    'История пересылки',
+                    callback_data='/o/mh/'
+                ), ],
+                [InlineKeyboardButton(
+                    'Статистика',
+                    callback_data='/o/statistics/'
+                ), ],
+                [InlineKeyboardButton(
+                    '💾 Логи',
+                    callback_data='/o/:get_logs/'
+                ), InlineKeyboardButton(
+                    '💾 db',
+                    callback_data='/o/:get_db/'
+                ), ],
+                [InlineKeyboardButton(
+                    'Проверить пост',
+                    callback_data='/o/:check_post/'
+                ), ],
+            ] + buttons.get_fixed(Path(callback_query.data))))
 
-    text = '**Параметры**'
 
-    inline_keyboard = [
-        [InlineKeyboardButton(
-            'Администраторы',
-            callback_data='/o/a/'
-        ), ],
-        [InlineKeyboardButton(
-            '💾 Логи',
-            callback_data='/o/:get_logs/'
-        ), InlineKeyboardButton(
-            '💾 db',
-            callback_data='/o/:get_db/'
-        ), ],
-        [InlineKeyboardButton(
-            'Проверить пост',
-            callback_data='/o/:check_post/'
-        ), ],
-    ]
+@Client.on_callback_query(filters.regex(
+    r'^/o/statistics/$') & custom_filters.admin_only)
+async def statistics(_, callback_query: CallbackQuery):
+    logger.debug(callback_query.data)
+    text = '**Статистика бота за время работы**\n\n'
 
-    inline_keyboard += buttons.get_fixed(path)
+    query = Category.select()
+    text += f'Категории: {query.count()} шт.\n'
+
+    query = Source.select()
+    text += f'Источники: {query.count()} шт.\n'
+
+    query = Filter.select()
+    text += f'Фильтры: {query.count()} шт.\n\n'
+
+    today = dt.datetime.today()
+    month_ago = today - dt.timedelta(days=30)
+    week_ago = today - dt.timedelta(days=7)
+    day_ago = today - dt.timedelta(days=1)
+
+    text += f'📰 **Переслано сообщений за последний период**\n'
+    query = CategoryMessageHistory.select().where((CategoryMessageHistory.deleted == False)
+                                                  & (CategoryMessageHistory.date > day_ago))
+    text += f'— День: {query.count()} шт.\n'
+    query = CategoryMessageHistory.select().where((CategoryMessageHistory.deleted == False)
+                                                  & (CategoryMessageHistory.date > week_ago))
+    text += f'— Неделя: {query.count()} шт.\n'
+    query = CategoryMessageHistory.select().where((CategoryMessageHistory.deleted == False)
+                                                  & (CategoryMessageHistory.date > month_ago))
+    text += f'— Месяц: {query.count()} шт.\n\n'
+    text += f'**По категориям**\n'
+    for category in Category.select():
+        query = CategoryMessageHistory.select().where((CategoryMessageHistory.deleted == False)
+                                                      & (CategoryMessageHistory.category == category))
+        text += f'— {await get_channel_formatted_link(category.tg_id)}: {query.count()} шт.\n'
+    query = CategoryMessageHistory.select()
+    text += f'Всего за всё время {query.count()} шт.\n\n'
+
+    text += f'🗑 **Отфильтровано сообщений за последний период**\n'
+    query = FilterMessageHistory.select().where(FilterMessageHistory.date > day_ago)
+    text += f'— День: {query.count()} шт.\n'
+    query = FilterMessageHistory.select().where(FilterMessageHistory.date > week_ago)
+    text += f'— Неделя: {query.count()} шт.\n'
+    query = FilterMessageHistory.select().where(FilterMessageHistory.date > month_ago)
+    text += f'— Месяц: {query.count()} шт.\n\n'
+
+    text += f'**По источникам с процентом от количества публикаций**\n'
+    for source in Source.select():
+        query = FilterMessageHistory.select().where(FilterMessageHistory.source == source)
+        query_count = query.count()
+        hm_query = CategoryMessageHistory.select().where((CategoryMessageHistory.deleted == False)
+                                                         & (CategoryMessageHistory.source == source))
+        total_count = query_count + hm_query.count()
+        text += (f'— {await get_channel_formatted_link(source.tg_id)}: {query_count} шт. '
+                 f'({total_count / 100 * query_count:0.1f}%)\n')
+    query = FilterMessageHistory.select()
+    query_count = query.count()
+    hm_query = CategoryMessageHistory.select().where(CategoryMessageHistory.deleted == False)
+    total_count = query_count + hm_query.count()
+    text += (f'Всего за всё время {query_count} шт. '
+             f'({total_count / 100 * query_count:0.1f}%)\n\n')
+
+    await callback_query.answer()
+    await callback_query.message.edit_text(
+        text, reply_markup=InlineKeyboardMarkup(buttons.get_fixed(Path('/o/mh/'))),
+        disable_web_page_preview=True)
+
+
+MAX_NUM_ENTRIES_MESSAGE = 5
+
+
+@Client.on_callback_query(filters.regex(
+    r'^/o/mh/$|^/o/mh/p_\d+/$') & custom_filters.admin_only)
+async def message_history(_, callback_query: CallbackQuery):
+    logger.debug(callback_query.data)
+    page = int(p) if (p := Path(callback_query.data).get_value('p')) else 1
+    query = CategoryMessageHistory.select().order_by(CategoryMessageHistory.id.desc())
+    obj_counts = query.count()
+    text = '**Список пересланных сообщений в обратном порядке**\n\n'
+    for item in query.paginate(page, MAX_NUM_ENTRIES_MESSAGE):
+        text += (f'{"🏞" if item.media_group else "🗞"}'
+                 f'{">📝" if item.source_message_edited else ""}'
+                 f'{">🗑" if item.source_message_deleted else ""}'
+                 f' [{item.source.title[:40]}]({get_message_link(item.source.tg_id, item.source_message_id)})\n'
+                 f'✅{">🖨" if item.rewritten else ""}'
+                 f'{">🗑" if item.deleted else ""}'
+                 f' [{item.category.title[:40]}]({get_message_link(item.category.tg_id, item.message_id)})\n'
+                 f'__{item.date.strftime("%Y.%m.%d, %H:%M:%S")}__'
+                 f'\n\n')
+    text += f'Всего записей: **{obj_counts}**'
+    inline_keyboard = [[]]
+    if page > 1:
+        inline_keyboard[0].append(InlineKeyboardButton(
+            'Предыдущие',
+            callback_data=f'/o/mh/p_{page - 1}/'))
+    if page < math.ceil(obj_counts / MAX_NUM_ENTRIES_MESSAGE):
+        inline_keyboard[0].append(InlineKeyboardButton(
+            'Следующие',
+            callback_data=f'/o/mh/p_{page + 1}/'))
+    inline_keyboard += buttons.get_fixed(Path('/o/mh/'))
+    await callback_query.answer()
+    await callback_query.message.edit_text(
+        text, reply_markup=InlineKeyboardMarkup(inline_keyboard))
+
+
+@Client.on_callback_query(filters.regex(
+    r'^/o/fh/$|^/o/fh/p_\d+/$') & custom_filters.admin_only)
+async def filter_history(_, callback_query: CallbackQuery):
+    logger.debug(callback_query.data)
+    page = int(p) if (p := Path(callback_query.data).get_value('p')) else 1
+    query = FilterMessageHistory.select().order_by(FilterMessageHistory.id.desc())
+    obj_counts = query.count()
+    text = '**Список отфильтрованных сообщений в обратном порядке**\n\n'
+    for item in query.paginate(page, MAX_NUM_ENTRIES_MESSAGE):
+        text += (f'{"🏞" if item.media_group else "🗞"}'
+                 f'[{item.source.title[:40]}]({get_message_link(item.source.tg_id, item.source_message_id)})\n'
+                 f'**{"Персональный" if item.filter.source else "Общий"}** фильтр '
+                 f'типа **{FILTER_TYPES_BY_ID.get(item.filter.type)}** '
+                 f'с паттерном `{item.filter.pattern}`\n'
+                 f'__{item.date.strftime("%Y.%m.%d, %H:%M:%S")}__'
+                 f'\n\n')
+    text += f'Всего записей: **{obj_counts}**'
+    inline_keyboard = [[]]
+    if page > 1:
+        inline_keyboard[0].append(InlineKeyboardButton(
+            'Предыдущие',
+            callback_data=f'/o/fh/p_{page - 1}/'))
+    if page < math.ceil(obj_counts / MAX_NUM_ENTRIES_MESSAGE):
+        inline_keyboard[0].append(InlineKeyboardButton(
+            'Следующие',
+            callback_data=f'/o/fh/p_{page + 1}/'))
+    inline_keyboard += buttons.get_fixed(Path('/o/fh/'))
     await callback_query.answer()
     await callback_query.message.edit_text(
         text, reply_markup=InlineKeyboardMarkup(inline_keyboard))
@@ -114,7 +265,7 @@ async def detail_admin(_, callback_query: CallbackQuery):
 
     admin_id = int(path.get_value('u'))
     admin_obj: Admin = Admin.get(id=admin_id)
-    text = f'**{await admin_obj.get_formatted_link()}**\n\n'
+    text = f'**{await get_user_formatted_link(admin_obj.tg_id)}**\n\n'
 
     inline_keyboard = []
     if admin_obj.tg_id != user.me.id:
@@ -162,8 +313,8 @@ async def add_admin_waiting_input(
 
     try:
         chat = await client.get_chat(message.text)
-    except (exceptions.BadRequest, exceptions.NotAcceptable) as err:
-        await reply(f'❌ Что-то пошло не так\n\n{err}')
+    except RPCError as e:
+        await reply(f'❌ Что-то пошло не так\n\n{e}')
         return
 
     if chat.type != ChatType.PRIVATE:
@@ -183,7 +334,7 @@ async def add_admin_waiting_input(
         return
 
     success_text = (f'✅ Администратор '
-                    f'**{await admin_obj.get_formatted_link()}** добавлен')
+                    f'**{await get_user_formatted_link(admin_obj.tg_id)}** добавлен')
     await reply(success_text)
 
     callback_query.data = path.get_prev()
@@ -201,7 +352,7 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
     path = Path(callback_query.data)
     admin_id = int(path.get_value('u'))
     admin_obj: Admin = Admin.get(id=admin_id)
-    text = f'**{await admin_obj.get_formatted_link()}**'
+    text = f'**{await get_user_formatted_link(admin_obj.tg_id)}**'
     if path.with_confirmation:
         q = (Admin
              .delete()
@@ -215,7 +366,7 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
         await list_admins(client, callback_query)
 
         await send_message_to_admins(
-            client, callback_query, f'Удален администратор {text}')
+            client, callback_query, f'❌ Удален администратор {text}')
         return
 
     text += '\n\nТы **удаляешь** администратора!'
@@ -238,37 +389,65 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
 async def check_post(client: Client, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
-    chat_id = callback_query.message.chat.id
-
-    text = ('ОК. Ты хочешь проверить есть ли пост в истории.\n\n'
-            '**Перешли пост в этот чат и я проверю.**')
-
     await callback_query.answer()
-    await callback_query.message.reply(text)
+    await callback_query.message.reply(
+        'ОК. Ты хочешь проверить есть ли пост в истории.\n\n'
+        '**Перешли пост в этот чат и я проверю.**')
     input_wait_manager.add(
-        chat_id, check_post_waiting_forwarding, client)
+        callback_query.message.chat.id, check_post_waiting_forwarding, client)
 
 
 async def check_post_waiting_forwarding(
         _, message: Message):
-    async def reply(text):
+    async def reply(text, b=None):
+        if not b:
+            b = []
         await message.reply_text(
             text,
             reply_markup=InlineKeyboardMarkup(
-                buttons.get_fixed(
-                    Path('/o/:check_post/'), back_title='Назад')),
+                b + buttons.get_fixed(
+                    Path('/o/'), back_title='Назад')),
             disable_web_page_preview=True)
 
     if not message.forward_from_chat:
         await reply('🫥 Это не пересланный пост')
         return
 
-    history_obj = History.get_or_none(
-        from_chat=message.forward_from_chat.id,
-        message_id=message.forward_from_message_id,)
+    chat_id = message.forward_from_chat.id
+    message_id = message.forward_from_message_id
+    source = Source.get_or_none(tg_id=chat_id)
+    m_history_obj = None
+    f_history_obj = None
+    if source:
+        m_history_obj = CategoryMessageHistory.get_or_none(
+            source=source,
+            source_message_id=message_id, )
+        f_history_obj = FilterMessageHistory.get_or_none(
+            source=source,
+            source_message_id=message_id, )
 
-    if not history_obj:
-        await reply('❌ Поста нет в истории')
+    if not m_history_obj:
+        m_history_obj = CategoryMessageHistory.get_or_none(
+            forward_from_chat_id=chat_id,
+            forward_from_message_id=message_id, )
+
+    if f_history_obj:
+        await reply(f'⚠️ [Пост]'
+                    f'({get_message_link(f_history_obj.source.tg_id, f_history_obj.source_message_id)}) '
+                    f'был отфильтрован',
+                    [[InlineKeyboardButton(
+                        'Перейти к фильтру',
+                        callback_data=f'/f_{f_history_obj.filter.id}/'
+                    ), ], ])
         return
 
-    await reply(f'✅ **{history_obj}**')
+    if not m_history_obj:
+        await reply(f'❌ [Поста]'
+                    f'({get_message_link(message.forward_from_chat.id, message.forward_from_message_id)})'
+                    f' нет в истории')
+        return
+
+    await reply(f'✅ [Пост]'
+                f'({get_message_link(m_history_obj.source.tg_id, m_history_obj.source_message_id)}) '
+                f'был опубликован в канале [{m_history_obj.category.title}]'
+                f'({get_message_link(m_history_obj.category.tg_id, m_history_obj.message_id)})')
