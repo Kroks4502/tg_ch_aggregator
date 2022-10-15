@@ -1,11 +1,10 @@
-name: CI
+name: Deploy Telegram Channel Aggregator
 
 on:
   push:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-
   workflow_dispatch:
 
 jobs:
@@ -31,4 +30,4 @@ jobs:
       with:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: ${{ github.workflow }} успешно выполнен!
+        message: ${{ github.repository }} -> ${{ github.workflow }} успешно выполнен!
