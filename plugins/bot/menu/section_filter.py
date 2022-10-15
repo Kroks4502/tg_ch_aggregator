@@ -74,7 +74,7 @@ async def list_types_filters(_, callback_query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(
     r'/t_\w+/$'))
-async def list_filters(_, callback_query: CallbackQuery):
+async def list_filters(_, callback_query: CallbackQuery, needs_an_answer: bool = True):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
@@ -110,7 +110,9 @@ async def list_filters(_, callback_query: CallbackQuery):
         path=path,
         prefix_path='f')
 
-    await callback_query.answer()
+    if needs_an_answer:
+        await callback_query.answer()
+
     await callback_query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(
@@ -297,7 +299,7 @@ async def add_filter_waiting_input(
     await reply(success_text)
 
     callback_query.data = path.get_prev()
-    await list_filters(client, callback_query)
+    await list_filters(client, callback_query, False)
 
     await send_message_to_admins(client, callback_query, success_text)
 
