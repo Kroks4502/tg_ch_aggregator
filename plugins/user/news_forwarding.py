@@ -252,7 +252,8 @@ async def edited_message(client: Client, message: Message):
     if message.edit_date - message.date > MESSAGES_EDIT_LIMIT_TD:
         logger.warning(f'Изменено сообщение {message.id} '
                        f'из источника {message.chat.title[:20]} ({message.chat.id}) '
-                       f'за пределами ограничения {MESSAGES_EDIT_LIMIT_TD}. ')
+                       f'за пределами ограничения {MESSAGES_EDIT_LIMIT_TD}. '
+                       f'Дата отправки сообщения: {message.date}')
         return
 
     blocked = blocking_editable_messages.get(message.chat.id)
