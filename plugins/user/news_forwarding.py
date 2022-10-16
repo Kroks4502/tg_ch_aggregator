@@ -180,12 +180,14 @@ def delete_agent_text_in_message(search_result: Match, message: Message):
     author = (f'💬 Источник: '
               f'{title if title else message.chat.id}'
               f'\n\n')
+    start = search_result.start()
+    end = search_result.end()
     if message.text:
-        message.text = (author + message.text[:search_result.start()]
-                        + separator + message.text[search_result.end():])
+        message.text = (author + message.text[:start]
+                        + f'{separator if start != 0 else ""}' + message.text[end:])
     elif message.caption:
-        message.caption = (author + message.caption[:search_result.start()]
-                           + separator + message.caption[search_result.end():])
+        message.caption = (author + message.caption[:start]
+                           + f'{separator if start != 0 else ""}' + message.caption[end:])
 
     cut_text_len = search_result.end() - search_result.start() - len(separator)
     for entity in (message.entities or message.caption_entities or []):
