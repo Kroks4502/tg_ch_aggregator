@@ -274,7 +274,8 @@ async def edited_message(client: Client, message: Message):
                         f'Оно удалено из категории {h.category.title}')
 
         if message.media_group_id:
-            media_group_ids[message.chat.id].clear()
+            if chat_media_groups := media_group_ids.get(message.chat.id):
+                chat_media_groups.clear()
             await message_with_media_group(client, message)
         else:
             await message_without_media_group(client, message)
