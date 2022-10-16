@@ -1,3 +1,4 @@
+import datetime
 import os
 import re
 
@@ -18,10 +19,11 @@ LOG_FORMAT = ('%(asctime)s : %(levelname)s : %(module)s : '
 
 DEVELOP_MODE = os.getenv('develop_mode')
 PATTERN_AGENT = re.compile(
-    r'\s*ДАННОЕ СООБЩЕНИЕ[\w ().,]+ИНОСТРАННОГО АГЕНТА[ .]*\s*',
+    r'\s*Д*А*Н*НОЕ СООБЩЕНИЕ[\w ().,]+ИНОСТРАННОГО АГЕНТА*[ .]*\s*',
     flags=re.IGNORECASE)
 PATTERN_WITHOUT_SMILE = re.compile(
     r'[^а-яА-ЯЁёa-zA-z0-9 |-]+',
     flags=re.IGNORECASE)
 
 DATABASE = SqliteDatabase('.db', pragmas={'foreign_keys': 1})
+MESSAGES_EDIT_LIMIT_TD = datetime.timedelta(minutes=60)

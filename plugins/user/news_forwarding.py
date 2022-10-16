@@ -15,7 +15,7 @@ from plugins.user.helpers import (add_to_filter_history,
                                   get_message_link,
                                   perform_check_history, perform_filtering)
 from send_media_group import send_media_group
-from settings import PATTERN_AGENT, PATTERN_WITHOUT_SMILE
+from settings import PATTERN_AGENT, PATTERN_WITHOUT_SMILE, MESSAGES_EDIT_LIMIT_TD
 
 media_group_ids = {}  # chat_id: [media_group_id ...]
 
@@ -234,11 +234,13 @@ async def service_message(client: Client, message: Message):
     custom_filters.monitored_channels
 )
 async def edited_message(client: Client, message: Message):
+    if message.edit_date - message.date > MESSAGES_EDIT_LIMIT_TD:
+        return
+
     history_obj: CategoryMessageHistory = CategoryMessageHistory.get_or_none(
         source=Source.get_or_none(tg_id=message.chat.id),
         source_message_id=message.id,
         deleted=False,)
-
     if not history_obj:
         return
 
