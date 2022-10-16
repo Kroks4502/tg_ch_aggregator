@@ -232,7 +232,7 @@ async def get_db(_, callback_query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(
     r'^/o/a/$') & custom_filters.admin_only)
-async def list_admins(_, callback_query: CallbackQuery):
+async def list_admins(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
@@ -253,7 +253,8 @@ async def list_admins(_, callback_query: CallbackQuery):
         prefix_path='u',
     )
     inline_keyboard += buttons.get_fixed(path)
-    await callback_query.answer()
+    if needs_an_answer:
+        await callback_query.answer()
     await callback_query.message.edit_text(
         text, reply_markup=InlineKeyboardMarkup(inline_keyboard))
 
@@ -340,7 +341,7 @@ async def add_admin_waiting_input(
     await reply(success_text)
 
     callback_query.data = path.get_prev()
-    await list_admins(client, callback_query)
+    await list_admins(client, callback_query, needs_an_answer=False)
 
     await send_message_to_admins(client, callback_query, success_text)
     return
@@ -365,7 +366,7 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
 
         callback_query.data = path.get_prev(3)
         await callback_query.answer('Администратор удален')
-        await list_admins(client, callback_query)
+        await list_admins(client, callback_query, needs_an_answer=False)
 
         await send_message_to_admins(
             client, callback_query, f'❌ Удален администратор {text}')

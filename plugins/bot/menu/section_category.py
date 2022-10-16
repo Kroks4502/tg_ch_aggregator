@@ -62,11 +62,12 @@ def main_menu(data: Message | CallbackQuery) -> (str, list[list]):
 
 @Client.on_callback_query(filters.regex(
     r'^/$'))
-async def set_main_menu(_, callback_query: CallbackQuery):
+async def set_main_menu(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
     logger.debug(callback_query.data)
 
     text, inline_keyboard = main_menu(callback_query)
-    await callback_query.answer()
+    if needs_an_answer:
+        await callback_query.answer()
     await callback_query.message.edit_text(
         text, reply_markup=InlineKeyboardMarkup(inline_keyboard))
 
@@ -228,9 +229,9 @@ async def edit_category_waiting_input(
 
     callback_query.data = path.get_prev()
     if path.action == 'add':
-        await set_main_menu(client, callback_query)
+        await set_main_menu(client, callback_query, needs_an_answer=False)
         return
-    await list_source(client, callback_query)
+    await list_source(client, callback_query, needs_an_answer=False)
 
 
 @Client.on_callback_query(filters.regex(
@@ -248,7 +249,7 @@ async def delete_category(client: Client, callback_query: CallbackQuery):
 
         callback_query.data = '/'
         await callback_query.answer('Категория удалена')
-        await set_main_menu(client, callback_query)
+        await set_main_menu(client, callback_query, needs_an_answer=False)
 
         await send_message_to_admins(
             client, callback_query,

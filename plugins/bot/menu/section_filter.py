@@ -19,7 +19,7 @@ from plugins.bot.menu.managers.input_wait import input_wait_manager
 
 @Client.on_callback_query(filters.regex(
     r'/s_\d+/$'))
-async def list_types_filters(_, callback_query: CallbackQuery):
+async def list_types_filters(_, callback_query: CallbackQuery, *, needs_an_answer=True):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
@@ -62,8 +62,8 @@ async def list_types_filters(_, callback_query: CallbackQuery):
         path=path,
         prefix_path='t',
     )
-
-    await callback_query.answer()
+    if needs_an_answer:
+        await callback_query.answer()
     await callback_query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(
@@ -74,7 +74,7 @@ async def list_types_filters(_, callback_query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(
     r'/t_\w+/$'))
-async def list_filters(_, callback_query: CallbackQuery, needs_an_answer: bool = True):
+async def list_filters(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
@@ -123,7 +123,7 @@ async def list_filters(_, callback_query: CallbackQuery, needs_an_answer: bool =
 
 @Client.on_callback_query(filters.regex(
     r'/f_\d+/$'))
-async def detail_filter(_, callback_query: CallbackQuery):
+async def detail_filter(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
@@ -154,8 +154,8 @@ async def detail_filter(_, callback_query: CallbackQuery):
         text = '**Общий фильтр**'
     text += (f'\nТип фильтра: **{FILTER_TYPES_BY_ID.get(filter_obj.type)}**'
              f'\nПаттерн: `{filter_obj.pattern}`')
-
-    await callback_query.answer()
+    if needs_an_answer:
+        await callback_query.answer()
     await callback_query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(inline_keyboard),
@@ -266,7 +266,7 @@ async def add_filter_choice_value(
 
     await callback_query.answer(success_text)
     callback_query.data = path.get_prev(2)
-    await list_filters(client, callback_query)
+    await list_filters(client, callback_query, needs_an_answer=False)
 
     await send_message_to_admins(client, callback_query, success_text)
 
@@ -301,7 +301,7 @@ async def add_filter_waiting_input(
     await reply(success_text)
 
     callback_query.data = path.get_prev()
-    await list_filters(client, callback_query, False)
+    await list_filters(client, callback_query, needs_an_answer=False)
 
     await send_message_to_admins(client, callback_query, success_text)
 
@@ -360,7 +360,7 @@ async def edit_body_filter_wait_input(
     await reply(success_text)
 
     callback_query.data = path.get_prev()
-    await detail_filter(client, callback_query)
+    await detail_filter(client, callback_query, needs_an_answer=False)
 
     await send_message_to_admins(client, callback_query, success_text)
 

@@ -22,7 +22,7 @@ from plugins.bot.menu.section_filter import list_types_filters
 
 @Client.on_callback_query(filters.regex(
     r'^/c_\d+/$'))
-async def list_source(_, callback_query: CallbackQuery):
+async def list_source(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
     logger.debug(callback_query.data)
 
     path = Path(callback_query.data)
@@ -59,7 +59,8 @@ async def list_source(_, callback_query: CallbackQuery):
         prefix_path='s',
     ) + buttons.get_fixed(path)
 
-    await callback_query.answer()
+    if needs_an_answer:
+        await callback_query.answer()
     await callback_query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(inline_keyboard),
@@ -85,7 +86,7 @@ async def edit_source_category(client: Client, callback_query: CallbackQuery):
 
     callback_query.data = path.get_prev(2)
     await callback_query.answer('Категория изменена')
-    await list_types_filters(client, callback_query)
+    await list_types_filters(client, callback_query, needs_an_answer=False)
 
     await send_message_to_admins(
         client, callback_query,
@@ -163,7 +164,7 @@ async def add_source_waiting_input(
     await edit_text(success_text)
 
     callback_query.data = path.get_prev()
-    await list_source(client, callback_query)
+    await list_source(client, callback_query, needs_an_answer=False)
 
     await send_message_to_admins(client, callback_query, success_text)
 
@@ -181,7 +182,7 @@ async def delete_source(client: Client, callback_query: CallbackQuery):
 
         callback_query.data = path.get_prev(3)
         await callback_query.answer('Источник удален')
-        await list_source(client, callback_query)
+        await list_source(client, callback_query, needs_an_answer=False)
 
         await send_message_to_admins(
             client, callback_query,
