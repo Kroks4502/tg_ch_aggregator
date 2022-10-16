@@ -46,7 +46,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
     & ~filters.media_group
     & ~filters.service
 )
-async def message_without_media_group(client: Client, message: Message):
+async def message_without_media_group(client: Client, message: Message, *, disable_notification: bool = None):
     source = Source.get(tg_id=message.chat.id)
 
     if not is_new_and_valid_post(message, source):
@@ -59,9 +59,11 @@ async def message_without_media_group(client: Client, message: Message):
     try:
         if search_result:
             delete_agent_text_in_message(search_result, message)
-            forwarded_message = await message.copy(source.category.tg_id)
+            forwarded_message = await message.copy(
+                source.category.tg_id, disable_notification=disable_notification)
         else:
-            forwarded_message = await message.forward(source.category.tg_id)
+            forwarded_message = await message.forward(
+                source.category.tg_id, disable_notification=disable_notification)
 
         add_to_category_history(
             message, forwarded_message, source,
@@ -82,7 +84,7 @@ async def message_without_media_group(client: Client, message: Message):
     & filters.media_group
     & ~filters.service
 )
-async def message_with_media_group(client: Client, message: Message):
+async def message_with_media_group(client: Client, message: Message, *, disable_notification: bool = False):
     chat = media_group_ids.get(message.chat.id)
     if not chat:
         chat = media_group_ids[message.chat.id] = []
@@ -162,11 +164,14 @@ async def message_with_media_group(client: Client, message: Message):
                 client,
                 source.category.tg_id,
                 media=media,
+                disable_notification=disable_notification
             )
         else:
             forwarded_messages = await client.forward_messages(
                 source.category.tg_id, message.chat.id,
-                [item.id for item in media_group_messages])
+                [item.id for item in media_group_messages],
+                disable_notification=disable_notification
+            )
 
         for original_message, forward_message in zip(
                 media_group_messages, forwarded_messages):
@@ -286,9 +291,9 @@ async def edited_message(client: Client, message: Message):
         if message.media_group_id:
             if chat_media_groups := media_group_ids.get(message.chat.id):
                 chat_media_groups.clear()
-            await message_with_media_group(client, message)
+            await message_with_media_group(client, message, disable_notification=True)
         else:
-            await message_without_media_group(client, message)
+            await message_without_media_group(client, message, disable_notification=True)
 
 
 @Client.on_deleted_messages(
