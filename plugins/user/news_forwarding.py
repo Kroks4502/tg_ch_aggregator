@@ -52,8 +52,9 @@ async def message_without_media_group(client: Client, message: Message):
         await client.read_chat_history(message.chat.id)
         return
 
+    message_text = message.text or message.caption or ''
     search_result = re.search(
-        PATTERN_AGENT, message.text or message.caption or '')
+        PATTERN_AGENT, str(message_text))
     if search_result:
         delete_agent_text_in_message(search_result, message)
         forwarded_message = await message.copy(source.category.tg_id)
@@ -94,7 +95,7 @@ async def message_with_media_group(client: Client, message: Message):
             await client.read_chat_history(message.chat.id)
             return
         if m.caption:
-            search_result = re.search(PATTERN_AGENT, m.caption)
+            search_result = re.search(PATTERN_AGENT, str(m.caption))
             if search_result:
                 is_agent = True
                 delete_agent_text_in_message(search_result, m)
@@ -183,9 +184,11 @@ def delete_agent_text_in_message(search_result: Match, message: Message):
     start = search_result.start()
     end = search_result.end()
     if message.text:
+        message.text = str(message.text)
         message.text = (author + message.text[:start]
                         + f'{separator if start != 0 else ""}' + message.text[end:])
     elif message.caption:
+        message.caption = str(message.caption)
         message.caption = (author + message.caption[:start]
                            + f'{separator if start != 0 else ""}' + message.caption[end:])
 
