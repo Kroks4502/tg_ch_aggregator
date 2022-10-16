@@ -66,9 +66,9 @@ async def message_without_media_group(client: Client, message: Message):
         rewritten=bool(search_result))
 
     await client.read_chat_history(message.chat.id)
-    logger.debug(f'Сообщение {message.id} '
-                 f'из источника {source.title} '
-                 f'переслано в категорию {source.category.title}')
+    logger.info(f'Сообщение {message.id} '
+                f'из источника {source.title} '
+                f'переслано в категорию {source.category.title}')
 
 
 @Client.on_message(
@@ -169,9 +169,9 @@ async def message_with_media_group(client: Client, message: Message):
             rewritten=is_agent)
 
     await client.read_chat_history(message.chat.id)
-    logger.debug(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
-                 f'из источника {source.title} '
-                 f'пересланы в категорию {source.category.title}')
+    logger.info(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
+                f'из источника {source.title} '
+                f'пересланы в категорию {source.category.title}')
 
 
 def delete_agent_text_in_message(search_result: Match, message: Message):
@@ -244,33 +244,38 @@ async def edited_message(client: Client, message: Message):
 
     if history_obj.media_group:
         messages_to_delete = []
-        for m in await client.get_media_group(
-                history_obj.category.tg_id, history_obj.message_id):
-            messages_to_delete.append(m.id)
+        query = (CategoryMessageHistory
+                 .select()
+                 .where((CategoryMessageHistory.source == history_obj.source)
+                        & (CategoryMessageHistory.media_group == history_obj.media_group)
+                        & (CategoryMessageHistory.deleted == False)))
+        for m in query:
+            messages_to_delete.append(m.message_id)
     else:
         messages_to_delete = [history_obj.message_id]
 
-    await client.delete_messages(
-        history_obj.category.tg_id, messages_to_delete)
+    if messages_to_delete:  # Предостерегает ситуацию получения повторного сообщения о редактировании
+        await client.delete_messages(
+            history_obj.category.tg_id, messages_to_delete)
 
-    query = ((CategoryMessageHistory
-             .select()
-             .where((CategoryMessageHistory.source == history_obj.source)
-                    & (CategoryMessageHistory.media_group == history_obj.media_group)))
-             if history_obj.media_group else [history_obj])
-    for h in query:
-        h.source_message_edited = True
-        h.deleted = True
-        h.save()
-        logger.info(f'Сообщение {h.source_message_id} '
-                    f'из источника {h.source.title} было изменено. '
-                    f'Оно удалено из категории {h.category.title}')
+        query = ((CategoryMessageHistory
+                 .select()
+                 .where((CategoryMessageHistory.category == history_obj.category)
+                        & (CategoryMessageHistory.message_id << messages_to_delete)))
+                 if history_obj.media_group else [history_obj])
+        for h in query:
+            h.source_message_edited = True
+            h.deleted = True
+            h.save()
+            logger.info(f'Сообщение {h.source_message_id} '
+                        f'из источника {h.source.title} было изменено. '
+                        f'Оно удалено из категории {h.category.title}')
 
-    if message.media_group_id:
-        media_group_ids.clear()
-        await message_with_media_group(client, message)
-    else:
-        await message_without_media_group(client, message)
+        if message.media_group_id:
+            media_group_ids[message.chat.id].clear()
+            await message_with_media_group(client, message)
+        else:
+            await message_without_media_group(client, message)
 
 
 @Client.on_deleted_messages(
