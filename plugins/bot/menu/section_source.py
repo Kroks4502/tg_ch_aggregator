@@ -74,10 +74,11 @@ async def edit_source_category(client: Client, callback_query: CallbackQuery):
 
     path = Path(callback_query.data)
     source_id = int(path.get_value('s'))
+    category_obj: Category = Category.get(id=int(path.get_value('c', after_action=True)))
     source_obj: Source = Source.get(id=source_id)
 
     q = (Source
-         .update({Source.category: int(path.get_value('c', after_action=True))})
+         .update({Source.category: category_obj})
          .where(Source.id == source_id))
     q.execute()
     Source.clear_actual_cache()
@@ -90,7 +91,7 @@ async def edit_source_category(client: Client, callback_query: CallbackQuery):
         client, callback_query,
         f'Изменена категория у источника '
         f'{await get_channel_formatted_link(source_obj.tg_id)} '
-        f'на {await get_channel_formatted_link(source_obj.category.tg_id)}')
+        f'на {await get_channel_formatted_link(category_obj.tg_id)}')
 
 
 @Client.on_callback_query(filters.regex(
