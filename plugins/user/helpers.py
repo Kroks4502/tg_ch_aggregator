@@ -49,17 +49,22 @@ class ChatsLocks:
         self.__chats = {}
 
     class __MessagesLocks:
-        def __init__(self, chat: set):
+        def __init__(self, chat_id, chat: set):
+            self.__chat_id = chat_id
             self.__chat = chat
 
         def add(self, value):
+            logger.info(f'Добавлена блокировка для чата {self.__chat_id} {value}')
             self.__chat.add(value)
 
         def remove(self, value):
             try:
+                logger.info(f'Снята блокировка для чата {self.__chat_id}')
                 self.__chat.remove(value)
             except KeyError:
-                ...
+                logger.warning(f'Не удалось снять блокировку для чата '
+                               f'{self.__chat_id} со значением {value}. '
+                               f'Текущие блокировки: {self.__chat}')
 
         def contains(self, key) -> bool:
             return key in self.__chat
@@ -68,7 +73,7 @@ class ChatsLocks:
         if not (messages := self.__chats.get(key)):
             messages = self.__chats[key] = set()
             self.__optimize()
-        return self.__MessagesLocks(messages)
+        return self.__MessagesLocks(key, messages)
 
     def __optimize(self):
         if len(self.__chats) > 5:
