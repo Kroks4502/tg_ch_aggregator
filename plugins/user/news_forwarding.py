@@ -4,6 +4,7 @@ from typing import Match
 
 from pyrogram import Client, filters
 from pyrogram.enums import MessageEntityType
+from pyrogram.errors import BadRequest
 from pyrogram.types import (Message, InputMediaPhoto, InputMediaVideo,
                             InputMediaAudio, InputMediaDocument, MessageEntity)
 
@@ -55,20 +56,25 @@ async def message_without_media_group(client: Client, message: Message):
     message_text = message.text or message.caption or ''
     search_result = re.search(
         PATTERN_AGENT, str(message_text))
-    if search_result:
-        delete_agent_text_in_message(search_result, message)
-        forwarded_message = await message.copy(source.category.tg_id)
-    else:
-        forwarded_message = await message.forward(source.category.tg_id)
+    try:
+        if search_result:
+            delete_agent_text_in_message(search_result, message)
+            forwarded_message = await message.copy(source.category.tg_id)
+        else:
+            forwarded_message = await message.forward(source.category.tg_id)
 
-    add_to_category_history(
-        message, forwarded_message, source,
-        rewritten=bool(search_result))
+        add_to_category_history(
+            message, forwarded_message, source,
+            rewritten=bool(search_result))
 
-    await client.read_chat_history(message.chat.id)
-    logger.info(f'Сообщение {message.id} '
-                f'из источника {source.title} '
-                f'переслано в категорию {source.category.title}')
+        await client.read_chat_history(message.chat.id)
+        logger.info(f'Сообщение {message.id} '
+                    f'из источника {source.title} '
+                    f'переслано в категорию {source.category.title}')
+    except BadRequest as e:
+        logger.error(f'Сообщение {message.id} '
+                     f'из источника {message.chat.title} привело к ошибке: {e}\n'
+                     f'Полное сообщение: {message}\n', exc_info=True)
 
 
 @Client.on_message(
@@ -86,92 +92,96 @@ async def message_with_media_group(client: Client, message: Message):
     if message.media_group_id in chat:
         return
     chat.append(message.media_group_id)
-
     source = Source.get(tg_id=message.chat.id)
-    media_group_messages = await message.get_media_group()
-    is_agent = False
-    for m in media_group_messages:
-        if not is_new_and_valid_post(m, source):
-            await client.read_chat_history(message.chat.id)
-            return
-        if m.caption:
-            search_result = re.search(PATTERN_AGENT, str(m.caption))
-            if search_result:
-                is_agent = True
-                delete_agent_text_in_message(search_result, m)
-
-    if is_agent:
-        media = []
+    try:
+        media_group_messages = await message.get_media_group()
+        is_agent = False
         for m in media_group_messages:
-            raw_caption_entities = []
-            for entity in (m.caption_entities if m.caption_entities else []):
-                possible_entity_params = {
-                    'offset': entity.offset,
-                    'length': entity.length,
-                    'user_id': entity.user.id if entity.user else 0,
-                    'language': entity.language,
-                    'url': entity.url,
-                    'document_id': entity.custom_emoji_id
-                }
-                entity_params = {}
-                for key in [*inspect.signature(
-                        entity.type.value).parameters.keys()]:
-                    entity_params.update({key: possible_entity_params[key]})
-                raw_caption_entities.append(entity.type.value(**entity_params))
-            if m.photo:
-                media.append(InputMediaPhoto(
-                    media=m.photo.file_id,
-                    parse_mode=None,
-                    caption=m.caption,
-                    caption_entities=raw_caption_entities
-                ))
-            elif m.audio:
-                media.append(InputMediaAudio(
-                    media=m.audio.file_id,
-                    caption=m.caption,
-                    caption_entities=raw_caption_entities,
-                    duration=m.audio.duration,
-                    performer=m.audio.performer,
-                    title=m.audio.title
-                ))
-            elif m.document:
-                media.append(InputMediaDocument(
-                    media=m.document.file_id,
-                    caption=m.caption,
-                    caption_entities=raw_caption_entities,
-                ))
-            elif m.video:
-                media.append(InputMediaVideo(
-                    media=m.video.file_id,
-                    caption=m.caption,
-                    caption_entities=raw_caption_entities,
-                    width=m.video.width,
-                    height=m.video.height,
-                    duration=m.video.duration,
-                    supports_streaming=m.video.supports_streaming,
-                ))
-            else:
-                raise ValueError('Message with this type can`t be copied.')
-        forwarded_messages = await send_media_group(
-            client,
-            source.category.tg_id,
-            media=media,
-        )
-    else:
-        forwarded_messages = await client.forward_messages(
-            source.category.tg_id, message.chat.id,
-            [item.id for item in media_group_messages])
+            if not is_new_and_valid_post(m, source):
+                await client.read_chat_history(message.chat.id)
+                return
+            if m.caption:
+                search_result = re.search(PATTERN_AGENT, str(m.caption))
+                if search_result:
+                    is_agent = True
+                    delete_agent_text_in_message(search_result, m)
 
-    for original_message, forward_message in zip(
-            media_group_messages, forwarded_messages):
-        add_to_category_history(
-            original_message, forward_message, source,
-            rewritten=is_agent)
+        if is_agent:
+            media = []
+            for m in media_group_messages:
+                raw_caption_entities = []
+                for entity in (m.caption_entities if m.caption_entities else []):
+                    possible_entity_params = {
+                        'offset': entity.offset,
+                        'length': entity.length,
+                        'user_id': entity.user.id if entity.user else 0,
+                        'language': entity.language,
+                        'url': entity.url,
+                        'document_id': entity.custom_emoji_id
+                    }
+                    entity_params = {}
+                    for key in [*inspect.signature(
+                            entity.type.value).parameters.keys()]:
+                        entity_params.update({key: possible_entity_params[key]})
+                    raw_caption_entities.append(entity.type.value(**entity_params))
+                if m.photo:
+                    media.append(InputMediaPhoto(
+                        media=m.photo.file_id,
+                        parse_mode=None,
+                        caption=m.caption,
+                        caption_entities=raw_caption_entities
+                    ))
+                elif m.audio:
+                    media.append(InputMediaAudio(
+                        media=m.audio.file_id,
+                        caption=m.caption,
+                        caption_entities=raw_caption_entities,
+                        duration=m.audio.duration,
+                        performer=m.audio.performer,
+                        title=m.audio.title
+                    ))
+                elif m.document:
+                    media.append(InputMediaDocument(
+                        media=m.document.file_id,
+                        caption=m.caption,
+                        caption_entities=raw_caption_entities,
+                    ))
+                elif m.video:
+                    media.append(InputMediaVideo(
+                        media=m.video.file_id,
+                        caption=m.caption,
+                        caption_entities=raw_caption_entities,
+                        width=m.video.width,
+                        height=m.video.height,
+                        duration=m.video.duration,
+                        supports_streaming=m.video.supports_streaming,
+                    ))
+                else:
+                    raise ValueError('Message with this type can`t be copied.')
+            forwarded_messages = await send_media_group(
+                client,
+                source.category.tg_id,
+                media=media,
+            )
+        else:
+            forwarded_messages = await client.forward_messages(
+                source.category.tg_id, message.chat.id,
+                [item.id for item in media_group_messages])
 
-    await client.read_chat_history(message.chat.id)
-    logger.info(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
-                f'из источника {source.title} '
-                f'пересланы в категорию {source.category.title}')
+        for original_message, forward_message in zip(
+                media_group_messages, forwarded_messages):
+            add_to_category_history(
+                original_message, forward_message, source,
+                rewritten=is_agent)
+
+        await client.read_chat_history(message.chat.id)
+        logger.info(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
+                    f'из источника {source.title} '
+                    f'пересланы в категорию {source.category.title}')
+    except BadRequest as e:
+        logger.error(f'Сообщение {message.id} '
+                     f'из источника {message.chat.title} привело к ошибке: {e}\n'
+                     f'Полное сообщение: {message}\n', exc_info=True)
 
 
 def delete_agent_text_in_message(search_result: Match, message: Message):
