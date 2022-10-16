@@ -23,7 +23,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
     if h_obj := perform_check_history(message, source):
         logger.info(
             f'Сообщение {message.id} из источника '
-            f'{message.chat.title[:20]} ({message.link}) '
+            f'{message.chat.title[:20]} ({message.chat.id}) '
             f'уже есть в канале категории {source.category} '
             f'({get_message_link(h_obj.category.tg_id, h_obj.message_id)})')
         return False
@@ -32,7 +32,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
         add_to_filter_history(message, filter_id, source)
         logger.info(
             f'Сообщение {message.id} из источника '
-            f'{message.chat.title[:20]} ({message.link}) '
+            f'{message.chat.title[:20]} ({message.chat.id}) '
             f'отфильтровано. ID фильтра: {filter_id}')
         return False
 
@@ -69,11 +69,11 @@ async def message_without_media_group(client: Client, message: Message, *, disab
 
         await client.read_chat_history(message.chat.id)
         logger.info(f'Сообщение {message.id} '
-                    f'из источника {source.title[:20]} ({source.tg_id}) '
+                    f'из источника {message.chat.title[:20]} ({message.chat.id}) '
                     f'переслано в категорию {source.category.title} ({source.category.tg_id})')
     except BadRequest as e:
         logger.error(f'Сообщение {message.id} '
-                     f'из источника {source.title[:20]} ({source.tg_id}) привело к ошибке.\n'
+                     f'из источника {message.chat.title[:20]} ({message.chat.id}) привело к ошибке.\n'
                      f'{e}\nПолное сообщение: {message}\n', exc_info=True)
 
 
@@ -178,12 +178,12 @@ async def message_with_media_group(client: Client, message: Message, *, disable_
 
         await client.read_chat_history(message.chat.id)
         logger.info(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
-                    f'из источника {source.title[:20]} ({source.tg_id}) '
+                    f'из источника {message.chat.title[:20]} ({message.chat.id}) '
                     f'пересланы в категорию {source.category.title} ({source.category.tg_id})')
     except BadRequest as e:
         logger.error(f'Сообщение {message.id} '
-                     f'из источника {source.title[:20]} ({source.tg_id}) привело к ошибке: {e}\n'
-                     f'Полное сообщение: {message}\n', exc_info=True)
+                     f'из источника {message.chat.title[:20]} ({message.chat.id}) привело к ошибке\n'
+                     f'{e}\nПолное сообщение: {message}\n', exc_info=True)
 
 
 def delete_agent_text_in_message(search_result: Match, message: Message):
