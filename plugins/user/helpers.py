@@ -59,7 +59,7 @@ class ChatsLocks:
 
         def remove(self, value):
             try:
-                logger.info(f'Снята блокировка для чата {self.__chat_id}')
+                logger.info(f'Снята блокировка для чата {self.__chat_id} {value}')
                 self.__chat.remove(value)
             except KeyError:
                 logger.warning(f'Не удалось снять блокировку для чата '

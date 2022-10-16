@@ -22,8 +22,8 @@ from settings import PATTERN_AGENT, PATTERN_WITHOUT_SMILE, MESSAGES_EDIT_LIMIT_T
 def is_new_and_valid_post(message: Message, source: Source) -> bool:
     if h_obj := perform_check_history(message, source):
         logger.info(
-            f'Сообщение {message.id} из чата '
-            f'{message.chat.id} ({message.link}) '
+            f'Сообщение {message.id} из источника '
+            f'{message.chat.title[:20]} ({message.link}) '
             f'уже есть в канале категории {source.category} '
             f'({get_message_link(h_obj.category.tg_id, h_obj.message_id)})')
         return False
@@ -31,8 +31,8 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
     if filter_id := perform_filtering(message, source):
         add_to_filter_history(message, filter_id, source)
         logger.info(
-            f'Сообщение {message.id} из чата '
-            f'{message.chat.id} ({message.link}) '
+            f'Сообщение {message.id} из источника '
+            f'{message.chat.title[:20]} ({message.link}) '
             f'отфильтровано. ID фильтра: {filter_id}')
         return False
 
@@ -69,12 +69,12 @@ async def message_without_media_group(client: Client, message: Message, *, disab
 
         await client.read_chat_history(message.chat.id)
         logger.info(f'Сообщение {message.id} '
-                    f'из источника {source.title} '
-                    f'переслано в категорию {source.category.title}')
+                    f'из источника {source.title[:20]} ({source.tg_id}) '
+                    f'переслано в категорию {source.category.title} ({source.category.tg_id})')
     except BadRequest as e:
         logger.error(f'Сообщение {message.id} '
-                     f'из источника {message.chat.title} привело к ошибке: {e}\n'
-                     f'Полное сообщение: {message}\n', exc_info=True)
+                     f'из источника {source.title[:20]} ({source.tg_id}) привело к ошибке.\n'
+                     f'{e}\nПолное сообщение: {message}\n', exc_info=True)
 
 
 blocking_received_media_groups = ChatsLocks()
@@ -178,11 +178,11 @@ async def message_with_media_group(client: Client, message: Message, *, disable_
 
         await client.read_chat_history(message.chat.id)
         logger.info(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
-                    f'из источника {source.title} '
-                    f'пересланы в категорию {source.category.title}')
+                    f'из источника {source.title[:20]} ({source.tg_id}) '
+                    f'пересланы в категорию {source.category.title} ({source.category.tg_id})')
     except BadRequest as e:
         logger.error(f'Сообщение {message.id} '
-                     f'из источника {message.chat.title} привело к ошибке: {e}\n'
+                     f'из источника {source.title[:20]} ({source.tg_id}) привело к ошибке: {e}\n'
                      f'Полное сообщение: {message}\n', exc_info=True)
 
 
@@ -251,7 +251,7 @@ blocking_editable_messages = ChatsLocks()
 async def edited_message(client: Client, message: Message):
     if message.edit_date - message.date > MESSAGES_EDIT_LIMIT_TD:
         logger.warning(f'Изменено сообщение {message.id} '
-                       f'из источника {message.chat.title} '
+                       f'из источника {message.chat.title[:20]} ({message.chat.id}) '
                        f'за пределами ограничения {MESSAGES_EDIT_LIMIT_TD}. ')
         return
 
@@ -259,7 +259,7 @@ async def edited_message(client: Client, message: Message):
     if (blocked.contains(message.media_group_id)
             or blocked.contains(message.id)):
         logger.warning(f'Изменение сообщения {message.id} '
-                       f'из источника {message.chat.title} заблокировано. ')
+                       f'из источника {message.chat.title[:20]} ({message.chat.id}) заблокировано.')
         return
     blocked.add(message.media_group_id if message.media_group_id else message.id)
 
@@ -269,7 +269,7 @@ async def edited_message(client: Client, message: Message):
         deleted=False, )
     if not history_obj:
         logger.warning(f'Измененного сообщения {message.id} '
-                       f'из источника {message.chat.title} нет в истории. ')
+                       f'из источника {message.chat.title[:20]} ({message.chat.id}) нет в истории. ')
         blocked.remove(message.media_group_id if message.media_group_id else message.id)
         return
 
@@ -299,8 +299,8 @@ async def edited_message(client: Client, message: Message):
             h.deleted = True
             h.save()
             logger.info(f'Сообщение {h.source_message_id} '
-                        f'из источника {h.source.title} было изменено. '
-                        f'Оно удалено из категории {h.category.title}')
+                        f'из источника {h.source.title[:20]} ({h.source.tg_id}) было изменено. '
+                        f'Оно удалено из категории {h.category.title[:20]} ({h.category.tg_id})')
 
         if message.media_group_id:
             if b := blocking_received_media_groups.get(message.chat.id):
@@ -328,5 +328,5 @@ async def deleted_messages(client: Client, messages: list[Message]):
             history_obj.deleted = True
             history_obj.save()
             logger.info(f'Сообщение {history_obj.source_message_id} '
-                        f'из источника {history_obj.source.title} было удалено. '
-                        f'Оно удалено из категории {history_obj.category.title}')
+                        f'из источника {history_obj.source.title[:20]} ({history_obj.source.tg_id}) было удалено. '
+                        f'Оно удалено из категории {history_obj.category.title[:20]} ({history_obj.category.tg_id})')
