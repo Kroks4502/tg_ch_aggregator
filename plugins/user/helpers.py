@@ -45,24 +45,26 @@ def add_to_filter_history(
 
 
 class ChatsLocks:
-    def __init__(self):
+    def __init__(self, name: str):
         self.__chats = {}
+        self.__name = name
 
     class __MessagesLocks:
-        def __init__(self, chat_id, chat: set):
+        def __init__(self, name: str, chat_id, chat: set):
+            self.__name = name
             self.__chat_id = chat_id
             self.__chat = chat
 
         def add(self, value):
-            logger.info(f'Добавлена блокировка для чата {self.__chat_id} {value}')
+            logger.info(f'Добавлена блокировка {self.__name} для чата {self.__chat_id} {value}')
             self.__chat.add(value)
 
         def remove(self, value):
             try:
-                logger.info(f'Снята блокировка для чата {self.__chat_id} {value}')
+                logger.info(f'Снята блокировка {self.__name} для чата {self.__chat_id} {value}')
                 self.__chat.remove(value)
             except KeyError:
-                logger.warning(f'Не удалось снять блокировку для чата '
+                logger.warning(f'Не удалось снять блокировку {self.__name} для чата '
                                f'{self.__chat_id} со значением {value}. '
                                f'Текущие блокировки: {self.__chat}')
 
@@ -73,7 +75,7 @@ class ChatsLocks:
         if not (messages := self.__chats.get(key)):
             messages = self.__chats[key] = set()
             self.__optimize()
-        return self.__MessagesLocks(key, messages)
+        return self.__MessagesLocks(self.__name, key, messages)
 
     def __optimize(self):
         if len(self.__chats) > 5:

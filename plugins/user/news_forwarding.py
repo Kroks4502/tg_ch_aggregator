@@ -77,7 +77,7 @@ async def message_without_media_group(client: Client, message: Message, *, disab
                      f'{e}\nПолное сообщение: {message}\n', exc_info=True)
 
 
-blocking_received_media_groups = ChatsLocks()
+blocking_received_media_groups = ChatsLocks('received')
 
 
 @Client.on_message(
@@ -242,7 +242,7 @@ async def service_message(client: Client, message: Message):
     await client.read_chat_history(message.chat.id)
 
 
-blocking_editable_messages = ChatsLocks()
+blocking_editable_messages = ChatsLocks('edit')
 
 
 @Client.on_edited_message(
