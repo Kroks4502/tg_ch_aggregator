@@ -44,6 +44,37 @@ def add_to_filter_history(
     )
 
 
+class ChatsLocks:
+    def __init__(self):
+        self.__chats = {}
+
+    class __MessagesLocks:
+        def __init__(self, chat: set):
+            self.__chat = chat
+
+        def add(self, value):
+            self.__chat.add(value)
+
+        def remove(self, value):
+            try:
+                self.__chat.remove(value)
+            except KeyError:
+                ...
+
+        def contains(self, key) -> bool:
+            return key in self.__chat
+
+    def get(self, key):
+        if not (messages := self.__chats.get(key)):
+            messages = self.__chats[key] = set()
+            self.__optimize()
+        return self.__MessagesLocks(messages)
+
+    def __optimize(self):
+        if len(self.__chats) > 5:
+            self.__chats.pop(list(self.__chats.keys())[0])
+
+
 def get_message_link(chat_id: int, message_id: int):
     return f'https://t.me/c/{utils.get_channel_id(chat_id)}/{message_id}'
 

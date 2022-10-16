@@ -14,11 +14,9 @@ from plugins.user import custom_filters
 from plugins.user.helpers import (add_to_filter_history,
                                   add_to_category_history,
                                   get_message_link,
-                                  perform_check_history, perform_filtering)
+                                  perform_check_history, perform_filtering, ChatsLocks)
 from send_media_group import send_media_group
 from settings import PATTERN_AGENT, PATTERN_WITHOUT_SMILE, MESSAGES_EDIT_LIMIT_TD
-
-media_group_ids = {}  # chat_id: [media_group_id ...]
 
 
 def is_new_and_valid_post(message: Message, source: Source) -> bool:
@@ -79,21 +77,20 @@ async def message_without_media_group(client: Client, message: Message, *, disab
                      f'Полное сообщение: {message}\n', exc_info=True)
 
 
+blocking_received_media_groups = ChatsLocks()
+
+
 @Client.on_message(
     custom_filters.monitored_channels
     & filters.media_group
     & ~filters.service
 )
 async def message_with_media_group(client: Client, message: Message, *, disable_notification: bool = False):
-    chat = media_group_ids.get(message.chat.id)
-    if not chat:
-        chat = media_group_ids[message.chat.id] = []
-        if len(media_group_ids) > 3:
-            media_group_ids.pop(list(media_group_ids.keys())[0])
-
-    if message.media_group_id in chat:
+    blocked = blocking_received_media_groups.get(message.chat.id)
+    if blocked.contains(message.media_group_id):
         return
-    chat.append(message.media_group_id)
+    blocked.add(message.media_group_id)
+
     source = Source.get(tg_id=message.chat.id)
     try:
         media_group_messages = await message.get_media_group()
@@ -245,6 +242,9 @@ async def service_message(client: Client, message: Message):
     await client.read_chat_history(message.chat.id)
 
 
+blocking_editable_messages = ChatsLocks()
+
+
 @Client.on_edited_message(
     custom_filters.monitored_channels
 )
@@ -252,10 +252,18 @@ async def edited_message(client: Client, message: Message):
     if message.edit_date - message.date > MESSAGES_EDIT_LIMIT_TD:
         return
 
+    blocked = blocking_editable_messages.get(message.chat.id)
+    if (blocked.contains(message.media_group_id)
+            or blocked.contains(message.id)):
+        logger.warning(f'Изменение сообщения {message.id} '
+                       f'из источника {message.chat.title} заблокировано. ')
+        return
+    blocked.add(message.media_group_id if message.media_group_id else message.id)
+
     history_obj: CategoryMessageHistory = CategoryMessageHistory.get_or_none(
         source=Source.get_or_none(tg_id=message.chat.id),
         source_message_id=message.id,
-        deleted=False,)
+        deleted=False, )
     if not history_obj:
         return
 
@@ -271,14 +279,14 @@ async def edited_message(client: Client, message: Message):
     else:
         messages_to_delete = [history_obj.message_id]
 
-    if messages_to_delete:  # Предостерегает ситуацию получения повторного сообщения о редактировании
+    if messages_to_delete:
         await client.delete_messages(
             history_obj.category.tg_id, messages_to_delete)
 
         query = ((CategoryMessageHistory
-                 .select()
-                 .where((CategoryMessageHistory.category == history_obj.category)
-                        & (CategoryMessageHistory.message_id << messages_to_delete)))
+                  .select()
+                  .where((CategoryMessageHistory.category == history_obj.category)
+                         & (CategoryMessageHistory.message_id << messages_to_delete)))
                  if history_obj.media_group else [history_obj])
         for h in query:
             h.source_message_edited = True
@@ -289,11 +297,13 @@ async def edited_message(client: Client, message: Message):
                         f'Оно удалено из категории {h.category.title}')
 
         if message.media_group_id:
-            if chat_media_groups := media_group_ids.get(message.chat.id):
-                chat_media_groups.clear()
+            if b := blocking_received_media_groups.get(message.chat.id):
+                b.remove(message.media_group_id)
             await message_with_media_group(client, message, disable_notification=True)
         else:
             await message_without_media_group(client, message, disable_notification=True)
+
+    blocked.remove(message.media_group_id if message.media_group_id else message.id)
 
 
 @Client.on_deleted_messages(
