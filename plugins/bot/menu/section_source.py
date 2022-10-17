@@ -130,7 +130,7 @@ async def add_source_waiting_input(
             disable_web_page_preview=True)
 
     try:
-        if message.forward_date:
+        if message.forward_from_chat:
             chat = message.forward_from_chat
         else:
             chat = await user.get_chat(input_text)

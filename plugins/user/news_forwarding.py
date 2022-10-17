@@ -189,7 +189,7 @@ async def message_with_media_group(client: Client, message: Message, *, disable_
 def delete_agent_text_in_message(search_result: Match, message: Message):
     separator = '\n\n'
     title = re.sub(PATTERN_WITHOUT_SMILE, "",
-                   message.forward_from_chat.title if message.forward_date else message.chat.title)
+                   message.forward_from_chat.title if message.forward_from_chat else message.chat.title)
     author = (f'💬 Источник: '
               f'{title if title else message.chat.id}'
               f'\n\n')
@@ -216,7 +216,7 @@ def delete_agent_text_in_message(search_result: Match, message: Message):
     bold = MessageEntity(
         type=MessageEntityType.BOLD, offset=0, length=add_author_len)
     url = message.link
-    if message.forward_date and message.forward_from_chat.username:
+    if message.forward_from_chat and message.forward_from_chat.username:
         url = (f'https://t.me/{message.forward_from_chat.username}/'
                f'{message.forward_from_message_id}')
     text_link = MessageEntity(
