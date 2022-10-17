@@ -250,10 +250,9 @@ blocking_editable_messages = ChatsLocks('edit')
 )
 async def edited_message(client: Client, message: Message):
     if message.edit_date - message.date > MESSAGES_EDIT_LIMIT_TD:
-        logger.warning(f'Изменено сообщение {message.id} '
-                       f'из источника {message.chat.title[:20]} ({message.chat.id}) '
-                       f'за пределами ограничения {MESSAGES_EDIT_LIMIT_TD}. '
-                       f'Дата отправки сообщения: {message.date}')
+        logger.info(f'Сообщение {message.id} '
+                    f'из источника {message.chat.title[:20]} ({message.chat.id}) '
+                    f'изменено спустя {(message.edit_date - message.date).seconds//60} мин.')
         return
 
     blocked = blocking_editable_messages.get(message.chat.id)
@@ -270,7 +269,8 @@ async def edited_message(client: Client, message: Message):
         deleted=False, )
     if not history_obj:
         logger.warning(f'Измененного сообщения {message.id} '
-                       f'из источника {message.chat.title[:20]} ({message.chat.id}) нет в истории. ')
+                       f'из источника {message.chat.title[:20]} ({message.chat.id}) '
+                       f'от {message.date} нет в истории.')
         blocked.remove(message.media_group_id if message.media_group_id else message.id)
         return
 
