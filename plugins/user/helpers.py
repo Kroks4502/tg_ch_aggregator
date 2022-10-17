@@ -21,7 +21,7 @@ def add_to_category_history(
         media_group=(original_message.media_group_id
                      if original_message.media_group_id else ''),
         forward_from_chat_id=(original_message.forward_from_chat.id
-                              if original_message.forward_date else None),
+                              if original_message.forward_from_chat else None),
         forward_from_message_id=original_message.forward_from_message_id,
         category=source.category,
         message_id=category_message.id,
