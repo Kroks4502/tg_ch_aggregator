@@ -24,6 +24,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
         logger.info(
             f'Сообщение {message.id} из источника '
             f'{message.chat.title[:20]} ({message.chat.id}) '
+            f'{"в составе медиагруппы " + message.media_group_id + " " if message.media_group_id else ""}'
             f'уже есть в канале категории {source.category} '
             f'({get_message_link(h_obj.category.tg_id, h_obj.message_id)})')
         return False
@@ -33,6 +34,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
         logger.info(
             f'Сообщение {message.id} из источника '
             f'{message.chat.title[:20]} ({message.chat.id}) '
+            f'{"в составе медиагруппы " + message.media_group_id + " " if message.media_group_id else ""}'
             f'отфильтровано. ID фильтра: {filter_id}')
         return False
 
@@ -45,6 +47,9 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
     & ~filters.service
 )
 async def message_without_media_group(client: Client, message: Message, *, disable_notification: bool = None):
+    logger.debug(f'Источник {message.chat.title[:20]} ({message.chat.id}) '
+                 f'отправил сообщение {message.id}')
+
     source = Source.get(tg_id=message.chat.id)
 
     if not is_new_and_valid_post(message, source):
@@ -86,6 +91,10 @@ blocking_received_media_groups = ChatsLocks('received')
     & ~filters.service
 )
 async def message_with_media_group(client: Client, message: Message, *, disable_notification: bool = False):
+    logger.debug(f'Источник {message.chat.title[:20]} ({message.chat.id}) '
+                 f'отправил сообщение {message.id} '
+                 f'в составе медиагруппы {message.media_group_id}')
+
     blocked = blocking_received_media_groups.get(message.chat.id)
     if blocked.contains(message.media_group_id):
         return
@@ -249,6 +258,8 @@ blocking_editable_messages = ChatsLocks('edit')
     custom_filters.monitored_channels
 )
 async def edited_message(client: Client, message: Message):
+    logger.debug(f'Источник {message.chat.title[:20]} ({message.chat.id}) изменил сообщение {message.id}')
+
     if message.edit_date - message.date > MESSAGES_EDIT_LIMIT_TD:
         logger.info(f'Сообщение {message.id} '
                     f'из источника {message.chat.title[:20]} ({message.chat.id}) '
@@ -317,6 +328,9 @@ async def edited_message(client: Client, message: Message):
     custom_filters.monitored_channels
 )
 async def deleted_messages(client: Client, messages: list[Message]):
+    logger.debug(f'Получено обновление о удалении сообщений источников '
+                 f'{[(message.chat.title, message.chat.id, message.id) for message in messages]}')
+
     for message in messages:
         history_obj: CategoryMessageHistory = CategoryMessageHistory.get_or_none(
             source=Source.get_or_none(tg_id=message.chat.id),
