@@ -3,3 +3,4 @@ Pyrogram==2.0.57
 python-dotenv==0.21.0
 APScheduler==3.9.1
 TgCrypto==1.2.4
+async_lru==1.0.3
