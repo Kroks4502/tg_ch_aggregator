@@ -30,7 +30,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
         return False
 
     if data := perform_filtering(message, source):
-        add_to_filter_history(message, int(data['id']), source)
+        add_to_filter_history(message, data['id'], source)
         logger.info(
             f'Сообщение {message.id} из источника '
             f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
