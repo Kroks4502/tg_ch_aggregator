@@ -24,7 +24,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
         logger.info(
             f'Сообщение {message.id} из источника '
             f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            f'{"в составе медиагруппы " + message.media_group_id + " " if message.media_group_id else ""}'
+            f'{"в составе медиагруппы " + str(message.media_group_id) + " " if message.media_group_id else ""}'
             f'уже есть в канале категории {get_shortened_text(source.category.title, 20)} {source.category.tg_id}'
             f'{get_message_link(h_obj.category.tg_id, h_obj.message_id)}')
         return False
@@ -34,7 +34,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
         logger.info(
             f'Сообщение {message.id} из источника '
             f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            f'{"в составе медиагруппы " + message.media_group_id + " " if message.media_group_id else ""}'
+            f'{"в составе медиагруппы " + str(message.media_group_id) + " " if message.media_group_id else ""}'
             f'отфильтровано: {data}')
         return False
 
