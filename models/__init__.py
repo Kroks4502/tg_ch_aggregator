@@ -2,7 +2,7 @@ from datetime import datetime
 
 from peewee import *
 
-from models_types import FilterType
+from models.types import FilterType
 from settings import DATABASE
 
 
@@ -101,7 +101,6 @@ class MessageHistoryModel(BaseModel):
     source_message_edited = BooleanField(default=False)
     source_message_deleted = BooleanField(default=False)
     media_group = CharField()
-    # is_media_group = BooleanField()
 
 
 class FilterMessageHistory(MessageHistoryModel):

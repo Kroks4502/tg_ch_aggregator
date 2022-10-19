@@ -1,89 +1,12 @@
 import itertools
 import re
 
-from pyrogram import utils
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message, MessageEntity
 
 from log import logger
-from models import Source, CategoryMessageHistory, FilterMessageHistory, Filter
-from models_types import FilterType, FilterMessageType
-
-
-def add_to_category_history(
-        original_message: Message, category_message: Message,
-        source: Source = None, rewritten: bool = False):
-    if not source:
-        source = Source.get(tg_id=original_message.chat.id)
-    CategoryMessageHistory.create(
-        source=source,
-        source_message_id=original_message.id,
-        media_group=(original_message.media_group_id
-                     if original_message.media_group_id else ''),
-        forward_from_chat_id=(original_message.forward_from_chat.id
-                              if original_message.forward_from_chat else None),
-        forward_from_message_id=original_message.forward_from_message_id,
-        category=source.category,
-        message_id=category_message.id,
-        rewritten=rewritten,
-    )
-
-
-def add_to_filter_history(
-        original_message: Message, filter: Filter | int,
-        source: Source = None):
-    if not source:
-        source = Source.get(tg_id=original_message.chat.id)
-
-    FilterMessageHistory.create(
-        source=source,
-        source_message_id=original_message.id,
-        media_group=(original_message.media_group_id
-                     if original_message.media_group_id else ''),
-        filter=filter
-    )
-
-
-class ChatsLocks:
-    def __init__(self, name: str):
-        self.__chats = {}
-        self.__name = name
-
-    class __MessagesLocks:
-        def __init__(self, name: str, chat_id, chat: set):
-            self.__name = name
-            self.__chat_id = chat_id
-            self.__chat = chat
-
-        def add(self, value):
-            logger.info(f'Добавлена блокировка {self.__name} для чата {self.__chat_id} {value}')
-            self.__chat.add(value)
-
-        def remove(self, value):
-            try:
-                logger.info(f'Снята блокировка {self.__name} для чата {self.__chat_id} {value}')
-                self.__chat.remove(value)
-            except KeyError:
-                logger.warning(f'Не удалось снять блокировку {self.__name} для чата '
-                               f'{self.__chat_id} со значением {value}. '
-                               f'Текущие блокировки: {self.__chat}')
-
-        def contains(self, key) -> bool:
-            return key in self.__chat
-
-    def get(self, key):
-        if not (messages := self.__chats.get(key)):
-            messages = self.__chats[key] = set()
-            self.__optimize()
-        return self.__MessagesLocks(self.__name, key, messages)
-
-    def __optimize(self):
-        if len(self.__chats) > 5:
-            self.__chats.pop(list(self.__chats.keys())[0])
-
-
-def get_message_link(chat_id: int, message_id: int):
-    return f'https://t.me/c/{utils.get_channel_id(chat_id)}/{message_id}'
+from models import Source, CategoryMessageHistory, Filter
+from models.types import FilterType, FilterMessageType
 
 
 def perform_check_history(
@@ -125,7 +48,7 @@ def perform_check_history(
             return h_obj
 
 
-def perform_filtering(message: Message, source: Source) -> int | None:
+def perform_filtering(message: Message, source: Source) -> dict | None:
     inspector = Inspector(message, source)
 
     if result := inspector.check_message_type():
@@ -158,7 +81,7 @@ class Inspector:
                 if getattr(self._message,
                            getattr(
                                FilterMessageType, data['pattern']).value[1]):
-                    return data['id']
+                    return data
             except AttributeError as e:
                 logger.error(e, exc_info=True)
 
@@ -167,14 +90,14 @@ class Inspector:
             if not self._search(
                     data['pattern'],
                     self._text):
-                return data['id']
+                return data
 
     def check_text(self) -> int | None:
         for data in self._get_filters(FilterType.TEXT):
             if self._search(
                     data['pattern'],
                     self._text):
-                return data['id']
+                return data
 
     def check_entities(self, entity: MessageEntity) -> int | None:
         if result := self._check_entity_type(entity):
@@ -192,7 +115,7 @@ class Inspector:
             try:
                 if entity.type == getattr(
                         MessageEntityType, data['pattern'].upper()):
-                    return data['id']
+                    return data
             except AttributeError as e:
                 logger.error(e, exc_info=True)
 
@@ -201,21 +124,21 @@ class Inspector:
             if self._search(
                     data['pattern'],
                     self._text[entity.offset:entity.offset + entity.length]):
-                return data['id']
+                return data
 
     def _check_text_link(self, entity: MessageEntity) -> int | None:
         for data in self._get_filters(FilterType.URL):
             if self._search(
                     data['pattern'],
                     entity.url):
-                return data['id']
+                return data
 
     def _check_url(self, entity: MessageEntity) -> int | None:
         for data in self._get_filters(FilterType.URL):
             if self._search(
                     data['pattern'],
                     self._text[entity.offset:entity.offset + entity.length]):
-                return data['id']
+                return data
 
     def _get_filters(self, f_type: FilterType):
         return itertools.chain(

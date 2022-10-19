@@ -10,32 +10,32 @@ from pyrogram.types import (Message, InputMediaPhoto, InputMediaVideo,
 
 from log import logger
 from models import Source, CategoryMessageHistory
-from plugins.user import custom_filters
-from plugins.user.helpers import (add_to_filter_history,
-                                  add_to_category_history,
-                                  get_message_link,
-                                  perform_check_history, perform_filtering, ChatsLocks)
-from send_media_group import send_media_group
 from settings import PATTERN_AGENT, PATTERN_WITHOUT_SMILE, MESSAGES_EDIT_LIMIT_TD
+from utilities import get_message_link, get_shortened_text
+from utilities.send_media_group import send_media_group
+from plugins.user import custom_filters
+from plugins.user.helpers.inspector import perform_check_history, perform_filtering
+from plugins.user.helpers.chats_locks import ChatsLocks
+from plugins.user.helpers.history import add_to_category_history, add_to_filter_history
 
 
 def is_new_and_valid_post(message: Message, source: Source) -> bool:
     if h_obj := perform_check_history(message, source):
         logger.info(
             f'Сообщение {message.id} из источника '
-            f'{message.chat.title[:20]} ({message.chat.id}) '
+            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
             f'{"в составе медиагруппы " + message.media_group_id + " " if message.media_group_id else ""}'
-            f'уже есть в канале категории {source.category} '
-            f'({get_message_link(h_obj.category.tg_id, h_obj.message_id)})')
+            f'уже есть в канале категории {get_shortened_text(source.category.title, 20)} {source.category.tg_id}'
+            f'{get_message_link(h_obj.category.tg_id, h_obj.message_id)}')
         return False
 
-    if filter_id := perform_filtering(message, source):
-        add_to_filter_history(message, filter_id, source)
+    if data := perform_filtering(message, source):
+        add_to_filter_history(message, data['id'], source)
         logger.info(
             f'Сообщение {message.id} из источника '
-            f'{message.chat.title[:20]} ({message.chat.id}) '
+            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
             f'{"в составе медиагруппы " + message.media_group_id + " " if message.media_group_id else ""}'
-            f'отфильтровано. ID фильтра: {filter_id}')
+            f'отфильтровано: {data}')
         return False
 
     return True
@@ -47,7 +47,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
     & ~filters.service
 )
 async def message_without_media_group(client: Client, message: Message, *, disable_notification: bool = None):
-    logger.debug(f'Источник {message.chat.title[:20]} ({message.chat.id}) '
+    logger.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
                  f'отправил сообщение {message.id}')
 
     source = Source.get(tg_id=message.chat.id)
@@ -74,11 +74,11 @@ async def message_without_media_group(client: Client, message: Message, *, disab
 
         await client.read_chat_history(message.chat.id)
         logger.info(f'Сообщение {message.id} '
-                    f'из источника {message.chat.title[:20]} ({message.chat.id}) '
-                    f'переслано в категорию {source.category.title} ({source.category.tg_id})')
+                    f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                    f'переслано в категорию {get_shortened_text(source.category.title, 20)} {source.category.tg_id}')
     except BadRequest as e:
         logger.error(f'Сообщение {message.id} '
-                     f'из источника {message.chat.title[:20]} ({message.chat.id}) привело к ошибке.\n'
+                     f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке.\n'
                      f'{e}\nПолное сообщение: {message}\n', exc_info=True)
 
 
@@ -91,7 +91,7 @@ blocking_received_media_groups = ChatsLocks('received')
     & ~filters.service
 )
 async def message_with_media_group(client: Client, message: Message, *, disable_notification: bool = False):
-    logger.debug(f'Источник {message.chat.title[:20]} ({message.chat.id}) '
+    logger.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
                  f'отправил сообщение {message.id} '
                  f'в составе медиагруппы {message.media_group_id}')
 
@@ -187,11 +187,11 @@ async def message_with_media_group(client: Client, message: Message, *, disable_
 
         await client.read_chat_history(message.chat.id)
         logger.info(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
-                    f'из источника {message.chat.title[:20]} ({message.chat.id}) '
-                    f'пересланы в категорию {source.category.title} ({source.category.tg_id})')
+                    f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                    f'пересланы в категорию {source.category.title} {source.category.tg_id}')
     except BadRequest as e:
         logger.error(f'Сообщение {message.id} '
-                     f'из источника {message.chat.title[:20]} ({message.chat.id}) привело к ошибке\n'
+                     f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке\n'
                      f'{e}\nПолное сообщение: {message}\n', exc_info=True)
 
 
@@ -258,11 +258,12 @@ blocking_editable_messages = ChatsLocks('edit')
     custom_filters.monitored_channels
 )
 async def edited_message(client: Client, message: Message):
-    logger.debug(f'Источник {message.chat.title[:20]} ({message.chat.id}) изменил сообщение {message.id}')
+    logger.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                 f'изменил сообщение {message.id}')
 
     if message.edit_date - message.date > MESSAGES_EDIT_LIMIT_TD:
         logger.info(f'Сообщение {message.id} '
-                    f'из источника {message.chat.title[:20]} ({message.chat.id}) '
+                    f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
                     f'изменено спустя {(message.edit_date - message.date).seconds//60} мин.')
         return
 
@@ -270,7 +271,7 @@ async def edited_message(client: Client, message: Message):
     if (blocked.contains(message.media_group_id)
             or blocked.contains(message.id)):
         logger.warning(f'Изменение сообщения {message.id} '
-                       f'из источника {message.chat.title[:20]} ({message.chat.id}) заблокировано.')
+                       f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} заблокировано.')
         return
     blocked.add(message.media_group_id if message.media_group_id else message.id)
 
@@ -280,7 +281,7 @@ async def edited_message(client: Client, message: Message):
         deleted=False, )
     if not history_obj:
         logger.warning(f'Измененного сообщения {message.id} '
-                       f'из источника {message.chat.title[:20]} ({message.chat.id}) '
+                       f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
                        f'от {message.date} нет в истории.')
         blocked.remove(message.media_group_id if message.media_group_id else message.id)
         return
@@ -311,8 +312,8 @@ async def edited_message(client: Client, message: Message):
             h.deleted = True
             h.save()
             logger.info(f'Сообщение {h.source_message_id} '
-                        f'из источника {h.source.title[:20]} ({h.source.tg_id}) было изменено. '
-                        f'Оно удалено из категории {h.category.title[:20]} ({h.category.tg_id})')
+                        f'из источника {get_shortened_text(h.source.title, 20)} {h.source.tg_id} было изменено. '
+                        f'Оно удалено из категории {get_shortened_text(h.category.title, 20)} {h.category.tg_id}')
 
         if message.media_group_id:
             if b := blocking_received_media_groups.get(message.chat.id):
@@ -328,7 +329,7 @@ async def edited_message(client: Client, message: Message):
     custom_filters.monitored_channels
 )
 async def deleted_messages(client: Client, messages: list[Message]):
-    logger.debug(f'Получено обновление о удалении сообщений источников '
+    logger.debug(f'Получено обновление об удалении сообщений источников '
                  f'{[(message.chat.title, message.chat.id, message.id) for message in messages]}')
 
     for message in messages:
@@ -343,5 +344,5 @@ async def deleted_messages(client: Client, messages: list[Message]):
             history_obj.deleted = True
             history_obj.save()
             logger.info(f'Сообщение {history_obj.source_message_id} '
-                        f'из источника {history_obj.source.title[:20]} ({history_obj.source.tg_id}) было удалено. '
-                        f'Оно удалено из категории {history_obj.category.title[:20]} ({history_obj.category.tg_id})')
+                        f'из источника {get_shortened_text(history_obj.source.title, 20)} {history_obj.source.tg_id} было удалено. '
+                        f'Оно удалено из категории {get_shortened_text(history_obj.category.title, 20)} {history_obj.category.tg_id}')

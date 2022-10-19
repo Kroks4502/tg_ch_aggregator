@@ -5,7 +5,7 @@ from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
 
 from log import logger
 from models import Source, Filter
-from models_types import (FilterType, FILTER_TYPES_BY_ID, FilterEntityType,
+from models.types import (FilterType, FILTER_TYPES_BY_ID, FilterEntityType,
                           FilterMessageType, FILTER_ENTITY_TYPES_BY_ID,
                           FILTER_MESSAGE_TYPES_BY_ID)
 from plugins.bot.menu import custom_filters

@@ -13,7 +13,9 @@ from initialization import user
 from log import logger
 from models import (Admin, CategoryMessageHistory, Source,
                     FilterMessageHistory, Category, Filter)
-from models_types import FILTER_TYPES_BY_ID
+from models.types import FILTER_TYPES_BY_ID
+from settings import LOGS_DIR, BASE_DIR
+from utilities import get_message_link, get_shortened_text
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.helpers import buttons
 from plugins.bot.menu.helpers.links import (get_user_formatted_link,
@@ -21,8 +23,6 @@ from plugins.bot.menu.helpers.links import (get_user_formatted_link,
 from plugins.bot.menu.helpers.path import Path
 from plugins.bot.menu.helpers.senders import send_message_to_admins
 from plugins.bot.menu.managers.input_wait import input_wait_manager
-from plugins.user.helpers import get_message_link
-from settings import LOGS_DIR, BASE_DIR
 
 
 @Client.on_callback_query(filters.regex(
@@ -119,7 +119,7 @@ async def statistics(_, callback_query: CallbackQuery):
                                                          & (CategoryMessageHistory.source == source))
         total_count = query_count + hm_query.count()
         if p := query_count / total_count * 100 if total_count else 0:
-            text += (f'— {source.title[:30]}: {query_count} шт. '
+            text += (f'— {get_shortened_text(source.title, 25)}: {query_count} шт. '
                      f'({p:0.1f}%)\n')
     query = FilterMessageHistory.select()
     query_count = query.count()
@@ -150,10 +150,12 @@ async def message_history(_, callback_query: CallbackQuery):
         text += (f'{"🏞" if item.media_group else "🗞"}'
                  f'{">📝" if item.source_message_edited else ""}'
                  f'{">🗑" if item.source_message_deleted else ""}'
-                 f' [{item.source.title[:30]}]({get_message_link(item.source.tg_id, item.source_message_id)})\n'
+                 f' [{get_shortened_text(item.source.title, 30)}]'
+                 f'({get_message_link(item.source.tg_id, item.source_message_id)})\n'
                  f'✅{">🖨" if item.rewritten else ""}'
                  f'{">🗑" if item.deleted else ""}'
-                 f' [{item.category.title[:30]}]({get_message_link(item.category.tg_id, item.message_id)})\n'
+                 f' [{get_shortened_text(item.category.title, 30)}]'
+                 f'({get_message_link(item.category.tg_id, item.message_id)})\n'
                  f'__{item.source_message_id} {item.date.strftime("%Y.%m.%d, %H:%M:%S")}__'
                  f'\n\n')
     text += f'Всего записей: **{obj_counts}**'
@@ -182,10 +184,11 @@ async def filter_history(_, callback_query: CallbackQuery):
     text = '**Список отфильтрованных сообщений в обратном порядке**\n\n'
     for item in query.paginate(page, MAX_NUM_ENTRIES_MESSAGE):
         text += (f'{"🏞" if item.media_group else "🗞"}'
-                 f'[{item.source.title[:30]}]({get_message_link(item.source.tg_id, item.source_message_id)})\n'
+                 f'[{get_shortened_text(item.source.title, 30)}]'
+                 f'({get_message_link(item.source.tg_id, item.source_message_id)})\n'
                  f'**{"Персональный" if item.filter.source else "Общий"}** фильтр '
-                 f'типа **{FILTER_TYPES_BY_ID.get(item.filter.type)}** '
-                 f'с паттерном `{item.filter.pattern}`\n'
+                 f'**{FILTER_TYPES_BY_ID.get(item.filter.type)}**\n'
+                 f'`{item.filter.pattern}`\n'
                  f'__{item.source_message_id} {item.date.strftime("%Y.%m.%d, %H:%M:%S")}__'
                  f'\n\n')
     text += f'Всего записей: **{obj_counts}**'

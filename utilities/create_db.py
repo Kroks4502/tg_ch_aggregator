@@ -1,8 +1,8 @@
-from models import (BaseModel, Category, Source, Filter, Admin,
+from models import (Category, Source, Filter, Admin,
                     FilterMessageHistory, CategoryMessageHistory)
+from settings import DATABASE
 
-
-BaseModel._meta.database.create_tables(
+DATABASE.create_tables(
     [
         Category, Source, Filter, Admin,
         FilterMessageHistory, CategoryMessageHistory

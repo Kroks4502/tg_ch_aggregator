@@ -8,7 +8,7 @@ os.makedirs(LOGS_DIR, exist_ok=True)
 logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT, encoding='utf-8')
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 handler = RotatingFileHandler(os.path.join(LOGS_DIR, 'app.log'),
                               maxBytes=50000000, backupCount=5, encoding='utf-8')
 handler.setFormatter(logging.Formatter(LOG_FORMAT))
