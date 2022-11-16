@@ -210,6 +210,7 @@ async def message_with_media_group(client: Client, message: Message, *, is_resen
         logger.warning(f'Сообщение {message.id} '
                        f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке '
                        f'{e}')
+    # todo: делать не пересылку когда [400 CHAT_FORWARDS_RESTRICTED] - The chat restricts forwarding content (caused by "messages.ForwardMessages")
     except BadRequest as e:
         logger.error(f'Сообщение {message.id} '
                      f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке\n'
