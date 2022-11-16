@@ -46,9 +46,14 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
     & ~filters.media_group
     & ~filters.service
 )
-async def message_without_media_group(client: Client, message: Message, *, disable_notification: bool = None):
-    logger.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                 f'отправил сообщение {message.id}')
+async def message_without_media_group(client: Client, message: Message, *, is_resending: bool = None):
+    if not is_resending:
+        logger.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                     f'отправил сообщение {message.id}')
+    else:
+        logger.debug(f'Повторная отправка из источника '
+                     f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                     f'сообщения {message.id}')
 
     source = Source.get(tg_id=message.chat.id)
 
@@ -63,10 +68,10 @@ async def message_without_media_group(client: Client, message: Message, *, disab
         if search_result:
             delete_agent_text_in_message(search_result, message)
             forwarded_message = await message.copy(
-                source.category.tg_id, disable_notification=disable_notification)
+                source.category.tg_id, disable_notification=is_resending)
         else:
             forwarded_message = await message.forward(
-                source.category.tg_id, disable_notification=disable_notification)
+                source.category.tg_id, disable_notification=is_resending)
 
         add_to_category_history(
             message, forwarded_message, source,
@@ -90,10 +95,16 @@ blocking_received_media_groups = ChatsLocks('received')
     & filters.media_group
     & ~filters.service
 )
-async def message_with_media_group(client: Client, message: Message, *, disable_notification: bool = False):
-    logger.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                 f'отправил сообщение {message.id} '
-                 f'в составе медиагруппы {message.media_group_id}')
+async def message_with_media_group(client: Client, message: Message, *, is_resending: bool = False):
+    if not is_resending:
+        logger.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                     f'отправил сообщение {message.id} '
+                     f'в составе медиагруппы {message.media_group_id}')
+    else:
+        logger.debug(f'Повторная отправка из источника '
+                     f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                     f'сообщения {message.id} '
+                     f'в составе медиагруппы {message.media_group_id}')
 
     blocked = blocking_received_media_groups.get(message.chat.id)
     if blocked.contains(message.media_group_id):
@@ -170,13 +181,13 @@ async def message_with_media_group(client: Client, message: Message, *, disable_
                 client,
                 source.category.tg_id,
                 media=media,
-                disable_notification=disable_notification
+                disable_notification=is_resending
             )
         else:
             forwarded_messages = await client.forward_messages(
                 source.category.tg_id, message.chat.id,
                 [item.id for item in media_group_messages],
-                disable_notification=disable_notification
+                disable_notification=is_resending
             )
 
         for original_message, forward_message in zip(
@@ -318,9 +329,9 @@ async def edited_message(client: Client, message: Message):
         if message.media_group_id:
             if b := blocking_received_media_groups.get(message.chat.id):
                 b.remove(message.media_group_id)
-            await message_with_media_group(client, message, disable_notification=True)
+            await message_with_media_group(client, message, is_resending=True)
         else:
-            await message_without_media_group(client, message, disable_notification=True)
+            await message_without_media_group(client, message, is_resending=True)
 
     blocked.remove(message.media_group_id if message.media_group_id else message.id)
 
