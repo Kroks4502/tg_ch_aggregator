@@ -4,7 +4,7 @@ from typing import Match
 
 from pyrogram import Client, filters
 from pyrogram.enums import MessageEntityType
-from pyrogram.errors import BadRequest
+from pyrogram.errors import BadRequest, MessageIdInvalid
 from pyrogram.types import (Message, InputMediaPhoto, InputMediaVideo,
                             InputMediaAudio, InputMediaDocument, MessageEntity)
 
@@ -200,6 +200,11 @@ async def message_with_media_group(client: Client, message: Message, *, is_resen
         logger.info(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
                     f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
                     f'пересланы в категорию {source.category.title} {source.category.tg_id}')
+    except MessageIdInvalid as e:
+        # Случай когда почти одновременно приходит сообщение о редактировании и удалении сообщения из источника.
+        logger.warning(f'Сообщение {message.id} '
+                       f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке '
+                       f'{e}')
     except BadRequest as e:
         logger.error(f'Сообщение {message.id} '
                      f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке\n'
@@ -349,11 +354,16 @@ async def deleted_messages(client: Client, messages: list[Message]):
             source_message_id=message.id,
             deleted=False, )
         if history_obj:
-            await client.delete_messages(
+            amount_deleted = await client.delete_messages(
                 history_obj.category.tg_id, history_obj.message_id)
             history_obj.source_message_deleted = True
             history_obj.deleted = True
             history_obj.save()
-            logger.info(f'Сообщение {history_obj.source_message_id} '
-                        f'из источника {get_shortened_text(history_obj.source.title, 20)} {history_obj.source.tg_id} было удалено. '
-                        f'Оно удалено из категории {get_shortened_text(history_obj.category.title, 20)} {history_obj.category.tg_id}')
+            if amount_deleted:
+                logger.info(f'Сообщение {history_obj.source_message_id} '
+                            f'из источника {get_shortened_text(history_obj.source.title, 20)} {history_obj.source.tg_id} было удалено. '
+                            f'Оно удалено из категории {get_shortened_text(history_obj.category.title, 20)} {history_obj.category.tg_id}')
+            else:
+                logger.info(f'Сообщение {history_obj.source_message_id} '
+                            f'из источника {get_shortened_text(history_obj.source.title, 20)} {history_obj.source.tg_id} было удалено. '
+                            f'Оно УЖЕ удалено из категории {get_shortened_text(history_obj.category.title, 20)} {history_obj.category.tg_id}')
