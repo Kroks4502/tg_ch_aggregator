@@ -81,6 +81,11 @@ async def message_without_media_group(client: Client, message: Message, *, is_re
         logger.info(f'Сообщение {message.id} '
                     f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
                     f'переслано в категорию {get_shortened_text(source.category.title, 20)} {source.category.tg_id}')
+    except MessageIdInvalid as e:
+        # Случай когда почти одновременно приходит сообщение о редактировании и удалении сообщения из источника.
+        logger.warning(f'Сообщение {message.id} '
+                       f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке '
+                       f'{e}')
     except BadRequest as e:
         logger.error(f'Сообщение {message.id} '
                      f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке.\n'
