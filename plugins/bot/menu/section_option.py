@@ -111,12 +111,13 @@ async def statistics(_, callback_query: CallbackQuery):
     query = FilterMessageHistory.select().where(FilterMessageHistory.date > month_ago)
     text += f'— Месяц: {query.count()} шт.\n\n'
 
-    text += f'**По источникам с процентом от количества публикаций**\n'
+    text += f'**По источникам с процентом от количества публикаций за последний месяц**\n'
     for source in Source.select():
-        query = FilterMessageHistory.select().where(FilterMessageHistory.source == source)
+        query = FilterMessageHistory.select().where((FilterMessageHistory.source == source) & (FilterMessageHistory.date > month_ago))
         query_count = query.count()
         hm_query = CategoryMessageHistory.select().where((CategoryMessageHistory.deleted == False)
-                                                         & (CategoryMessageHistory.source == source))
+                                                         & (CategoryMessageHistory.source == source)
+                                                         & (CategoryMessageHistory.date > month_ago))
         total_count = query_count + hm_query.count()
         if p := query_count / total_count * 100 if total_count else 0:
             text += (f'— {get_shortened_text(source.title, 25)}: {query_count} шт. '
