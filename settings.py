@@ -19,7 +19,7 @@ LOG_FORMAT = ('%(asctime)s : %(levelname)s : %(module)s : '
 
 DEVELOP_MODE = os.getenv('develop_mode')
 PATTERN_AGENT = re.compile(
-    r'\s*Д*АН*ОЕ\sСООБЩЕНИЕ[\w\s().,]+ИНОСТРАННОГО\s(АГЕНТА|)*[\s.]*\s*',
+    r'\s*Д*АН*ОЕ\sСООБЩЕНИЕ[\w\s().,]+ИНОСТРАННОГО\s(АГЕНТА|)*[\s.]*\s*|\s*НАСТОЯЩИЙ МАТЕРИАЛ[\w \t\x0B\f\r().,]+[\r\n]*',
     flags=re.IGNORECASE)
 PATTERN_WITHOUT_SMILE = re.compile(
     r'[^а-яА-ЯЁёa-zA-z0-9 |-]+',
