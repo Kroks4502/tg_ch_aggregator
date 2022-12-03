@@ -1,6 +1,7 @@
 import math
 import os
 import datetime as dt
+from operator import itemgetter
 
 import peewee
 from pyrogram import Client, filters
@@ -111,7 +112,8 @@ async def statistics(_, callback_query: CallbackQuery):
     query = FilterMessageHistory.select().where(FilterMessageHistory.date > month_ago)
     text += f'— Месяц: {query.count()} шт.\n\n'
 
-    text += f'**По источникам с процентом от количества публикаций за последний месяц**\n'
+    text += f'**По источникам за последний месяц**\n'
+    lines = []
     for source in Source.select():
         query = FilterMessageHistory.select().where((FilterMessageHistory.source == source) & (FilterMessageHistory.date > month_ago))
         query_count = query.count()
@@ -120,8 +122,9 @@ async def statistics(_, callback_query: CallbackQuery):
                                                          & (CategoryMessageHistory.date > month_ago))
         total_count = query_count + hm_query.count()
         if p := query_count / total_count * 100 if total_count else 0:
-            text += (f'— {get_shortened_text(source.title, 25)}: {query_count} шт. '
-                     f'({p:0.1f}%)\n')
+            lines.append((f'— {get_shortened_text(source.title, 25)}: {query_count} шт. ({p:0.1f}%)\n', p))
+    text += ''.join([line[0] for line in sorted(lines, key=itemgetter(1), reverse=True)])
+
     query = FilterMessageHistory.select()
     query_count = query.count()
     hm_query = CategoryMessageHistory.select().where(CategoryMessageHistory.deleted == False)
