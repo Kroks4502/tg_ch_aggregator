@@ -122,8 +122,8 @@ async def statistics(_, callback_query: CallbackQuery):
                                                          & (CategoryMessageHistory.date > month_ago))
         total_count = query_count + hm_query.count()
         if p := query_count / total_count * 100 if total_count else 0:
-            lines.append((f'— {get_shortened_text(source.title, 25)}: {query_count} шт. ({p:0.1f}%)\n', p))
-    text += ''.join([f'{i}. {line[0]}' for i, line in enumerate(sorted(lines, key=itemgetter(1), reverse=True), start=1)])
+            lines.append((f'{get_shortened_text(source.title, 25)}: {query_count} шт. ({p:0.1f}%)\n', p))
+    text += ''.join([f'{i}. {" " if i < 10 else ""}{line[0]}' for i, line in enumerate(sorted(lines, key=itemgetter(1), reverse=True), start=1)])
 
     query = FilterMessageHistory.select()
     query_count = query.count()
