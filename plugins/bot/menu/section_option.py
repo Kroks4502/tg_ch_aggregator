@@ -123,7 +123,7 @@ async def statistics(_, callback_query: CallbackQuery):
         total_count = query_count + hm_query.count()
         if p := query_count / total_count * 100 if total_count else 0:
             lines.append((f'— {get_shortened_text(source.title, 25)}: {query_count} шт. ({p:0.1f}%)\n', p))
-    text += ''.join([line[0] for line in sorted(lines, key=itemgetter(1), reverse=True)])
+    text += ''.join([f'{i}. {line[0]}' for i, line in enumerate(sorted(lines, key=itemgetter(1), reverse=True), start=1)])
 
     query = FilterMessageHistory.select()
     query_count = query.count()
