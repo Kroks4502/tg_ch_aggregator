@@ -67,6 +67,7 @@ async def message_without_media_group(client: Client, message: Message, *, is_re
     try:
         if search_result:
             delete_agent_text_in_message(search_result, message)
+            message.web_page = None  # disable_web_page_preview = True
             forwarded_message = await message.copy(
                 source.category.tg_id, disable_notification=is_resending)
         else:
