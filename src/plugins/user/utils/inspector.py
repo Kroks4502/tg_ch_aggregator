@@ -4,9 +4,9 @@ import re
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message, MessageEntity
 
+from filter_types import FilterType, FilterMessageType
 from log import logger
 from models import Source, CategoryMessageHistory, Filter
-from models.types import FilterType, FilterMessageType
 
 
 def perform_check_history(

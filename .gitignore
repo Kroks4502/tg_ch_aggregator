@@ -131,8 +131,5 @@ dmypy.json
 *.session
 *.session-journal
 *.db
-/probe*.py
+/sessions/
 /logs/
-/create_db_old.py
-/filters_test.py
-/test_data/

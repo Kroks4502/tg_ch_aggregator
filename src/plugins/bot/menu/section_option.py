@@ -1,6 +1,6 @@
+import datetime as dt
 import math
 import os
-import datetime as dt
 from operator import itemgetter
 
 import peewee
@@ -10,20 +10,20 @@ from pyrogram.errors import RPCError
 from pyrogram.types import (CallbackQuery, InlineKeyboardMarkup,
                             InlineKeyboardButton, Message)
 
-from initialization import user
+from clients import user
+from common import get_message_link, get_shortened_text
+from filter_types import FILTER_TYPES_BY_ID
 from log import logger
 from models import (Admin, CategoryMessageHistory, Source,
                     FilterMessageHistory, Category, Filter)
-from models.types import FILTER_TYPES_BY_ID
-from settings import LOGS_DIR, BASE_DIR
-from utilities import get_message_link, get_shortened_text
 from plugins.bot.menu import custom_filters
-from plugins.bot.menu.helpers import buttons
-from plugins.bot.menu.helpers.links import (get_user_formatted_link,
-                                            get_channel_formatted_link)
-from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_admins
-from plugins.bot.menu.managers.input_wait import input_wait_manager
+from plugins.bot.menu.utils import buttons
+from plugins.bot.menu.utils.links import (get_user_formatted_link,
+                                          get_channel_formatted_link)
+from plugins.bot.menu.utils.managers import input_wait_manager
+from plugins.bot.menu.utils.path import Path
+from plugins.bot.menu.utils.senders import send_message_to_admins
+from settings import LOGS_DIR, DB_FILEPATH
 
 
 @Client.on_callback_query(filters.regex(
@@ -219,7 +219,7 @@ async def get_logs(_, callback_query: CallbackQuery):
     await callback_query.answer('Загрузка...')
     info_message = ''
     for filename in os.listdir(LOGS_DIR):
-        file_path = os.path.join(LOGS_DIR, filename)
+        file_path = LOGS_DIR / filename
         if os.stat(file_path).st_size:
             await callback_query.message.reply_document(file_path)
         else:
@@ -234,7 +234,7 @@ async def get_db(_, callback_query: CallbackQuery):
     logger.debug(callback_query.data)
 
     await callback_query.answer('Загрузка...')
-    await callback_query.message.reply_document(os.path.join(BASE_DIR, '.db'))
+    await callback_query.message.reply_document(DB_FILEPATH)
 
 
 @Client.on_callback_query(filters.regex(

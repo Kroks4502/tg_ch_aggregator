@@ -8,17 +8,17 @@ from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message, Chat,
                             ChatPrivileges)
 
-from initialization import user
+from clients import user
 from log import logger
 from models import Source, Category, Filter
 from plugins.bot.menu import custom_filters
-from plugins.bot.menu.helpers import buttons
-from plugins.bot.menu.helpers.checks import is_admin
-from plugins.bot.menu.helpers.links import get_channel_formatted_link
-from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_admins
-from plugins.bot.menu.managers.input_wait import input_wait_manager
 from plugins.bot.menu.section_source import list_source
+from plugins.bot.menu.utils import buttons
+from plugins.bot.menu.utils.checks import is_admin
+from plugins.bot.menu.utils.links import get_channel_formatted_link
+from plugins.bot.menu.utils.managers import input_wait_manager
+from plugins.bot.menu.utils.path import Path
+from plugins.bot.menu.utils.senders import send_message_to_admins
 
 
 def list_category_buttons(

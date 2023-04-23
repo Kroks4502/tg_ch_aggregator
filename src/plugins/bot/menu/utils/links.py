@@ -1,7 +1,7 @@
 from async_lru import alru_cache
 from pyrogram.errors import RPCError
 
-from initialization import user
+from clients import user
 from log import logger
 
 

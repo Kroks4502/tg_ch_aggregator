@@ -4,16 +4,16 @@ from operator import attrgetter
 from pyrogram.errors import RPCError
 from pyrogram.types import Dialog
 
+from clients import user, bot
 from log import logger
-from initialization import user, bot
 from models import Admin, Category, Source
-from plugins.user.news_forwarding import (message_with_media_group,
-                                          message_without_media_group)
+from plugins.user.forwarding_messages import message_with_media_group, message_without_media_group
 
 
 async def startup():
-    while not user.is_connected or not bot.is_connected:
+    while not user.is_connected or not user.is_initialized or not bot.is_connected or not bot.is_initialized:
         await sleep(0.1)
+
     msg = 'Запущен начальный скрипт'
     logger.info(msg)
     me = await user.get_me()

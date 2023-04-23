@@ -1,14 +1,15 @@
 import datetime
 
-from pyrogram import compose
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from pyrogram import compose
 
-from initialization import bot, user
-from start_script import startup
+from clients import bot, user
+from starter import startup
 
 scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
 scheduler.add_job(
-    startup, 'date',
+    func=startup,
+    trigger='date',
     run_date=(datetime.datetime.today() + datetime.timedelta(seconds=1))
 )
 scheduler.start()

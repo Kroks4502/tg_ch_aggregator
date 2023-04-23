@@ -2,7 +2,7 @@ from datetime import datetime
 
 from peewee import *
 
-from models.types import FilterType
+from filter_types import FilterType
 from settings import DATABASE
 
 
@@ -53,8 +53,7 @@ class Category(ChannelModel):
 
 
 class Source(ChannelModel):
-    category = ForeignKeyField(
-        Category, backref='sources', on_delete='CASCADE')
+    category = ForeignKeyField(Category, backref='sources', on_delete='CASCADE')
     _cache_monitored_channels = None
 
     @classmethod
@@ -77,10 +76,8 @@ class Source(ChannelModel):
 
 class Filter(BaseModel):
     pattern = CharField()
-    type = IntegerField(choices=[(filter_type.name, filter_type.value)
-                                 for filter_type in FilterType])
-    source = ForeignKeyField(
-        Source, null=True, backref='filters', on_delete='CASCADE')
+    type = IntegerField(choices=[(filter_type.name, filter_type.value) for filter_type in FilterType])
+    source = ForeignKeyField(Source, null=True, backref='filters', on_delete='CASCADE')
 
     def __str__(self):
         return self.pattern
@@ -114,6 +111,3 @@ class CategoryMessageHistory(MessageHistoryModel):
     message_id = IntegerField()
     rewritten = BooleanField()
     deleted = BooleanField(default=False)
-
-
-

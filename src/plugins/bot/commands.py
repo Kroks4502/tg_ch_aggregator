@@ -1,9 +1,9 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup
 
-from plugins.bot.menu.managers.input_wait import input_wait_manager
 from plugins.bot.menu.section_category import main_menu
 from plugins.bot.menu.section_option import check_post_waiting_forwarding
+from plugins.bot.menu.utils.managers import input_wait_manager
 
 
 @Client.on_message(filters.command(['start', 'go']))

@@ -3,18 +3,17 @@ from pyrogram import Client, filters
 from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
                             InlineKeyboardMarkup, Message)
 
+from filter_types import FilterType, FILTER_TYPES_BY_ID, FilterEntityType, FILTER_ENTITY_TYPES_BY_ID, FilterMessageType, \
+    FILTER_MESSAGE_TYPES_BY_ID
 from log import logger
 from models import Source, Filter
-from models.types import (FilterType, FILTER_TYPES_BY_ID, FilterEntityType,
-                          FilterMessageType, FILTER_ENTITY_TYPES_BY_ID,
-                          FILTER_MESSAGE_TYPES_BY_ID)
 from plugins.bot.menu import custom_filters
-from plugins.bot.menu.helpers import buttons
-from plugins.bot.menu.helpers.checks import is_admin
-from plugins.bot.menu.helpers.links import get_channel_formatted_link
-from plugins.bot.menu.helpers.path import Path
-from plugins.bot.menu.helpers.senders import send_message_to_admins
-from plugins.bot.menu.managers.input_wait import input_wait_manager
+from plugins.bot.menu.utils import buttons
+from plugins.bot.menu.utils.checks import is_admin
+from plugins.bot.menu.utils.links import get_channel_formatted_link
+from plugins.bot.menu.utils.managers import input_wait_manager
+from plugins.bot.menu.utils.path import Path
+from plugins.bot.menu.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(filters.regex(

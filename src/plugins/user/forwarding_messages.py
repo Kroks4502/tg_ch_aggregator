@@ -8,15 +8,15 @@ from pyrogram.errors import BadRequest, MessageIdInvalid
 from pyrogram.types import (Message, InputMediaPhoto, InputMediaVideo,
                             InputMediaAudio, InputMediaDocument, MessageEntity)
 
+from common import get_message_link, get_shortened_text
 from log import logger
 from models import Source, CategoryMessageHistory
-from settings import PATTERN_AGENT, PATTERN_WITHOUT_SMILE, MESSAGES_EDIT_LIMIT_TD
-from utilities import get_message_link, get_shortened_text
-from utilities.send_media_group import send_media_group
 from plugins.user import custom_filters
-from plugins.user.helpers.inspector import perform_check_history, perform_filtering
-from plugins.user.helpers.chats_locks import ChatsLocks
-from plugins.user.helpers.history import add_to_category_history, add_to_filter_history
+from plugins.user.utils.chats_locks import ChatsLocks
+from plugins.user.utils.history import add_to_category_history, add_to_filter_history
+from plugins.user.utils.inspector import perform_check_history, perform_filtering
+from plugins.user.utils.send_media_group import send_media_group
+from settings import PATTERN_AGENT, PATTERN_WITHOUT_SMILE, MESSAGES_EDIT_LIMIT_TD
 
 
 def is_new_and_valid_post(message: Message, source: Source) -> bool:
