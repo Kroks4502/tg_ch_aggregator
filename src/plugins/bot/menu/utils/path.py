@@ -2,6 +2,8 @@ import re
 
 
 class Path:
+    """Построение путей в меню бота для callback_query.data."""
+
     def __init__(self, path: str):
         self.path = path
 

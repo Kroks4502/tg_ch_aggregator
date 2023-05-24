@@ -52,11 +52,11 @@ async def list_source(_, callback_query: CallbackQuery, *, needs_an_answer: bool
         .join(Filter, peewee.JOIN.LEFT_OUTER)
         .group_by(Source.id)
     )
-    inline_keyboard += buttons.get_list_model(
+    inline_keyboard += buttons.get_list(
         data={item.id: (item.title, item.count) for item in query},
         path=path,
         prefix_path='s',
-    ) + buttons.get_fixed(path)
+    ) + buttons.get_footer(path)
 
     if needs_an_answer:
         await callback_query.answer()
@@ -125,7 +125,7 @@ async def add_source_waiting_input(
         await new_message.edit_text(
             text,
             reply_markup=InlineKeyboardMarkup(
-                buttons.get_fixed(path, back_title='Назад')),
+                buttons.get_footer(path, back_title='Назад')),
             disable_web_page_preview=True)
 
     try:
@@ -195,6 +195,6 @@ async def delete_source(client: Client, callback_query: CallbackQuery):
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
             '❌ Подтвердить удаление',
             callback_data=f'{path}/'
-        ), ]] + buttons.get_fixed(path)),
+        ), ]] + buttons.get_footer(path)),
         disable_web_page_preview=True
     )

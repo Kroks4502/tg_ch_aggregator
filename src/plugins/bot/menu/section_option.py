@@ -60,7 +60,7 @@ async def options(_, callback_query: CallbackQuery):
                     'Проверить пост',
                     callback_data='/o/:check_post/'
                 ), ],
-            ] + buttons.get_fixed(Path(callback_query.data))))
+            ] + buttons.get_footer(Path(callback_query.data))))
 
 
 @Client.on_callback_query(filters.regex(
@@ -137,7 +137,7 @@ async def statistics(_, callback_query: CallbackQuery):
 
     await callback_query.answer()
     await callback_query.message.edit_text(
-        text, reply_markup=InlineKeyboardMarkup(buttons.get_fixed(Path('/o/mh/'))),
+        text, reply_markup=InlineKeyboardMarkup(buttons.get_footer(Path('/o/mh/'))),
         disable_web_page_preview=True)
 
 
@@ -174,7 +174,7 @@ async def message_history(_, callback_query: CallbackQuery):
         inline_keyboard[0].append(InlineKeyboardButton(
             'Следующие',
             callback_data=f'/o/mh/p_{page + 1}/'))
-    inline_keyboard += buttons.get_fixed(Path('/o/mh/'))
+    inline_keyboard += buttons.get_footer(Path('/o/mh/'))
     await callback_query.answer()
     await callback_query.message.edit_text(
         text, reply_markup=InlineKeyboardMarkup(inline_keyboard))
@@ -207,7 +207,7 @@ async def filter_history(_, callback_query: CallbackQuery):
         inline_keyboard[0].append(InlineKeyboardButton(
             'Следующие',
             callback_data=f'/o/fh/p_{page + 1}/'))
-    inline_keyboard += buttons.get_fixed(Path('/o/fh/'))
+    inline_keyboard += buttons.get_footer(Path('/o/fh/'))
     await callback_query.answer()
     await callback_query.message.edit_text(
         text, reply_markup=InlineKeyboardMarkup(inline_keyboard))
@@ -256,12 +256,12 @@ async def list_admins(_, callback_query: CallbackQuery, *, needs_an_answer: bool
     query = (Admin
              .select(Admin.id,
                      Admin.username, ))
-    inline_keyboard += buttons.get_list_model(
+    inline_keyboard += buttons.get_list(
         data={f'{item.id}': (item.username, 0) for item in query},
         path=path,
         prefix_path='u',
     )
-    inline_keyboard += buttons.get_fixed(path)
+    inline_keyboard += buttons.get_footer(path)
     if needs_an_answer:
         await callback_query.answer()
     await callback_query.message.edit_text(
@@ -285,7 +285,7 @@ async def detail_admin(_, callback_query: CallbackQuery):
             '✖️ Удалить',
             callback_data=path.add_action('delete')
         ), ])
-    inline_keyboard += buttons.get_fixed(path)
+    inline_keyboard += buttons.get_footer(path)
     await callback_query.answer()
     await callback_query.message.edit_text(
         text,
@@ -320,7 +320,7 @@ async def add_admin_waiting_input(
         await message.reply_text(
             text,
             reply_markup=InlineKeyboardMarkup(
-                buttons.get_fixed(path, back_title='Назад')),
+                buttons.get_footer(path, back_title='Назад')),
             disable_web_page_preview=True)
 
     try:
@@ -387,7 +387,7 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
         '❌ Подтвердить удаление',
         callback_data=f'{path}/'
     ), ]]
-    inline_keyboard += buttons.get_fixed(path)
+    inline_keyboard += buttons.get_footer(path)
 
     await callback_query.answer()
     await callback_query.message.edit_text(
@@ -417,7 +417,7 @@ async def check_post_waiting_forwarding(
         await message.reply_text(
             text,
             reply_markup=InlineKeyboardMarkup(
-                b + buttons.get_fixed(
+                b + buttons.get_footer(
                     Path('/o/'), back_title='Назад')),
             disable_web_page_preview=True)
 

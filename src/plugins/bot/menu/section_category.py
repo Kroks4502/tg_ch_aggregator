@@ -27,7 +27,7 @@ def list_category_buttons(
                      peewee.fn.Count(Source.id).alias('count'))
              .join(Source, peewee.JOIN.LEFT_OUTER)
              .group_by(Category.id))
-    return buttons.get_list_model(
+    return buttons.get_list(
         data={f'{item.id}': (item.title, item.count) for item in query},
         path=path,
         prefix_path='c',
@@ -81,7 +81,7 @@ async def choice_source_category(_, callback_query: CallbackQuery):
             f'\n\nТы **меняешь категорию** у источника.\n'
             f'Выбери новую категорию:')
 
-    inline_keyboard = list_category_buttons(path) + buttons.get_fixed(path)
+    inline_keyboard = list_category_buttons(path) + buttons.get_footer(path)
     await callback_query.answer()
     await callback_query.message.edit_text(
         text, reply_markup=InlineKeyboardMarkup(inline_keyboard),
@@ -117,8 +117,8 @@ async def add_category_waiting_input(
         await new_message.edit_text(
             text,
             reply_markup=InlineKeyboardMarkup(
-                buttons.get_fixed(Path(callback_query.data),
-                                  back_title='Назад')),
+                buttons.get_footer(Path(callback_query.data),
+                                   back_title='Назад')),
             disable_web_page_preview=True)
 
     if len(message.text) > 80:
@@ -178,7 +178,7 @@ async def edit_category_waiting_input(
         await message.reply_text(
             text,
             reply_markup=InlineKeyboardMarkup(
-                buttons.get_fixed(path, back_title='Назад')),
+                buttons.get_footer(path, back_title='Назад')),
             disable_web_page_preview=True)
 
     try:
@@ -263,6 +263,6 @@ async def delete_category(client: Client, callback_query: CallbackQuery):
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
             '❌ Подтвердить удаление',
             callback_data=f'{path}/'
-        ), ]] + buttons.get_fixed(path)),
+        ), ]] + buttons.get_footer(path)),
         disable_web_page_preview=True
     )

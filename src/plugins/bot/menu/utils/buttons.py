@@ -3,8 +3,17 @@ from pyrogram.types import InlineKeyboardButton
 from plugins.bot.menu.utils.path import Path
 
 
-def get_fixed(
-        path: Path, back_title='Назад') -> list[list[InlineKeyboardButton]]:
+def get_footer(
+        path: Path,
+        back_title: str = 'Назад'
+) -> list[list[InlineKeyboardButton]]:
+    """
+    Получить фиксированные кнопки "Главная" и "Назад".
+
+    :param path: Текущий путь в меню.
+    :param back_title: Текст кнопки "Назад".
+    :return: Фиксированные кнопки.
+    """
     row_buttons = [InlineKeyboardButton('🗂 На главную', callback_data='/')]
     prev_data = path.get_prev()
     if prev_data != '/':
@@ -17,12 +26,21 @@ def get_fixed(
 MAX_LENGTH_BUTTON_TEXT = 12
 
 
-def get_list_model(
-        data: dict,
+def get_list(
+        data: dict[int | str, tuple[str | None, int]],
         path: Path,
         prefix_path: str = '',
-        button_show_all_title: str = '',
+        button_show_all_title: str = None,
 ) -> list[list[InlineKeyboardButton]]:
+    """
+    Получить кнопки для списка данных.
+
+    :param data: Данные для преобразования в кнопки. Ключ - id, значение кортеж из имени кнопки и количества сущностей.
+    :param path: Текущий путь в меню.
+    :param prefix_path: Префикс для формирования пути.
+    :param button_show_all_title: Добавляет кнопку с <prefix_path>_0.
+    :return: Кнопки из данных.
+    """
     buttons = []
     row_buttons = []
 

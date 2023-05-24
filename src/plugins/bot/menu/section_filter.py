@@ -58,7 +58,7 @@ async def list_types_filters(_, callback_query: CallbackQuery, *, needs_an_answe
             for filter_type in FilterType}
     data.update({item.type: (FILTER_TYPES_BY_ID.get(item.type), item.count)
                  for item in query})
-    inline_keyboard += buttons.get_list_model(
+    inline_keyboard += buttons.get_list(
         data=data,
         path=path,
         prefix_path='t',
@@ -68,7 +68,7 @@ async def list_types_filters(_, callback_query: CallbackQuery, *, needs_an_answe
     await callback_query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(
-            inline_keyboard + buttons.get_fixed(path)),
+            inline_keyboard + buttons.get_footer(path)),
         disable_web_page_preview=True
     )
 
@@ -106,7 +106,7 @@ async def list_filters(_, callback_query: CallbackQuery, *, needs_an_answer: boo
         .where((source_where if source_where else Filter.source == source_id)
                & (Filter.type == filter_type))
     )
-    inline_keyboard += buttons.get_list_model(
+    inline_keyboard += buttons.get_list(
         data={f'{item.id}': (item.pattern, 0) for item in query},
         path=path,
         prefix_path='f')
@@ -117,7 +117,7 @@ async def list_filters(_, callback_query: CallbackQuery, *, needs_an_answer: boo
     await callback_query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(
-            inline_keyboard + buttons.get_fixed(path)),
+            inline_keyboard + buttons.get_footer(path)),
         disable_web_page_preview=True
     )
 
@@ -146,7 +146,7 @@ async def detail_filter(_, callback_query: CallbackQuery, *, needs_an_answer: bo
                 '✖️',
                 callback_data=path.add_action('delete')
             ), ], )
-    inline_keyboard += buttons.get_fixed(path)
+    inline_keyboard += buttons.get_footer(path)
 
     if filter_obj.source:
         text = (f'Источник: '
@@ -220,7 +220,7 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
             if entity_type.name not in existing_filters_patterns:
                 data.update({entity_type.value[0]: (entity_type.name, 0)})
 
-    inline_keyboard = buttons.get_list_model(
+    inline_keyboard = buttons.get_list(
         data=data,
         path=path,
         prefix_path='v',
@@ -230,7 +230,7 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
     await callback_query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(
-            inline_keyboard + buttons.get_fixed(path)),
+            inline_keyboard + buttons.get_footer(path)),
         disable_web_page_preview=True
     )
 
@@ -283,7 +283,7 @@ async def add_filter_waiting_input(
         await message.reply_text(
             text,
             reply_markup=InlineKeyboardMarkup(
-                buttons.get_fixed(path, back_title='Параметры')),
+                buttons.get_footer(path, back_title='Параметры')),
             disable_web_page_preview=True)
 
     filter_obj = Filter.create(
@@ -343,8 +343,9 @@ async def edit_body_filter_wait_input(
         await message.reply_text(
             text,
             reply_markup=InlineKeyboardMarkup(
-                buttons.get_fixed(path, back_title='Параметры')),
-            disable_web_page_preview=True)
+                buttons.get_footer(path, back_title='Параметры')),
+            disable_web_page_preview=True
+        )
 
     filter_obj.pattern = message.text
     filter_obj.save()
@@ -406,6 +407,6 @@ async def delete_filter(client: Client, callback_query: CallbackQuery):
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
             '❌ Подтвердить удаление',
             callback_data=f'{path}/'
-        ), ]] + buttons.get_fixed(path)),
+        ), ]] + buttons.get_footer(path)),
         disable_web_page_preview=True
     )

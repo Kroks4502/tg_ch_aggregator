@@ -9,6 +9,7 @@ from plugins.bot.menu import custom_filters
 
 
 class InputWaitManager:
+    """Менеджер ожидания отправки пользователем сообщения боту."""
     _waiting_chats: dict[int: dict[str: any]] = {}
 
     def add(

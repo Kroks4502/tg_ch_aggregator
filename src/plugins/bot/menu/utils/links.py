@@ -8,6 +8,7 @@ from clients import user
 
 @alru_cache(maxsize=128)
 async def get_user_formatted_link(tg_id: int) -> str:
+    """Получить отформатированную в markdown ссылку на пользователя по tg_id."""
     try:
         chat = await user.get_chat(tg_id)
         if chat.username:
@@ -23,6 +24,7 @@ async def get_user_formatted_link(tg_id: int) -> str:
 
 @alru_cache(maxsize=128)
 async def get_channel_formatted_link(tg_id: int) -> str:
+    """Получить отформатированную в markdown ссылку на канал по tg_id."""
     try:
         chat = await user.get_chat(tg_id)
         if chat.username:

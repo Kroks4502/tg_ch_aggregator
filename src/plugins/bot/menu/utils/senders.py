@@ -8,7 +8,11 @@ from models import Admin
 
 
 async def send_message_to_admins(
-        client: Client, callback_query: CallbackQuery, text):
+        client: Client,
+        callback_query: CallbackQuery,
+        text: str
+):
+    """Отправка сообщений всем администраторам бота."""
     f_user = callback_query.from_user
     for admin in Admin.select().where(Admin.tg_id != f_user.id):
         if f_user.username:

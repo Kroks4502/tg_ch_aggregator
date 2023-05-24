@@ -6,4 +6,5 @@ from pyrogram.types import CallbackQuery
 
 @Client.on_callback_query(group=-999)
 def log(_, callback_query: CallbackQuery):
+    """Логирование всех получаемых CallbackQuery."""
     logging.debug(callback_query.data)
