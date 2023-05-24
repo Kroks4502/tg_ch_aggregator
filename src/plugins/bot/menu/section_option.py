@@ -17,12 +17,12 @@ from log import logger
 from models import (Admin, CategoryMessageHistory, Source,
                     FilterMessageHistory, Category, Filter)
 from plugins.bot.menu import custom_filters
-from plugins.bot.menu.utils import buttons
-from plugins.bot.menu.utils.links import (get_user_formatted_link,
-                                          get_channel_formatted_link)
-from plugins.bot.menu.utils.managers import input_wait_manager
-from plugins.bot.menu.utils.path import Path
-from plugins.bot.menu.utils.senders import send_message_to_admins
+from plugins.bot.menu.common import buttons
+from plugins.bot.menu.common.links import (get_user_formatted_link,
+                                           get_channel_formatted_link)
+from plugins.bot.menu.common.managers import input_wait_manager
+from plugins.bot.menu.common.path import Path
+from plugins.bot.menu.common.senders import send_message_to_admins
 from settings import LOGS_DIR, DB_FILEPATH
 
 

@@ -12,10 +12,10 @@ from common import get_message_link, get_shortened_text
 from log import logger
 from models import Source, CategoryMessageHistory
 from plugins.user import custom_filters
-from plugins.user.utils.chats_locks import ChatsLocks
-from plugins.user.utils.history import add_to_category_history, add_to_filter_history
-from plugins.user.utils.inspector import perform_check_history, perform_filtering
-from plugins.user.utils.send_media_group import send_media_group
+from plugins.user.common.chats_locks import ChatsLocks
+from plugins.user.common.history import add_to_category_history, add_to_filter_history
+from plugins.user.common.inspector import perform_check_history, perform_filtering
+from plugins.user.common.send_media_group import send_media_group
 from settings import PATTERN_AGENT, PATTERN_WITHOUT_SMILE, MESSAGES_EDIT_LIMIT_TD
 
 
