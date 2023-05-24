@@ -13,12 +13,12 @@ from log import logger
 from models import Source, Category, Filter
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.section_source import list_source
-from plugins.bot.menu.common import buttons
-from plugins.bot.menu.common.checks import is_admin
-from plugins.bot.menu.common.links import get_channel_formatted_link
-from plugins.bot.menu.common.managers import input_wait_manager
-from plugins.bot.menu.common.path import Path
-from plugins.bot.menu.common.senders import send_message_to_admins
+from plugins.bot.menu.utils import buttons
+from plugins.bot.menu.utils.checks import is_admin
+from plugins.bot.menu.utils.links import get_channel_formatted_link
+from plugins.bot.menu.utils.managers import input_wait_manager
+from plugins.bot.menu.utils.path import Path
+from plugins.bot.menu.utils.senders import send_message_to_admins
 
 
 def list_category_buttons(

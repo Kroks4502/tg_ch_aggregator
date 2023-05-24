@@ -1,7 +1,7 @@
 from pyrogram import filters
 from pyrogram.types import Message, CallbackQuery
 
-from plugins.bot.menu.common.checks import is_admin
+from plugins.bot.menu.utils.checks import is_admin
 
 
 def chat(chat_id: int):

@@ -1,6 +1,6 @@
 from pyrogram.types import InlineKeyboardButton
 
-from plugins.bot.menu.common.path import Path
+from plugins.bot.menu.utils.path import Path
 
 
 def get_fixed(
