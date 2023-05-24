@@ -1,8 +1,9 @@
+import logging
+
 from pyrogram import Client
 from pyrogram.errors import RPCError
 from pyrogram.types import CallbackQuery
 
-from log import logger
 from models import Admin
 
 
@@ -23,4 +24,4 @@ async def send_message_to_admins(
                 admin.tg_id, f'{b_text}\n{text}',
                 disable_web_page_preview=True)
         except RPCError as e:
-            logger.error(e, exc_info=True)
+            logging.error(e, exc_info=True)

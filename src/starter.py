@@ -1,11 +1,11 @@
+import logging
 from asyncio import sleep
 from operator import attrgetter
 
 from pyrogram.errors import RPCError
 from pyrogram.types import Dialog
 
-from clients import user, bot
-from log import logger
+from clients import bot, user
 from models import Admin, Category, Source
 from plugins.user.forwarding_messages import message_with_media_group, message_without_media_group
 
@@ -15,7 +15,7 @@ async def startup():
         await sleep(0.1)
 
     msg = 'Запущен начальный скрипт'
-    logger.info(msg)
+    logging.info(msg)
     me = await user.get_me()
     await bot.send_message(me.id, msg)
 
@@ -30,7 +30,7 @@ async def startup():
         else:
             await message_without_media_group(user, message)
 
-    logger.info(
+    logging.info(
         f'Начальный скрипт завершил работу. '
         f'Обработано сообщений: {len(new_messages)}.')
     await bot.send_message(
@@ -48,7 +48,7 @@ async def update_admin_usernames(user_bot_tg_id: int):
                 admin = await user.get_users(admin_tg_id)
                 actual.update({admin.id: admin.username})
             except RPCError as e:
-                logger.warning(e, exc_info=True)
+                logging.warning(e, exc_info=True)
     for tg_id, username in actual.items():
         if (username and username != db_data[tg_id]
                 or not username and f'…{str(tg_id)[-5:]}' != db_data[tg_id]):
@@ -99,9 +99,9 @@ async def check_sources_in_dialogs(db_channels: dict):
     for tg_id, data in db_channels.items():
         if data[2] is False:
             mgs = f'Источника {tg_id} {data[1]} нет в диалогах UserBot'
-            logger.warning(mgs)
+            logging.warning(mgs)
             for admin in Admin.select():
                 try:
                     await bot.send_message(admin.tg_id, mgs)
                 except RPCError as e:
-                    logger.error(e, exc_info=True)
+                    logging.error(e, exc_info=True)

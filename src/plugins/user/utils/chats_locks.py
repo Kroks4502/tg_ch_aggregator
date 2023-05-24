@@ -1,4 +1,4 @@
-from log import logger
+import logging
 
 
 class ChatsLocks:
@@ -13,17 +13,17 @@ class ChatsLocks:
             self.__chat = chat
 
         def add(self, value):
-            logger.info(f'Добавлена блокировка {self.__name} для чата {self.__chat_id} {value}')
+            logging.info(f'Добавлена блокировка {self.__name} для чата {self.__chat_id} {value}')
             self.__chat.add(value)
 
         def remove(self, value):
             try:
-                logger.info(f'Снята блокировка {self.__name} для чата {self.__chat_id} {value}')
+                logging.info(f'Снята блокировка {self.__name} для чата {self.__chat_id} {value}')
                 self.__chat.remove(value)
             except KeyError:
-                logger.warning(f'Не удалось снять блокировку {self.__name} для чата '
-                               f'{self.__chat_id} со значением {value}. '
-                               f'Текущие блокировки: {self.__chat}')
+                logging.warning(f'Не удалось снять блокировку {self.__name} для чата '
+                                f'{self.__chat_id} со значением {value}. '
+                                f'Текущие блокировки: {self.__chat}')
 
         def contains(self, key) -> bool:
             return key in self.__chat

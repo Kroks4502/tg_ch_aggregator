@@ -1,6 +1,6 @@
 from pyrogram import Client
 
-from settings import API_ID, API_HASH, BOT_TOKEN, SESSIONS_DIR
+from config import API_HASH, API_ID, BOT_TOKEN, SESSIONS_DIR
 
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 

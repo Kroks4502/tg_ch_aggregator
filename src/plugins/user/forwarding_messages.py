@@ -1,27 +1,26 @@
 import inspect
+import logging
 import re
 from typing import Match
 
 from pyrogram import Client, filters
 from pyrogram.enums import MessageEntityType
 from pyrogram.errors import BadRequest, MessageIdInvalid
-from pyrogram.types import (Message, InputMediaPhoto, InputMediaVideo,
-                            InputMediaAudio, InputMediaDocument, MessageEntity)
+from pyrogram.types import InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo, Message, MessageEntity
 
 from common import get_message_link, get_shortened_text
-from log import logger
-from models import Source, CategoryMessageHistory
+from config import MESSAGES_EDIT_LIMIT_TD, PATTERN_AGENT, PATTERN_WITHOUT_SMILE
+from models import CategoryMessageHistory, Source
 from plugins.user import custom_filters
 from plugins.user.utils.chats_locks import ChatsLocks
 from plugins.user.utils.history import add_to_category_history, add_to_filter_history
 from plugins.user.utils.inspector import perform_check_history, perform_filtering
 from plugins.user.utils.send_media_group import send_media_group
-from settings import PATTERN_AGENT, PATTERN_WITHOUT_SMILE, MESSAGES_EDIT_LIMIT_TD
 
 
 def is_new_and_valid_post(message: Message, source: Source) -> bool:
     if h_obj := perform_check_history(message, source):
-        logger.info(
+        logging.info(
             f'Сообщение {message.id} из источника '
             f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
             f'{"в составе медиагруппы " + str(message.media_group_id) + " " if message.media_group_id else ""}'
@@ -31,7 +30,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
 
     if data := perform_filtering(message, source):
         add_to_filter_history(message, data['id'], source)
-        logger.info(
+        logging.info(
             f'Сообщение {message.id} из источника '
             f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
             f'{"в составе медиагруппы " + str(message.media_group_id) + " " if message.media_group_id else ""}'
@@ -48,12 +47,12 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
 )
 async def message_without_media_group(client: Client, message: Message, *, is_resending: bool = None):
     if not is_resending:
-        logger.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                     f'отправил сообщение {message.id}')
+        logging.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                      f'отправил сообщение {message.id}')
     else:
-        logger.debug(f'Повторная отправка из источника '
-                     f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                     f'сообщения {message.id}')
+        logging.debug(f'Повторная отправка из источника '
+                      f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                      f'сообщения {message.id}')
 
     source = Source.get(tg_id=message.chat.id)
 
@@ -79,18 +78,18 @@ async def message_without_media_group(client: Client, message: Message, *, is_re
             rewritten=bool(search_result))
 
         await client.read_chat_history(message.chat.id)
-        logger.info(f'Сообщение {message.id} '
-                    f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                    f'переслано в категорию {get_shortened_text(source.category.title, 20)} {source.category.tg_id}')
+        logging.info(f'Сообщение {message.id} '
+                     f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                     f'переслано в категорию {get_shortened_text(source.category.title, 20)} {source.category.tg_id}')
     except MessageIdInvalid as e:
         # Случай когда почти одновременно приходит сообщение о редактировании и удалении сообщения из источника.
-        logger.warning(f'Сообщение {message.id} '
-                       f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке '
-                       f'{e}')
+        logging.warning(f'Сообщение {message.id} '
+                        f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке '
+                        f'{e}')
     except BadRequest as e:
-        logger.error(f'Сообщение {message.id} '
-                     f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке.\n'
-                     f'{e}\nПолное сообщение: {message}\n', exc_info=True)
+        logging.error(f'Сообщение {message.id} '
+                      f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке.\n'
+                      f'{e}\nПолное сообщение: {message}\n', exc_info=True)
 
 
 blocking_received_media_groups = ChatsLocks('received')
@@ -103,14 +102,14 @@ blocking_received_media_groups = ChatsLocks('received')
 )
 async def message_with_media_group(client: Client, message: Message, *, is_resending: bool = False):
     if not is_resending:
-        logger.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                     f'отправил сообщение {message.id} '
-                     f'в составе медиагруппы {message.media_group_id}')
+        logging.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                      f'отправил сообщение {message.id} '
+                      f'в составе медиагруппы {message.media_group_id}')
     else:
-        logger.debug(f'Повторная отправка из источника '
-                     f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                     f'сообщения {message.id} '
-                     f'в составе медиагруппы {message.media_group_id}')
+        logging.debug(f'Повторная отправка из источника '
+                      f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                      f'сообщения {message.id} '
+                      f'в составе медиагруппы {message.media_group_id}')
 
     blocked = blocking_received_media_groups.get(message.chat.id)
     if blocked.contains(message.media_group_id):
@@ -203,19 +202,20 @@ async def message_with_media_group(client: Client, message: Message, *, is_resen
                 rewritten=is_agent)
 
         await client.read_chat_history(message.chat.id)
-        logger.info(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
-                    f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                    f'пересланы в категорию {source.category.title} {source.category.tg_id}')
+        logging.info(f'Сообщения {[item.id for item in media_group_messages]} медиагруппы {message.media_group_id} '
+                     f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                     f'пересланы в категорию {source.category.title} {source.category.tg_id}')
     except MessageIdInvalid as e:
         # Случай когда почти одновременно приходит сообщение о редактировании и удалении сообщения из источника.
-        logger.warning(f'Сообщение {message.id} '
-                       f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке '
-                       f'{e}')
-    # todo: делать не пересылку когда [400 CHAT_FORWARDS_RESTRICTED] - The chat restricts forwarding content (caused by "messages.ForwardMessages")
+        logging.warning(f'Сообщение {message.id} '
+                        f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке '
+                        f'{e}')
+    # todo: делать не пересылку когда
+    #  [400 CHAT_FORWARDS_RESTRICTED] - The chat restricts forwarding content (caused by "messages.ForwardMessages")
     except BadRequest as e:
-        logger.error(f'Сообщение {message.id} '
-                     f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке\n'
-                     f'{e}\nПолное сообщение: {message}\n', exc_info=True)
+        logging.error(f'Сообщение {message.id} '
+                      f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к ошибке\n'
+                      f'{e}\nПолное сообщение: {message}\n', exc_info=True)
 
 
 def delete_agent_text_in_message(search_result: Match, message: Message):
@@ -281,20 +281,20 @@ blocking_editable_messages = ChatsLocks('edit')
     custom_filters.monitored_channels
 )
 async def edited_message(client: Client, message: Message):
-    logger.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                 f'изменил сообщение {message.id}')
+    logging.debug(f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                  f'изменил сообщение {message.id}')
 
     if message.edit_date - message.date > MESSAGES_EDIT_LIMIT_TD:
-        logger.info(f'Сообщение {message.id} '
-                    f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                    f'изменено спустя {(message.edit_date - message.date).seconds//60} мин.')
+        logging.info(f'Сообщение {message.id} '
+                     f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                     f'изменено спустя {(message.edit_date - message.date).seconds // 60} мин.')
         return
 
     blocked = blocking_editable_messages.get(message.chat.id)
     if (blocked.contains(message.media_group_id)
             or blocked.contains(message.id)):
-        logger.warning(f'Изменение сообщения {message.id} '
-                       f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} заблокировано.')
+        logging.warning(f'Изменение сообщения {message.id} '
+                        f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} заблокировано.')
         return
     blocked.add(message.media_group_id if message.media_group_id else message.id)
 
@@ -303,9 +303,9 @@ async def edited_message(client: Client, message: Message):
         source_message_id=message.id,
         deleted=False, )
     if not history_obj:
-        logger.warning(f'Измененного сообщения {message.id} '
-                       f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                       f'от {message.date} нет в истории.')
+        logging.warning(f'Измененного сообщения {message.id} '
+                        f'из источника {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+                        f'от {message.date} нет в истории.')
         blocked.remove(message.media_group_id if message.media_group_id else message.id)
         return
 
@@ -334,9 +334,9 @@ async def edited_message(client: Client, message: Message):
             h.source_message_edited = True
             h.deleted = True
             h.save()
-            logger.info(f'Сообщение {h.source_message_id} '
-                        f'из источника {get_shortened_text(h.source.title, 20)} {h.source.tg_id} было изменено. '
-                        f'Оно удалено из категории {get_shortened_text(h.category.title, 20)} {h.category.tg_id}')
+            logging.info(f'Сообщение {h.source_message_id} '
+                         f'из источника {get_shortened_text(h.source.title, 20)} {h.source.tg_id} было изменено. '
+                         f'Оно удалено из категории {get_shortened_text(h.category.title, 20)} {h.category.tg_id}')
 
         if message.media_group_id:
             if b := blocking_received_media_groups.get(message.chat.id):
@@ -352,8 +352,8 @@ async def edited_message(client: Client, message: Message):
     custom_filters.monitored_channels
 )
 async def deleted_messages(client: Client, messages: list[Message]):
-    logger.debug(f'Получено обновление об удалении сообщений источников '
-                 f'{[(message.chat.title, message.chat.id, message.id) for message in messages]}')
+    logging.debug(f'Получено обновление об удалении сообщений источников '
+                  f'{[(message.chat.title, message.chat.id, message.id) for message in messages]}')
 
     for message in messages:
         history_obj: CategoryMessageHistory = CategoryMessageHistory.get_or_none(
@@ -367,10 +367,16 @@ async def deleted_messages(client: Client, messages: list[Message]):
             history_obj.deleted = True
             history_obj.save()
             if amount_deleted:
-                logger.info(f'Сообщение {history_obj.source_message_id} '
-                            f'из источника {get_shortened_text(history_obj.source.title, 20)} {history_obj.source.tg_id} было удалено. '
-                            f'Оно удалено из категории {get_shortened_text(history_obj.category.title, 20)} {history_obj.category.tg_id}')
+                logging.info(
+                    f'Сообщение {history_obj.source_message_id} из источника '
+                    f'{get_shortened_text(history_obj.source.title, 20)} {history_obj.source.tg_id} было удалено. '
+                    f'Оно удалено из категории {get_shortened_text(history_obj.category.title, 20)} '
+                    f'{history_obj.category.tg_id}'
+                )
             else:
-                logger.info(f'Сообщение {history_obj.source_message_id} '
-                            f'из источника {get_shortened_text(history_obj.source.title, 20)} {history_obj.source.tg_id} было удалено. '
-                            f'Оно УЖЕ удалено из категории {get_shortened_text(history_obj.category.title, 20)} {history_obj.category.tg_id}')
+                logging.info(
+                    f'Сообщение {history_obj.source_message_id} из источника '
+                    f'{get_shortened_text(history_obj.source.title, 20)} {history_obj.source.tg_id} было удалено. '
+                    f'Оно УЖЕ удалено из категории {get_shortened_text(history_obj.category.title, 20)} '
+                    f'{history_obj.category.tg_id}'
+                )

@@ -1,12 +1,12 @@
 import itertools
+import logging
 import re
 
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message, MessageEntity
 
-from filter_types import FilterType, FilterMessageType
-from log import logger
-from models import Source, CategoryMessageHistory, Filter
+from filter_types import FilterMessageType, FilterType
+from models import CategoryMessageHistory, Filter, Source
 
 
 def perform_check_history(
@@ -83,7 +83,7 @@ class Inspector:
                                FilterMessageType, data['pattern']).value[1]):
                     return data
             except AttributeError as e:
-                logger.error(e, exc_info=True)
+                logging.error(e, exc_info=True)
 
     def check_white_text(self) -> int | None:
         for data in self._get_filters(FilterType.ONLY_WHITE_TEXT):
@@ -117,7 +117,7 @@ class Inspector:
                         MessageEntityType, data['pattern'].upper()):
                     return data
             except AttributeError as e:
-                logger.error(e, exc_info=True)
+                logging.error(e, exc_info=True)
 
     def _check_hashtag(self, entity: MessageEntity) -> int | None:
         for data in self._get_filters(FilterType.HASHTAG):

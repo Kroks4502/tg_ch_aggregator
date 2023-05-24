@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 import math
 import os
 from operator import itemgetter
@@ -7,29 +8,25 @@ import peewee
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
 from pyrogram.errors import RPCError
-from pyrogram.types import (CallbackQuery, InlineKeyboardMarkup,
-                            InlineKeyboardButton, Message)
+from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from clients import user
 from common import get_message_link, get_shortened_text
+from config import DB_FILEPATH, LOGS_DIR
 from filter_types import FILTER_TYPES_BY_ID
-from log import logger
-from models import (Admin, CategoryMessageHistory, Source,
-                    FilterMessageHistory, Category, Filter)
+from models import Admin, Category, CategoryMessageHistory, Filter, FilterMessageHistory, Source
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.utils import buttons
-from plugins.bot.menu.utils.links import (get_user_formatted_link,
-                                          get_channel_formatted_link)
+from plugins.bot.menu.utils.links import get_channel_formatted_link, get_user_formatted_link
 from plugins.bot.menu.utils.managers import input_wait_manager
 from plugins.bot.menu.utils.path import Path
 from plugins.bot.menu.utils.senders import send_message_to_admins
-from settings import LOGS_DIR, DB_FILEPATH
 
 
 @Client.on_callback_query(filters.regex(
     r'^/o/$') & custom_filters.admin_only)
 async def options(_, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     await callback_query.answer()
     await callback_query.message.edit_text(
@@ -69,7 +66,7 @@ async def options(_, callback_query: CallbackQuery):
 @Client.on_callback_query(filters.regex(
     r'^/o/statistics/$') & custom_filters.admin_only)
 async def statistics(_, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
     text = '**Статистика бота за время работы**\n\n'
 
     query = Category.select()
@@ -115,7 +112,9 @@ async def statistics(_, callback_query: CallbackQuery):
     text += f'**По источникам за последний месяц**\n'
     lines = []
     for source in Source.select():
-        query = FilterMessageHistory.select().where((FilterMessageHistory.source == source) & (FilterMessageHistory.date > month_ago))
+        query = FilterMessageHistory.select().where(
+            (FilterMessageHistory.source == source) & (FilterMessageHistory.date > month_ago)
+        )
         query_count = query.count()
         hm_query = CategoryMessageHistory.select().where((CategoryMessageHistory.deleted == False)
                                                          & (CategoryMessageHistory.source == source)
@@ -123,7 +122,10 @@ async def statistics(_, callback_query: CallbackQuery):
         total_count = query_count + hm_query.count()
         if p := query_count / total_count * 100 if total_count else 0:
             lines.append((f'{get_shortened_text(source.title, 25)}: {query_count} шт. ({p:0.1f}%)\n', p))
-    text += ''.join([f'{i}. {" " if i < 10 else ""}{line[0]}' for i, line in enumerate(sorted(lines, key=itemgetter(1), reverse=True), start=1)])
+    text += ''.join(
+        [f'{i}. {" " if i < 10 else ""}{line[0]}'
+         for i, line in enumerate(sorted(lines, key=itemgetter(1), reverse=True), start=1)]
+    )
 
     query = FilterMessageHistory.select()
     query_count = query.count()
@@ -145,7 +147,7 @@ MAX_NUM_ENTRIES_MESSAGE = 5
 @Client.on_callback_query(filters.regex(
     r'^/o/mh/$|^/o/mh/p_\d+/$') & custom_filters.admin_only)
 async def message_history(_, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
     page = int(p) if (p := Path(callback_query.data).get_value('p')) else 1
     query = CategoryMessageHistory.select().order_by(CategoryMessageHistory.id.desc())
     obj_counts = query.count()
@@ -181,7 +183,7 @@ async def message_history(_, callback_query: CallbackQuery):
 @Client.on_callback_query(filters.regex(
     r'^/o/fh/$|^/o/fh/p_\d+/$') & custom_filters.admin_only)
 async def filter_history(_, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
     page = int(p) if (p := Path(callback_query.data).get_value('p')) else 1
     query = FilterMessageHistory.select().order_by(FilterMessageHistory.id.desc())
     obj_counts = query.count()
@@ -214,7 +216,7 @@ async def filter_history(_, callback_query: CallbackQuery):
 @Client.on_callback_query(filters.regex(
     r'^/o/:get_logs/$') & custom_filters.admin_only)
 async def get_logs(_, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     await callback_query.answer('Загрузка...')
     info_message = ''
@@ -231,7 +233,7 @@ async def get_logs(_, callback_query: CallbackQuery):
 @Client.on_callback_query(filters.regex(
     r'^/o/:get_db/') & custom_filters.admin_only)
 async def get_db(_, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     await callback_query.answer('Загрузка...')
     await callback_query.message.reply_document(DB_FILEPATH)
@@ -240,7 +242,7 @@ async def get_db(_, callback_query: CallbackQuery):
 @Client.on_callback_query(filters.regex(
     r'^/o/a/$') & custom_filters.admin_only)
 async def list_admins(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
 
@@ -269,7 +271,7 @@ async def list_admins(_, callback_query: CallbackQuery, *, needs_an_answer: bool
 @Client.on_callback_query(filters.regex(
     r'^/o/a/u_\d+/$') & custom_filters.admin_only)
 async def detail_admin(_, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
 
@@ -295,7 +297,7 @@ async def detail_admin(_, callback_query: CallbackQuery):
 @Client.on_callback_query(filters.regex(
     r'^/o/a/:add/$') & custom_filters.admin_only)
 async def add_admin(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     chat_id = callback_query.message.chat.id
 
@@ -310,7 +312,7 @@ async def add_admin(client: Client, callback_query: CallbackQuery):
 
 async def add_admin_waiting_input(
         client: Client, message: Message, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
 
@@ -357,7 +359,7 @@ async def add_admin_waiting_input(
 @Client.on_callback_query(filters.regex(
     r'u_\d+/:delete/') & custom_filters.admin_only)
 async def delete_admin(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     admin_id = int(path.get_value('u'))
@@ -397,7 +399,7 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
 @Client.on_callback_query(filters.regex(
     r'^/o/:check_post/$') & custom_filters.admin_only)
 async def check_post(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     await callback_query.answer()
     await callback_query.message.reply(

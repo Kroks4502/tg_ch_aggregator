@@ -1,12 +1,14 @@
+import logging
+
 import peewee
 from pyrogram import Client, filters
-from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
-                            InlineKeyboardMarkup, Message)
+from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from filter_types import FilterType, FILTER_TYPES_BY_ID, FilterEntityType, FILTER_ENTITY_TYPES_BY_ID, FilterMessageType, \
-    FILTER_MESSAGE_TYPES_BY_ID
-from log import logger
-from models import Source, Filter
+from filter_types import (
+    FILTER_ENTITY_TYPES_BY_ID, FILTER_MESSAGE_TYPES_BY_ID, FILTER_TYPES_BY_ID, FilterEntityType, FilterMessageType,
+    FilterType
+)
+from models import Filter, Source
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.utils import buttons
 from plugins.bot.menu.utils.checks import is_admin
@@ -19,7 +21,7 @@ from plugins.bot.menu.utils.senders import send_message_to_admins
 @Client.on_callback_query(filters.regex(
     r'/s_\d+/$'))
 async def list_types_filters(_, callback_query: CallbackQuery, *, needs_an_answer=True):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
 
@@ -74,7 +76,7 @@ async def list_types_filters(_, callback_query: CallbackQuery, *, needs_an_answe
 @Client.on_callback_query(filters.regex(
     r'/t_\w+/$'))
 async def list_filters(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     filter_type = int(path.get_value('t'))
@@ -123,7 +125,7 @@ async def list_filters(_, callback_query: CallbackQuery, *, needs_an_answer: boo
 @Client.on_callback_query(filters.regex(
     r'/f_\d+/$'))
 async def detail_filter(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     filter_obj: Filter = Filter.get(id=int(path.get_value('f')))
@@ -165,7 +167,7 @@ async def detail_filter(_, callback_query: CallbackQuery, *, needs_an_answer: bo
 @Client.on_callback_query(filters.regex(
     r'/s_\d+/t_\w+/:add/$') & custom_filters.admin_only)
 async def add_filter(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     chat_id = callback_query.message.chat.id
@@ -237,7 +239,7 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
     r'/s_\d+/t_\w+/:add/v_\w+/$') & custom_filters.admin_only)
 async def add_filter_choice_value(
         client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     source_id = int(path.get_value('s'))
@@ -273,7 +275,7 @@ async def add_filter_choice_value(
 async def add_filter_waiting_input(
         client: Client, message: Message, callback_query,
         filter_type, source_obj):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
 
@@ -308,7 +310,7 @@ async def add_filter_waiting_input(
 @Client.on_callback_query(filters.regex(
     r'/f_\d+/:edit/$') & custom_filters.admin_only)
 async def edit_body_filter(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     chat_id = callback_query.message.chat.id
@@ -333,7 +335,7 @@ async def edit_body_filter(client: Client, callback_query: CallbackQuery):
 async def edit_body_filter_wait_input(
         client: Client, message: Message, callback_query: CallbackQuery,
         filter_obj: Filter):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
 
@@ -367,7 +369,7 @@ async def edit_body_filter_wait_input(
 @Client.on_callback_query(filters.regex(
     r'f_\d+/:delete/') & custom_filters.admin_only)
 async def delete_filter(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     filter_id = int(path.get_value('f'))

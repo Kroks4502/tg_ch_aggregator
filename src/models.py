@@ -2,8 +2,8 @@ from datetime import datetime
 
 from peewee import *
 
+from config import DATABASE
 from filter_types import FilterType
-from settings import DATABASE
 
 
 class BaseModel(Model):

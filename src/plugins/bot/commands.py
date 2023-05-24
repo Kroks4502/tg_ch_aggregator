@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup
+from pyrogram.types import InlineKeyboardMarkup, Message
 
 from plugins.bot.menu.section_category import main_menu
 from plugins.bot.menu.section_option import check_post_waiting_forwarding

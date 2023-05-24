@@ -1,10 +1,8 @@
-from clients import user, bot
-from models import Category, Source, Filter, Admin, FilterMessageHistory, CategoryMessageHistory
-from settings import DATABASE
-
+from clients import bot, user
+from config import DATABASE
+from models import Admin, Category, CategoryMessageHistory, Filter, FilterMessageHistory, Source
 
 if __name__ == '__main__':
-    # Создаем таблицы в БД
     DATABASE.create_tables(
         [
             Category, Source, Filter, Admin,

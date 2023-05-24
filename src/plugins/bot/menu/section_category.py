@@ -1,16 +1,14 @@
+import logging
 import re
 
 import peewee
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
-from pyrogram.errors import exceptions, RPCError
-from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
-                            InlineKeyboardMarkup, Message, Chat,
-                            ChatPrivileges)
+from pyrogram.errors import RPCError, exceptions
+from pyrogram.types import CallbackQuery, Chat, ChatPrivileges, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from clients import user
-from log import logger
-from models import Source, Category, Filter
+from models import Category, Filter, Source
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.section_source import list_source
 from plugins.bot.menu.utils import buttons
@@ -63,7 +61,7 @@ def main_menu(data: Message | CallbackQuery) -> (str, list[list]):
 @Client.on_callback_query(filters.regex(
     r'^/$'))
 async def set_main_menu(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     text, inline_keyboard = main_menu(callback_query)
     if needs_an_answer:
@@ -75,7 +73,7 @@ async def set_main_menu(_, callback_query: CallbackQuery, *, needs_an_answer: bo
 @Client.on_callback_query(filters.regex(
     r's_\d+/:edit/$') & custom_filters.admin_only)
 async def choice_source_category(_, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     source_obj: Source = Source.get(id=int(path.get_value('s')))
@@ -93,7 +91,7 @@ async def choice_source_category(_, callback_query: CallbackQuery):
 @Client.on_callback_query(filters.regex(
     r'^/:add/$') & custom_filters.admin_only)
 async def add_category(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     await callback_query.answer()
     await callback_query.message.reply(
@@ -109,7 +107,7 @@ async def add_category(client: Client, callback_query: CallbackQuery):
 
 async def add_category_waiting_input(
         client: Client, message: Message, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     new_channel_name = f'{message.text} | Aggregator'
     new_message = await message.reply_text(
@@ -154,7 +152,7 @@ async def add_category_waiting_input(
 @Client.on_callback_query(filters.regex(
     r'^/c_\d+/:edit/$') & custom_filters.admin_only)
 async def edit_category(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     await callback_query.answer()
     await callback_query.message.reply(
@@ -171,7 +169,7 @@ async def edit_category(client: Client, callback_query: CallbackQuery):
 
 async def edit_category_waiting_input(
         client: Client, message: Message, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     input_text = re.sub('https://t.me/', '', message.text)
     path = Path(callback_query.data)
@@ -237,7 +235,7 @@ async def edit_category_waiting_input(
 @Client.on_callback_query(filters.regex(
     r'c_\d+/:delete/') & custom_filters.admin_only)
 async def delete_category(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     category_obj: Category = Category.get(id=int(path.get_value('c')))

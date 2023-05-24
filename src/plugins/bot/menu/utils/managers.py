@@ -1,10 +1,10 @@
+import logging
 from typing import Callable
 
 from pyrogram import Client
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 
-from log import logger
 from plugins.bot.menu import custom_filters
 
 
@@ -42,7 +42,7 @@ class InputWaitManager:
             msg = (f'Во время выполнения функции '
                    f'{input_chat["func"].__name__} '
                    f'было перехвачено исключение')
-            logger.error(f'{msg}: {e}', exc_info=True)
+            logging.error(f'{msg}: {e}', exc_info=True)
             await message.reply(f'❌ {msg}:\n{e}')
 
 

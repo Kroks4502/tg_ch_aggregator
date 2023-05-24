@@ -1,5 +1,5 @@
 from pyrogram import filters
-from pyrogram.types import Message, CallbackQuery
+from pyrogram.types import CallbackQuery, Message
 
 from plugins.bot.menu.utils.checks import is_admin
 

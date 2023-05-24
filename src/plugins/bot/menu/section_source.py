@@ -1,15 +1,14 @@
+import logging
 import re
 
 import peewee
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
 from pyrogram.errors import RPCError
-from pyrogram.types import (CallbackQuery, InlineKeyboardButton,
-                            InlineKeyboardMarkup, Message)
+from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from clients import user
-from log import logger
-from models import Source, Filter, Category
+from models import Category, Filter, Source
 from plugins.bot.menu import custom_filters
 from plugins.bot.menu.section_filter import list_types_filters
 from plugins.bot.menu.utils import buttons
@@ -23,7 +22,7 @@ from plugins.bot.menu.utils.senders import send_message_to_admins
 @Client.on_callback_query(filters.regex(
     r'^/c_\d+/$'))
 async def list_source(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     category_id = int(path.get_value('c'))
@@ -71,7 +70,7 @@ async def list_source(_, callback_query: CallbackQuery, *, needs_an_answer: bool
 @Client.on_callback_query(filters.regex(
     r's_\d+/:edit/c_\d+/$') & custom_filters.admin_only)
 async def edit_source_category(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     source_id = int(path.get_value('s'))
@@ -98,7 +97,7 @@ async def edit_source_category(client: Client, callback_query: CallbackQuery):
 @Client.on_callback_query(filters.regex(
     r'^/c_\d+/:add/$') & custom_filters.admin_only)
 async def add_source(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     text = ('ОК. Ты добавляешь новый источник.\n\n'
             '**Введи публичный username канала, ссылку на него '
@@ -113,7 +112,7 @@ async def add_source(client: Client, callback_query: CallbackQuery):
 
 async def add_source_waiting_input(
         client: Client, message: Message, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     category_id = int(path.get_value('c'))
@@ -172,7 +171,7 @@ async def add_source_waiting_input(
 @Client.on_callback_query(filters.regex(
     r's_\d+/:delete/') & custom_filters.admin_only)
 async def delete_source(client: Client, callback_query: CallbackQuery):
-    logger.debug(callback_query.data)
+    logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     source_obj: Source = Source.get(id=int(path.get_value('s')))
