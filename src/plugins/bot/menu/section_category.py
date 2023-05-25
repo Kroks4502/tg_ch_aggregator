@@ -16,9 +16,8 @@ from pyrogram.types import (
 
 from clients import user
 from models import Category, Filter, Source
-from plugins.bot.menu import custom_filters
 from plugins.bot.menu.section_source import list_source
-from plugins.bot.menu.utils import buttons
+from plugins.bot.menu.utils import buttons, custom_filters
 from plugins.bot.menu.utils.checks import is_admin
 from plugins.bot.menu.utils.links import get_channel_formatted_link
 from plugins.bot.menu.utils.managers import input_wait_manager

@@ -1,10 +1,8 @@
 import inspect
 import logging
 import re
-from typing import Match
 
 from pyrogram import Client, filters
-from pyrogram.enums import MessageEntityType
 from pyrogram.errors import BadRequest, MessageIdInvalid
 from pyrogram.types import (
     InputMediaAudio,
@@ -12,42 +10,17 @@ from pyrogram.types import (
     InputMediaPhoto,
     InputMediaVideo,
     Message,
-    MessageEntity,
 )
 
-from common import get_message_link, get_shortened_text
-from config import MESSAGES_EDIT_LIMIT_TD, PATTERN_AGENT, PATTERN_WITHOUT_SMILE
+from common import get_shortened_text
+from config import MESSAGES_EDIT_LIMIT_TD, PATTERN_AGENT
 from models import CategoryMessageHistory, Source
-from plugins.user import custom_filters
+from plugins.user.utils import custom_filters
 from plugins.user.utils.chats_locks import ChatsLocks
-from plugins.user.utils.history import add_to_category_history, add_to_filter_history
-from plugins.user.utils.inspector import perform_check_history, perform_filtering
+from plugins.user.utils.history import add_to_category_history
+from plugins.user.utils.inspector import is_new_and_valid_post
+from plugins.user.utils.rewriter import delete_agent_text_in_message
 from plugins.user.utils.send_media_group import send_media_group
-
-
-def is_new_and_valid_post(message: Message, source: Source) -> bool:
-    if h_obj := perform_check_history(message, source):
-        logging.info(
-            f'Сообщение {message.id} из источника '
-            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            f'{"в составе медиагруппы " + str(message.media_group_id) + " " if message.media_group_id else ""}'
-            'уже есть в канале категории'
-            f' {get_shortened_text(source.category.title, 20)} {source.category.tg_id}'
-            f'{get_message_link(h_obj.category.tg_id, h_obj.message_id)}'
-        )
-        return False
-
-    if data := perform_filtering(message, source):
-        add_to_filter_history(message, data['id'], source)
-        logging.info(
-            f'Сообщение {message.id} из источника '
-            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            f'{"в составе медиагруппы " + str(message.media_group_id) + " " if message.media_group_id else ""}'
-            f'отфильтровано: {data}'
-        )
-        return False
-
-    return True
 
 
 @Client.on_message(
@@ -272,71 +245,6 @@ async def message_with_media_group(
             ),
             exc_info=True,
         )
-
-
-def delete_agent_text_in_message(search_result: Match, message: Message):
-    separator = '\n\n'
-    title = re.sub(
-        PATTERN_WITHOUT_SMILE,
-        "",
-        (
-            message.forward_from_chat.title
-            if message.forward_from_chat
-            else message.chat.title
-        ),
-    )
-    author = f'💬 Источник: {title if title else message.chat.id}\n\n'
-    start = search_result.start()
-    end = search_result.end()
-    if message.text:
-        message.text = str(message.text)
-        message.text = (
-            author
-            + message.text[:start]
-            + f'{separator if start != 0 else ""}'
-            + message.text[end:]
-        )
-    elif message.caption:
-        message.caption = str(message.caption)
-        message.caption = (
-            author
-            + message.caption[:start]
-            + f'{separator if start != 0 else ""}'
-            + message.caption[end:]
-        )
-
-    cut_text_len = search_result.end() - search_result.start() - len(separator)
-    for entity in message.entities or message.caption_entities or []:
-        if entity.offset > search_result.start():
-            entity.offset -= cut_text_len
-
-    add_author_len = len(author)
-    for entity in message.entities or message.caption_entities or []:
-        entity.offset += add_author_len + 1
-
-    bold = MessageEntity(type=MessageEntityType.BOLD, offset=0, length=add_author_len)
-    url = message.link
-    if message.forward_from_chat and message.forward_from_chat.username:
-        url = (
-            f'https://t.me/{message.forward_from_chat.username}/'
-            f'{message.forward_from_message_id}'
-        )
-    text_link = MessageEntity(
-        type=MessageEntityType.TEXT_LINK,
-        offset=0,
-        length=add_author_len,
-        url=url,
-    )
-    if message.text:
-        if not message.entities:
-            message.entities = []
-        message.entities.insert(0, bold)
-        message.entities.insert(0, text_link)
-    if message.caption:
-        if not message.caption_entities:
-            message.caption_entities = []
-        message.caption_entities.insert(0, bold)
-        message.caption_entities.insert(0, text_link)
 
 
 @Client.on_message(

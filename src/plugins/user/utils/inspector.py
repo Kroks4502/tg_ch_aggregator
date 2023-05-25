@@ -5,8 +5,35 @@ import re
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message, MessageEntity
 
+from common import get_shortened_text, get_message_link
 from filter_types import FilterMessageType, FilterType
 from models import CategoryMessageHistory, Filter, Source
+from plugins.user.utils.history import add_to_filter_history
+
+
+def is_new_and_valid_post(message: Message, source: Source) -> bool:
+    if h_obj := perform_check_history(message, source):
+        logging.info(
+            f'Сообщение {message.id} из источника '
+            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+            f'{"в составе медиагруппы " + str(message.media_group_id) + " " if message.media_group_id else ""}'
+            'уже есть в канале категории'
+            f' {get_shortened_text(source.category.title, 20)} {source.category.tg_id}'
+            f'{get_message_link(h_obj.category.tg_id, h_obj.message_id)}'
+        )
+        return False
+
+    if data := perform_filtering(message, source):
+        add_to_filter_history(message, data['id'], source)
+        logging.info(
+            f'Сообщение {message.id} из источника '
+            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+            f'{"в составе медиагруппы " + str(message.media_group_id) + " " if message.media_group_id else ""}'
+            f'отфильтровано: {data}'
+        )
+        return False
+
+    return True
 
 
 def perform_check_history(

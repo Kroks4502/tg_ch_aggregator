@@ -27,8 +27,7 @@ from models import (
     FilterMessageHistory,
     Source,
 )
-from plugins.bot.menu import custom_filters
-from plugins.bot.menu.utils import buttons
+from plugins.bot.menu.utils import buttons, custom_filters
 from plugins.bot.menu.utils.links import (
     get_channel_formatted_link,
     get_user_formatted_link,
