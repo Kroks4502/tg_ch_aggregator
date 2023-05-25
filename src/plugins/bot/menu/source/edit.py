@@ -4,7 +4,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from models import Category, Source
-from plugins.bot.menu.section_filter import list_types_filters
+from plugins.bot.menu.filter.list_types import list_types_filters
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.path import Path
