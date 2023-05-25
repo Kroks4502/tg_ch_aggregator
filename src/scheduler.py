@@ -10,6 +10,6 @@ def start_scheduler():
     scheduler.add_job(
         func=startup,
         trigger='date',
-        run_date=(dt.datetime.today() + dt.timedelta(seconds=1))
+        run_date=(dt.datetime.today() + dt.timedelta(seconds=1)),
     )
     scheduler.start()

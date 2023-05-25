@@ -22,12 +22,10 @@ class Path:
         return f'{self.path}:{name}/'
 
     def get_prev(self, step: int = 1) -> str:
-        return self._search_first_group(
-            r'([\w/:]*/)([\w/:]*/){' + str(step) + r'}$')
+        return self._search_first_group(r'([\w/:]*/)([\w/:]*/){' + str(step) + r'}$')
 
     def get_value(self, prefix: str, after_action: bool = False) -> str:
-        path = (self._get_action_path() if after_action
-                else self._get_begin_path())
+        path = self._get_action_path() if after_action else self._get_begin_path()
         return self._search_first_group(r'/' + prefix + r'_(\w+)/', path)
 
     @property

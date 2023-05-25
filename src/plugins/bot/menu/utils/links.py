@@ -13,8 +13,10 @@ async def get_user_formatted_link(tg_id: int) -> str:
         chat = await user.get_chat(tg_id)
         if chat.username:
             return f'[{chat.username}](https://{chat.username}.t.me)'
-        full_name = (f'{chat.first_name + " " if chat.first_name else ""}'
-                     f'{chat.last_name + " " if chat.last_name else ""}')
+        full_name = (
+            f'{chat.first_name + " " if chat.first_name else ""}'
+            f'{chat.last_name + " " if chat.last_name else ""}'
+        )
         if full_name:
             return f'{full_name + " " if full_name else "" }…{str(tg_id)[-5:]}'
     except RPCError as e:

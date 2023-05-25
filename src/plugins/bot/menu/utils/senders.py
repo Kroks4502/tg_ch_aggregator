@@ -8,9 +8,9 @@ from models import Admin
 
 
 async def send_message_to_admins(
-        client: Client,
-        callback_query: CallbackQuery,
-        text: str
+    client: Client,
+    callback_query: CallbackQuery,
+    text: str,
 ):
     """Отправка сообщений всем администраторам бота."""
     f_user = callback_query.from_user
@@ -20,12 +20,14 @@ async def send_message_to_admins(
         else:
             full_name = (
                 f'{f_user.first_name + " " if f_user.first_name else ""}'
-                f'{f_user.last_name if f_user.last_name else ""}')
-            b_text = (f'{full_name} ({f_user.id})'
-                      if full_name else f'{f_user.id}')
+                f'{f_user.last_name if f_user.last_name else ""}'
+            )
+            b_text = f'{full_name} ({f_user.id})' if full_name else f'{f_user.id}'
         try:
             await client.send_message(
-                admin.tg_id, f'{b_text}\n{text}',
-                disable_web_page_preview=True)
+                admin.tg_id,
+                f'{b_text}\n{text}',
+                disable_web_page_preview=True,
+            )
         except RPCError as e:
             logging.error(e, exc_info=True)

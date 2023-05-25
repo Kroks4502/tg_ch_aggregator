@@ -4,8 +4,8 @@ from plugins.bot.menu.utils.path import Path
 
 
 def get_footer(
-        path: Path,
-        back_title: str = 'Назад'
+    path: Path,
+    back_title: str = 'Назад',
 ) -> list[list[InlineKeyboardButton]]:
     """
     Получить фиксированные кнопки "Главная" и "Назад".
@@ -14,12 +14,20 @@ def get_footer(
     :param back_title: Текст кнопки "Назад".
     :return: Фиксированные кнопки.
     """
-    row_buttons = [InlineKeyboardButton('🗂 На главную', callback_data='/')]
+    row_buttons = [
+        InlineKeyboardButton(
+            '🗂 На главную',
+            callback_data='/',
+        )
+    ]
     prev_data = path.get_prev()
     if prev_data != '/':
         row_buttons.append(
             InlineKeyboardButton(
-                f'🔙 {back_title}', callback_data=prev_data))
+                f'🔙 {back_title}',
+                callback_data=prev_data,
+            )
+        )
     return [row_buttons]
 
 
@@ -27,10 +35,10 @@ MAX_LENGTH_BUTTON_TEXT = 12
 
 
 def get_list(
-        data: dict[int | str, tuple[str | None, int]],
-        path: Path,
-        prefix_path: str = '',
-        button_show_all_title: str = None,
+    data: dict[int | str, tuple[str | None, int]],
+    path: Path,
+    prefix_path: str = '',
+    button_show_all_title: str = None,
 ) -> list[list[InlineKeyboardButton]]:
     """
     Получить кнопки для списка данных.
@@ -62,17 +70,19 @@ def get_list(
         row_buttons.append(
             InlineKeyboardButton(
                 title,
-                callback_data=path.add_value(prefix_path, key)
+                callback_data=path.add_value(prefix_path, key),
             )
         )
     buttons.append(row_buttons)
 
     if button_show_all_title and total_amount:
-        buttons.append([
-            InlineKeyboardButton(
-                f'{button_show_all_title} ({total_amount})',
-                callback_data=path.add_value(prefix_path, 0)
-            )
-        ])
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    f'{button_show_all_title} ({total_amount})',
+                    callback_data=path.add_value(prefix_path, 0),
+                )
+            ]
+        )
 
     return buttons

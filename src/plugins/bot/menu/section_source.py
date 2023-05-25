@@ -5,7 +5,12 @@ import peewee
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
 from pyrogram.errors import RPCError
-from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from pyrogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 
 from clients import user
 from models import Category, Filter, Source
@@ -19,35 +24,40 @@ from plugins.bot.menu.utils.path import Path
 from plugins.bot.menu.utils.senders import send_message_to_admins
 
 
-@Client.on_callback_query(filters.regex(
-    r'^/c_\d+/$'))
-async def list_source(_, callback_query: CallbackQuery, *, needs_an_answer: bool = True):
+@Client.on_callback_query(
+    filters.regex(r'^/c_\d+/$'),
+)
+async def list_source(
+    _,
+    callback_query: CallbackQuery,
+    *,
+    needs_an_answer: bool = True,
+):
     logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     category_id = int(path.get_value('c'))
-    category_obj: Category = (Category.get(id=category_id)
-                              if category_id else None)
+    category_obj: Category = Category.get(id=category_id) if category_id else None
 
-    text = (f'Категория: **{await get_channel_formatted_link(category_obj.tg_id)}**'
-            if category_obj else '**Все источники**')
+    text = (
+        f'Категория: **{await get_channel_formatted_link(category_obj.tg_id)}**'
+        if category_obj
+        else '**Все источники**'
+    )
 
     inline_keyboard = []
     if category_obj and is_admin(callback_query.from_user.id):
-        inline_keyboard.append([InlineKeyboardButton(
-            '➕',
-            callback_data=path.add_action('add')
-        ), InlineKeyboardButton(
-            f'📝',
-            callback_data=path.add_action('edit')
-        ), InlineKeyboardButton(
-            '✖️',
-            callback_data=path.add_action('delete')
-        ), ])
+        inline_keyboard.append(
+            [
+                InlineKeyboardButton('➕', callback_data=path.add_action('add')),
+                InlineKeyboardButton(f'📝', callback_data=path.add_action('edit')),
+                InlineKeyboardButton('✖️', callback_data=path.add_action('delete')),
+            ]
+        )
     query = (
-        Source
-        .select(Source.id, Source.title,
-                peewee.fn.Count(Filter.id).alias('count'))
+        Source.select(
+            Source.id, Source.title, peewee.fn.Count(Filter.id).alias('count')
+        )
         .where(Source.category == category_id if category_id else True)
         .join(Filter, peewee.JOIN.LEFT_OUTER)
         .group_by(Source.id)
@@ -63,23 +73,24 @@ async def list_source(_, callback_query: CallbackQuery, *, needs_an_answer: bool
     await callback_query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(inline_keyboard),
-        disable_web_page_preview=True
+        disable_web_page_preview=True,
     )
 
 
-@Client.on_callback_query(filters.regex(
-    r's_\d+/:edit/c_\d+/$') & custom_filters.admin_only)
+@Client.on_callback_query(
+    filters.regex(r's_\d+/:edit/c_\d+/$') & custom_filters.admin_only,
+)
 async def edit_source_category(client: Client, callback_query: CallbackQuery):
     logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
     source_id = int(path.get_value('s'))
-    category_obj: Category = Category.get(id=int(path.get_value('c', after_action=True)))
+    category_obj: Category = Category.get(
+        id=int(path.get_value('c', after_action=True))
+    )
     source_obj: Source = Source.get(id=source_id)
 
-    q = (Source
-         .update({Source.category: category_obj})
-         .where(Source.id == source_id))
+    q = Source.update({Source.category: category_obj}).where(Source.id == source_id)
     q.execute()
     Source.clear_actual_cache()
 
@@ -88,30 +99,40 @@ async def edit_source_category(client: Client, callback_query: CallbackQuery):
     await list_types_filters(client, callback_query, needs_an_answer=False)
 
     await send_message_to_admins(
-        client, callback_query,
-        f'Изменена категория у источника '
-        f'{await get_channel_formatted_link(source_obj.tg_id)} '
-        f'на {await get_channel_formatted_link(category_obj.tg_id)}')
+        client,
+        callback_query,
+        (
+            'Изменена категория у источника '
+            f'{await get_channel_formatted_link(source_obj.tg_id)} '
+            f'на {await get_channel_formatted_link(category_obj.tg_id)}'
+        ),
+    )
 
 
-@Client.on_callback_query(filters.regex(
-    r'^/c_\d+/:add/$') & custom_filters.admin_only)
+@Client.on_callback_query(
+    filters.regex(r'^/c_\d+/:add/$') & custom_filters.admin_only,
+)
 async def add_source(client: Client, callback_query: CallbackQuery):
     logging.debug(callback_query.data)
 
-    text = ('ОК. Ты добавляешь новый источник.\n\n'
-            '**Введи публичный username канала, ссылку на него '
-            'или перешли мне пост из этого канала:**')
+    text = (
+        'ОК. Ты добавляешь новый источник.\n\n'
+        '**Введи публичный username канала, ссылку на него '
+        'или перешли мне пост из этого канала:**'
+    )
 
     await callback_query.answer()
     await callback_query.message.reply(text)
     input_wait_manager.add(
-        callback_query.message.chat.id, add_source_waiting_input, client,
-        callback_query)
+        callback_query.message.chat.id, add_source_waiting_input, client, callback_query
+    )
 
 
 async def add_source_waiting_input(
-        client: Client, message: Message, callback_query: CallbackQuery):
+    client: Client,
+    message: Message,
+    callback_query: CallbackQuery,
+):
     logging.debug(callback_query.data)
 
     path = Path(callback_query.data)
@@ -125,8 +146,10 @@ async def add_source_waiting_input(
         await new_message.edit_text(
             text,
             reply_markup=InlineKeyboardMarkup(
-                buttons.get_footer(path, back_title='Назад')),
-            disable_web_page_preview=True)
+                buttons.get_footer(path, back_title='Назад')
+            ),
+            disable_web_page_preview=True,
+        )
 
     try:
         if message.forward_from_chat:
@@ -144,22 +167,22 @@ async def add_source_waiting_input(
     try:
         await user.join_chat(chat.username if chat.username else chat.id)
     except RPCError as e:
-        await edit_text(f'❌ Основной клиент не может подписаться на канал\n\n'
-                        f'{e}')
+        await edit_text(f'❌ Основной клиент не может подписаться на канал\n\n{e}')
         return
 
     try:
-        Source.create(tg_id=chat.id, title=chat.title,
-                      category=category_id)
+        Source.create(tg_id=chat.id, title=chat.title, category=category_id)
         Source.clear_actual_cache()
     except peewee.IntegrityError:
         await edit_text(f'❗️Этот канал уже используется')
         return
 
     category_obj: Category = Category.get(id=category_id)
-    success_text = (f'✅ Источник [{chat.title}](https://{chat.username}.t.me) '
-                    f'добавлен в категорию '
-                    f'{await get_channel_formatted_link(category_obj.tg_id)}')
+    success_text = (
+        f'✅ Источник [{chat.title}](https://{chat.username}.t.me) '
+        'добавлен в категорию '
+        f'{await get_channel_formatted_link(category_obj.tg_id)}'
+    )
     await edit_text(success_text)
 
     callback_query.data = path.get_prev()
@@ -168,8 +191,9 @@ async def add_source_waiting_input(
     await send_message_to_admins(client, callback_query, success_text)
 
 
-@Client.on_callback_query(filters.regex(
-    r's_\d+/:delete/') & custom_filters.admin_only)
+@Client.on_callback_query(
+    filters.regex(r's_\d+/:delete/') & custom_filters.admin_only,
+)
 async def delete_source(client: Client, callback_query: CallbackQuery):
     logging.debug(callback_query.data)
 
@@ -184,17 +208,30 @@ async def delete_source(client: Client, callback_query: CallbackQuery):
         await list_source(client, callback_query, needs_an_answer=False)
 
         await send_message_to_admins(
-            client, callback_query,
-            f'❌ Удален источник **{await get_channel_formatted_link(source_obj.tg_id)}**')
+            client,
+            callback_query,
+            (
+                '❌ Удален источник'
+                f' **{await get_channel_formatted_link(source_obj.tg_id)}**'
+            ),
+        )
         return
 
     await callback_query.answer()
     await callback_query.message.edit_text(
-        f'Источник: **{await get_channel_formatted_link(source_obj.tg_id)}**\n\n'
-        'Ты **удаляешь** источник!',
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
-            '❌ Подтвердить удаление',
-            callback_data=f'{path}/'
-        ), ]] + buttons.get_footer(path)),
-        disable_web_page_preview=True
+        (
+            f'Источник: **{await get_channel_formatted_link(source_obj.tg_id)}**\n\n'
+            'Ты **удаляешь** источник!'
+        ),
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        '❌ Подтвердить удаление', callback_data=f'{path}/'
+                    ),
+                ]
+            ]
+            + buttons.get_footer(path)
+        ),
+        disable_web_page_preview=True,
     )

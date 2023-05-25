@@ -8,7 +8,9 @@ configure_logging()
 
 start_scheduler()
 
-compose([
-    bot,
-    user,
-])
+compose(
+    [
+        bot,
+        user,
+    ]
+)
