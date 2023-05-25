@@ -7,8 +7,10 @@ from pyrogram.types import Dialog
 
 from clients import bot, user
 from models import Admin, Category, Source
-from plugins.user.forwarding_messages import (
+from plugins.user.sources_monitoring.message_with_media_group import (
     message_with_media_group,
+)
+from plugins.user.sources_monitoring.message_without_media_group import (
     message_without_media_group,
 )
 
