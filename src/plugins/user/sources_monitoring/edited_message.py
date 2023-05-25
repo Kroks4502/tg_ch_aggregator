@@ -6,13 +6,15 @@ from pyrogram.types import Message
 from common import get_shortened_text
 from config import MESSAGES_EDIT_LIMIT_TD
 from models import CategoryMessageHistory, Source
-from plugins.user.sources_monitoring import (
-    message_with_media_group,
-    message_without_media_group,
-)
 from plugins.user.sources_monitoring.blocking import (
     blocking_received_media_groups,
     blocking_editable_messages,
+)
+from plugins.user.sources_monitoring.message_with_media_group import (
+    message_with_media_group,
+)
+from plugins.user.sources_monitoring.message_without_media_group import (
+    message_without_media_group,
 )
 from plugins.user.utils import custom_filters
 
