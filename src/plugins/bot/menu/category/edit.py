@@ -10,8 +10,7 @@ from pyrogram.types import CallbackQuery, Message, InlineKeyboardMarkup
 from clients import user
 from models import Category
 from plugins.bot.menu.main import set_main_menu
-from plugins.bot.menu.section_source import list_source
-
+from plugins.bot.menu.source.list import list_source
 from plugins.bot.utils import custom_filters, buttons
 from plugins.bot.utils.managers import input_wait_manager
 from plugins.bot.utils.path import Path
