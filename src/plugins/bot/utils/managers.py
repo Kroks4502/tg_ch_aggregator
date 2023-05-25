@@ -26,7 +26,7 @@ class InputWaitManager:
                 MessageHandler(
                     self.__input_text,
                     filters=(
-                            custom_filters.chat(chat_id) & ~custom_filters.command_message
+                        custom_filters.chat(chat_id) & ~custom_filters.command_message
                     ),
                 ),
             ),

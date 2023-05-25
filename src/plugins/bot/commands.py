@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, Message
 
-from plugins.bot.menu.section_category import main_menu
+from plugins.bot.menu.main import main_menu
 from plugins.bot.menu.section_option import check_post_waiting_forwarding
 from plugins.bot.utils.managers import input_wait_manager
 
