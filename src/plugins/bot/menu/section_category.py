@@ -17,12 +17,12 @@ from pyrogram.types import (
 from clients import user
 from models import Category, Filter, Source
 from plugins.bot.menu.section_source import list_source
-from plugins.bot.menu.utils import buttons, custom_filters
-from plugins.bot.menu.utils.checks import is_admin
-from plugins.bot.menu.utils.links import get_channel_formatted_link
-from plugins.bot.menu.utils.managers import input_wait_manager
-from plugins.bot.menu.utils.path import Path
-from plugins.bot.menu.utils.senders import send_message_to_admins
+from plugins.bot.utils import buttons, custom_filters
+from plugins.bot.utils.checks import is_admin
+from plugins.bot.utils.links import get_channel_formatted_link
+from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.path import Path
+from plugins.bot.utils.senders import send_message_to_admins
 
 
 def list_category_buttons(path: Path, button_show_all_title='') -> list[list]:

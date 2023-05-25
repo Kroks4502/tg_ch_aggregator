@@ -5,7 +5,7 @@ from pyrogram import Client
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 
-from plugins.bot.menu.utils import custom_filters
+from plugins.bot.utils import custom_filters
 
 
 class InputWaitManager:
@@ -26,7 +26,7 @@ class InputWaitManager:
                 MessageHandler(
                     self.__input_text,
                     filters=(
-                        custom_filters.chat(chat_id) & ~custom_filters.command_message
+                            custom_filters.chat(chat_id) & ~custom_filters.command_message
                     ),
                 ),
             ),
