@@ -2,8 +2,8 @@ from datetime import datetime
 
 from peewee import *
 
+from config import DATABASE
 from filter_types import FilterType
-from settings import DATABASE
 
 
 class BaseModel(Model):
@@ -26,8 +26,13 @@ class BaseModel(Model):
                 raise Exception(f'Одного из имен полей нет в модели {cls.__name__}')
 
         for row in cls._cache:
-            if all(True if row[i] == value else False for i, value in conditions.items()):
-                yield {field_name: row[i] for i, field_name in enumerate(cls._meta.sorted_field_names)}
+            if all(
+                True if row[i] == value else False for i, value in conditions.items()
+            ):
+                yield {
+                    field_name: row[i]
+                    for i, field_name in enumerate(cls._meta.sorted_field_names)
+                }
 
     @classmethod
     def _update_cache(cls):
@@ -76,7 +81,9 @@ class Source(ChannelModel):
 
 class Filter(BaseModel):
     pattern = CharField()
-    type = IntegerField(choices=[(filter_type.name, filter_type.value) for filter_type in FilterType])
+    type = IntegerField(
+        choices=[(filter_type.name, filter_type.value) for filter_type in FilterType]
+    )
     source = ForeignKeyField(Source, null=True, backref='filters', on_delete='CASCADE')
 
     def __str__(self):

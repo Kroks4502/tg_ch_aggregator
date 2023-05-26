@@ -2,10 +2,25 @@ from pyrogram import utils
 
 
 def get_message_link(chat_id: int, message_id: int):
+    """
+    Сформировать ссылку на сообщение в канале.
+
+    :param chat_id: ID чата.
+    :param message_id: ID сообщения.
+    :return: Ссылка на сообщение.
+    """
     return f'https://t.me/c/{utils.get_channel_id(chat_id)}/{message_id}'
 
 
 def get_shortened_text(text: str, max_len: int, *, last_trim_char: str = '…') -> str:
+    """
+    Получить сокращенный текст.
+
+    :param text: Исходный текст.
+    :param max_len: Максимальная длина сокращенного текста.
+    :param last_trim_char: Последний символ, добавляемый в возвращаемую строку.
+    :return: Сокращенный текст.
+    """
     if len(text) <= max_len:
         return text
 

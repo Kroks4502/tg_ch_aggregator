@@ -1,18 +1,20 @@
 from pyrogram import filters
-from pyrogram.types import Message, CallbackQuery
+from pyrogram.types import CallbackQuery, Message
 
-from plugins.bot.menu.utils.checks import is_admin
+from plugins.bot.utils.checks import is_admin
 
 
 def chat(chat_id: int):
     async def func(flt, _, message: Message):
         return flt.chat_id == message.chat.id
+
     return filters.create(func, chat_id=chat_id)
 
 
 def is_command(_, __, message: Message) -> bool:
     if not message.text:
         return False
+
     return str(message.text)[0] == '/'
 
 
