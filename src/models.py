@@ -100,7 +100,7 @@ class Admin(BaseModel):
 
 class MessageHistoryModel(BaseModel):
     date = DateTimeField(default=datetime.now)
-    source = ForeignKeyField(Source)
+    source = ForeignKeyField(Source, on_delete='CASCADE')
     source_message_id = IntegerField()
     source_message_edited = BooleanField(default=False)
     source_message_deleted = BooleanField(default=False)
