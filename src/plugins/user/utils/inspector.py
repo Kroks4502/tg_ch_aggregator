@@ -12,7 +12,8 @@ from plugins.user.utils.history import add_to_filter_history
 
 
 def is_new_and_valid_post(message: Message, source: Source) -> bool:
-    if h_obj := perform_check_history(message, source):
+    """Сообщения ещё нет в истории и оно проходит фильтр."""
+    if h_obj := get_message_history(message, source):
         logging.info(
             f'Сообщение {message.id} из источника '
             f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
@@ -23,7 +24,7 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
         )
         return False
 
-    if data := perform_filtering(message, source):
+    if data := get_message_filter(message, source):
         add_to_filter_history(message, data['id'], source)
         logging.info(
             f'Сообщение {message.id} из источника '
@@ -36,10 +37,11 @@ def is_new_and_valid_post(message: Message, source: Source) -> bool:
     return True
 
 
-def perform_check_history(
+def get_message_history(
     message: Message,
     source: Source,
 ) -> CategoryMessageHistory | None:
+    """Получить историю сообщения, если она есть."""
     if message.forward_from_chat:
         forward_source = Source.get_or_none(tg_id=message.forward_from_chat.id)
         if forward_source:
@@ -77,8 +79,10 @@ def perform_check_history(
             return h_obj
 
 
-def perform_filtering(message: Message, source: Source) -> dict | None:
-    inspector = Inspector(message, source)
+def get_message_filter(message: Message, source: Source) -> dict | None:
+    """Получить информацию о прохождении фильтра, если сообщение его не проходит."""
+
+    inspector = FilterInspector(message, source)
 
     if result := inspector.check_message_type():
         return result
@@ -98,7 +102,7 @@ def perform_filtering(message: Message, source: Source) -> dict | None:
     return
 
 
-class Inspector:
+class FilterInspector:
     def __init__(self, message: Message, source: Source):
         self._message = message
         self._text = message.text or message.caption
