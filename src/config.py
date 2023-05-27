@@ -6,10 +6,9 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from dotenv import load_dotenv
-from peewee import SqliteDatabase
+from peewee import PostgresqlDatabase
 
 BASE_DIR = Path(__file__).parent
-DB_FILEPATH = BASE_DIR.parent / '.db'
 SESSIONS_DIR = BASE_DIR.parent / 'sessions'
 
 LOGS_DIR = BASE_DIR.parent / 'logs'
@@ -34,7 +33,15 @@ PATTERN_WITHOUT_SMILE = re.compile(
     flags=re.IGNORECASE,
 )
 
-DATABASE = SqliteDatabase(DB_FILEPATH, pragmas={'foreign_keys': 1})
+# DATABASE = SqliteDatabase(DB_FILEPATH, pragmas={'foreign_keys': 1})
+
+DATABASE = PostgresqlDatabase(
+    os.getenv('postgresql_database'),
+    user=os.getenv('postgresql_user'),
+    password=os.getenv('postgresql_password'),
+    host=os.getenv('postgresql_host'),
+    port=os.getenv('postgresql_port'),
+)
 
 # Период в течение которого при редактировании сообщения в источнике, происходит пересылка в категорию
 MESSAGES_EDIT_LIMIT_TD = datetime.timedelta(minutes=60)

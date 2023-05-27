@@ -46,7 +46,7 @@ class BaseModel(Model):
 
 
 class ChannelModel(BaseModel):
-    tg_id = IntegerField(unique=True)
+    tg_id = BigIntegerField(unique=True)
     title = CharField()
 
     def __str__(self):
@@ -81,7 +81,7 @@ class Source(ChannelModel):
 
 class Filter(BaseModel):
     pattern = CharField()
-    type = IntegerField(
+    type = SmallIntegerField(
         choices=[(filter_type.name, filter_type.value) for filter_type in FilterType]
     )
     source = ForeignKeyField(Source, null=True, backref='filters', on_delete='CASCADE')
@@ -91,7 +91,7 @@ class Filter(BaseModel):
 
 
 class Admin(BaseModel):
-    tg_id = IntegerField(unique=True)
+    tg_id = BigIntegerField(unique=True)
     username = CharField()
 
     def __str__(self):
@@ -101,7 +101,7 @@ class Admin(BaseModel):
 class MessageHistoryModel(BaseModel):
     date = DateTimeField(default=datetime.now)
     source = ForeignKeyField(Source, on_delete='CASCADE')
-    source_message_id = IntegerField()
+    source_message_id = BigIntegerField()
     source_message_edited = BooleanField(default=False)
     source_message_deleted = BooleanField(default=False)
     media_group = CharField()
@@ -112,9 +112,9 @@ class FilterMessageHistory(MessageHistoryModel):
 
 
 class CategoryMessageHistory(MessageHistoryModel):
-    forward_from_chat_id = IntegerField(null=True)
-    forward_from_message_id = IntegerField(null=True)
+    forward_from_chat_id = BigIntegerField(null=True)
+    forward_from_message_id = BigIntegerField(null=True)
     category = ForeignKeyField(Category, on_delete='CASCADE')
-    message_id = IntegerField()
+    message_id = BigIntegerField()
     rewritten = BooleanField()
     deleted = BooleanField(default=False)

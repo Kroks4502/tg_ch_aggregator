@@ -4,3 +4,5 @@ python-dotenv==0.21.0
 APScheduler==3.9.1
 TgCrypto==1.2.4
 async_lru==1.0.3
+psycopg2-binary==2.9.6
+yoyo-migrations==8.2.0

@@ -32,7 +32,6 @@ async def options(_, callback_query: CallbackQuery):
                 ],
                 [
                     InlineKeyboardButton('💾 Логи', callback_data='/o/:get_logs/'),
-                    InlineKeyboardButton('💾 db', callback_data='/o/:get_db/'),
                 ],
                 [
                     InlineKeyboardButton(

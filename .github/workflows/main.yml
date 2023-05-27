@@ -18,6 +18,7 @@ jobs:
           script: |
             cd /home/tgbot/tg_ch_aggregator/
             git pull
+            yoyo apply --database postgresql://${{ secrets.db_user }}:${{ secrets.db_pass }}@localhost/${{ secrets.db_name }}
             supervisorctl restart tgbot
   send_message:
     runs-on: ubuntu-latest

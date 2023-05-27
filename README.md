@@ -18,8 +18,13 @@
 ## Запуск проекта
 1. Клонировать репозиторий
 2. Создать .env файл по шаблону [.env.template](.env.template)
-3. Выполнить создание таблиц БД и пройти авторизацию в Telegram [first_start.py](first_start.py)
-4. 
+3. Выполнить создание таблиц БД c [create_db_tables.py](create_db_tables.py) по текущим моделям, либо применить все миграции
+    ```shell
+    apt install yoyo
+    yoyo apply --database postgresql://{{ db_user }}:{{ db_pass }}@localhost/{{ db_name }}
+    ```
+4. Пройти авторизацию в Telegram [create_tg_sessions.py](create_tg_sessions.py)
+
 
 ## Как использовать
 ...
