@@ -12,14 +12,14 @@ jobs:
       - name: executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.S1_HOST }}
-          username: ${{ secrets.S1_USER }}
-          password: ${{ secrets.S1_PSW }}
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.HOST_USER }}
+          key: ${{ secrets.HOST_KEY }}
           script: |
-            cd /home/tgbot/tg_ch_aggregator/
+            cd tg_ch_aggregator/
             git pull
-            yoyo apply --database postgresql://${{ secrets.db_user }}:${{ secrets.db_pass }}@localhost/${{ secrets.db_name }}
-            supervisorctl restart tgbot
+            yoyo apply --database postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@localhost/${{ secrets.DB_NAME }}
+            systemctl restart tgbot
   send_message:
     runs-on: ubuntu-latest
     needs: deploy

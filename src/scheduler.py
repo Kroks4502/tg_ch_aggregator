@@ -6,7 +6,7 @@ from starter import startup
 
 
 def start_scheduler():
-    scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
+    scheduler = AsyncIOScheduler()
     scheduler.add_job(
         func=startup,
         trigger='date',

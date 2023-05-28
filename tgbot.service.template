@@ -1,0 +1,16 @@
+[Unit]
+Description=Tgbot
+After=network.target
+Requires=postgresql@14-main.service
+
+[Service]
+Type=simple
+Restart=always
+
+WorkingDirectory={{ tgbot_dir }}
+ExecStart=python3 {{ tgbot_dir }}/main.py
+
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
