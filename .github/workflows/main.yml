@@ -15,8 +15,10 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.HOST_USER }}
           key: ${{ secrets.HOST_KEY }}
+          script_stop: true
           script: |
             cd tg_ch_aggregator/
+            git reset --hard HEAD
             git pull
             yoyo apply --database postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@localhost/${{ secrets.DB_NAME }}
             systemctl restart tgbot
