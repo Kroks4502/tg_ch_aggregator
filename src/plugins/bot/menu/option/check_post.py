@@ -96,6 +96,7 @@ async def check_post_waiting_forwarding(_, message: Message):
     await reply(
         '✅ [Пост]'
         f'({get_message_link(m_history_obj.source.tg_id, m_history_obj.source_message_id)}) '
-        f'был опубликован в канале [{m_history_obj.category.title}]'
+        f'из источника `{m_history_obj.source.title}` '
+        f'был опубликован в категории [{m_history_obj.category.title}]'
         f'({get_message_link(m_history_obj.category.tg_id, m_history_obj.message_id)})'
     )
