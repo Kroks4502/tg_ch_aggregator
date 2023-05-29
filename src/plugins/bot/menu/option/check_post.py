@@ -57,6 +57,7 @@ async def check_post_waiting_forwarding(_, message: Message):
         m_history_obj = CategoryMessageHistory.get_or_none(
             source=source,
             source_message_id=message_id,
+            deleted=False
         )
         f_history_obj = FilterMessageHistory.get_or_none(
             source=source,
@@ -67,6 +68,7 @@ async def check_post_waiting_forwarding(_, message: Message):
         m_history_obj = CategoryMessageHistory.get_or_none(
             forward_from_chat_id=chat_id,
             forward_from_message_id=message_id,
+            deleted=False
         )
 
     if f_history_obj:
