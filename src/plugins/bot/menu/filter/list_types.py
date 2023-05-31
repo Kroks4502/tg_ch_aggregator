@@ -1,64 +1,48 @@
-import logging
-
 import peewee
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery
 
-from filter_types import FilterType, FILTER_TYPES_BY_ID
+from filter_types import FilterType
 from models import Source, Filter
-from plugins.bot.utils import buttons
-from plugins.bot.utils.checks import is_admin
-from plugins.bot.utils.links import get_channel_formatted_link
-from plugins.bot.utils.path import Path
+from plugins.bot.utils.inline_keyboard import Menu, ButtonData
 
 
 @Client.on_callback_query(
-    filters.regex(r'/s_\d+/$'),
+    filters.regex(r'/ft/$'),
 )
-async def list_types_filters(_, callback_query: CallbackQuery, *, needs_an_answer=True):
-    logging.debug(callback_query.data)
+async def list_types_filters(_, callback_query: CallbackQuery):
+    await callback_query.answer()
 
-    path = Path(callback_query.data)
+    menu = Menu(callback_query.data)
 
-    source_id = int(path.get_value('s'))
-    source_obj: Source = Source.get_or_none(id=source_id)
+    source_id = menu.path.get_value('s')
+    source_obj: Source = Source.get(id=source_id) if source_id else None
 
-    text = '**Общие фильтры**'
-    inline_keyboard = []
     if source_obj:
-        text = (
-            '\nКатегория: '
-            f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**\n'
-            'Источник: '
-            f'**{await get_channel_formatted_link(source_obj.tg_id)}**'
+        query = (
+            Filter.select(Filter.type, peewee.fn.Count(Filter.id).alias('count'))
+            .where(Filter.source == source_id)
+            .group_by(Filter.type)
         )
-        if is_admin(callback_query.from_user.id):
-            inline_keyboard.append(
-                [
-                    InlineKeyboardButton(f'📝', callback_data=path.add_action('edit')),
-                    InlineKeyboardButton('✖️', callback_data=path.add_action('delete')),
-                ]
-            )
+    else:
+        query = (
+            Filter.select(Filter.type, peewee.fn.Count(Filter.id).alias('count'))
+            .where(Filter.source.is_null(True))
+            .group_by(Filter.type)
+        )
 
-    source_where = None if source_id else Filter.source.is_null(True)
-    query = (
-        Filter.select(Filter.type, peewee.fn.Count(Filter.id).alias('count'))
-        .where(source_where if source_where else Filter.source == source_id)
-        .group_by(Filter.type)
+    amounts = {i.type: i.count for i in query}
+
+    menu.add_rows_from_data(
+        data=[
+            ButtonData(ft.name, ft.value, amounts.get(ft.value, 0)) for ft in FilterType
+        ],
+        postfix='f/',
     )
-    data = {filter_type.value: (filter_type.name, 0) for filter_type in FilterType}
-    data.update(
-        {item.type: (FILTER_TYPES_BY_ID.get(item.type), item.count) for item in query}
-    )
-    inline_keyboard += buttons.get_list(
-        data=data,
-        path=path,
-        prefix_path='t',
-    )
-    if needs_an_answer:
-        await callback_query.answer()
+
+    text = await menu.get_text(source_obj=source_obj)
     await callback_query.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard + buttons.get_footer(path)),
+        text=text,
+        reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
     )

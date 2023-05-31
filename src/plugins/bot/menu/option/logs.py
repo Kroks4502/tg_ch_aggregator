@@ -12,8 +12,6 @@ from plugins.bot.utils import custom_filters
     filters.regex(r'^/o/:get_logs/$') & custom_filters.admin_only,
 )
 async def get_logs(_, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-
     await callback_query.answer('Загрузка...')
     info_message = ''
     for filename in os.listdir(LOGS_DIR):

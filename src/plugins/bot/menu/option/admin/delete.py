@@ -15,8 +15,6 @@ from plugins.bot.utils.senders import send_message_to_admins
     filters.regex(r'u_\d+/:delete/') & custom_filters.admin_only,
 )
 async def delete_admin(client: Client, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-
     path = Path(callback_query.data)
     admin_id = int(path.get_value('u'))
     admin_obj: Admin = Admin.get(id=admin_id)

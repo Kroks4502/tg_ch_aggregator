@@ -11,8 +11,6 @@ from plugins.bot.utils.path import Path
     filters.regex(r'^/o/$') & custom_filters.admin_only,
 )
 async def options(_, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-
     await callback_query.answer()
     await callback_query.message.edit_text(
         '**Параметры**',

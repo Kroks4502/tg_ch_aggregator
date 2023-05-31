@@ -15,7 +15,6 @@ from plugins.bot.utils.path import Path
     filters.regex(r'^/o/mh/$|^/o/mh/p_\d+/$') & custom_filters.admin_only,
 )
 async def message_history(_, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
     page = int(p) if (p := Path(callback_query.data).get_value('p')) else 1
     query = CategoryMessageHistory.select().order_by(CategoryMessageHistory.id.desc())
     obj_counts = query.count()

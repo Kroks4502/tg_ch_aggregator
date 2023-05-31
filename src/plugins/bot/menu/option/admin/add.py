@@ -20,8 +20,6 @@ from plugins.bot.utils.senders import send_message_to_admins
     filters.regex(r'^/o/a/:add/$') & custom_filters.admin_only,
 )
 async def add_admin(client: Client, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-
     chat_id = callback_query.message.chat.id
 
     text = (

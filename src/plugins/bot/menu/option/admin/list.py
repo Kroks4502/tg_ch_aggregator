@@ -11,13 +11,8 @@ from plugins.bot.utils.path import Path
 @Client.on_callback_query(
     filters.regex(r'^/o/a/$') & custom_filters.admin_only,
 )
-async def list_admins(
-    _,
-    callback_query: CallbackQuery,
-    *,
-    needs_an_answer: bool = True,
-):
-    logging.debug(callback_query.data)
+async def list_admins(_, callback_query: CallbackQuery):
+    await callback_query.answer()
 
     path = Path(callback_query.data)
 
@@ -36,11 +31,10 @@ async def list_admins(
     inline_keyboard += buttons.get_list(
         data={f'{item.id}': (item.username, 0) for item in query},
         path=path,
-        prefix_path='u',
+        prefix='u',
     )
     inline_keyboard += buttons.get_footer(path)
-    if needs_an_answer:
-        await callback_query.answer()
+
     await callback_query.message.edit_text(
         text, reply_markup=InlineKeyboardMarkup(inline_keyboard)
     )

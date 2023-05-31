@@ -22,7 +22,8 @@ from plugins.bot.utils.path import Path
     filters.regex(r'^/o/statistics/$') & custom_filters.admin_only,
 )
 async def statistics(_, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
+    await callback_query.answer('Загрузка...')
+
     text = '**Статистика бота за время работы**\n\n'
 
     query = Category.select()
@@ -120,7 +121,6 @@ async def statistics(_, callback_query: CallbackQuery):
     p = query_count / total_count * 100 if total_count else 0
     text += f'__Всего за всё время отфильтровано {query_count} шт. ({p:0.1f}%)__\n\n'
 
-    await callback_query.answer()
     await callback_query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(buttons.get_footer(Path('/o/mh/'))),

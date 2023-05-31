@@ -1,70 +1,40 @@
-import logging
-
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery
 
-from filter_types import FILTER_TYPES_BY_ID
 from models import Source, Filter
-from plugins.bot.utils import buttons
 from plugins.bot.utils.checks import is_admin
-from plugins.bot.utils.links import get_channel_formatted_link
-from plugins.bot.utils.path import Path
+from plugins.bot.utils.inline_keyboard import Menu, ButtonData
 
 
 @Client.on_callback_query(
-    filters.regex(r'/t_\w+/$'),
+    filters.regex(r'/ft/\d+/f/$'),
 )
-async def list_filters(
-    _,
-    callback_query: CallbackQuery,
-    *,
-    needs_an_answer: bool = True,
-):
-    logging.debug(callback_query.data)
+async def list_filters(_, callback_query: CallbackQuery):
+    await callback_query.answer()
 
-    path = Path(callback_query.data)
-    filter_type = int(path.get_value('t'))
-    source_id = int(path.get_value('s'))
+    menu = Menu(callback_query.data, back_step=2)
+
+    filter_type_id = menu.path.get_value('ft')
+    source_id = menu.path.get_value('s')
     source_obj: Source = Source.get(id=source_id) if source_id else None
 
+    if is_admin(callback_query.from_user.id):
+        menu.add_row_button('➕ Добавить фильтр', ':add')
+
     if source_obj:
-        text = (
-            'Категория: '
-            f'**{await get_channel_formatted_link(source_obj.category.tg_id)}**\n'
-            'Источник: '
-            f'**{await get_channel_formatted_link(source_obj.tg_id)}**'
+        query = Filter.select().where(
+            (Filter.source == source_id) & (Filter.type == filter_type_id)
         )
     else:
-        text = '**Общие фильтры**'
-    text += f'\nФильтр: **{FILTER_TYPES_BY_ID.get(filter_type)}**'
-
-    inline_keyboard = []
-    if is_admin(callback_query.from_user.id):
-        inline_keyboard.append(
-            [
-                InlineKeyboardButton(
-                    '➕ Добавить фильтр',
-                    callback_data=path.add_action('add'),
-                )
-            ]
+        query = Filter.select().where(
+            Filter.source.is_null(True) & (Filter.type == filter_type_id)
         )
 
-    source_where = None if source_id else Filter.source.is_null(True)
-    query = Filter.select().where(
-        (source_where if source_where else Filter.source == source_id)
-        & (Filter.type == filter_type)
-    )
-    inline_keyboard += buttons.get_list(
-        data={f'{item.id}': (item.pattern, 0) for item in query},
-        path=path,
-        prefix_path='f',
-    )
+    menu.add_rows_from_data(data=[ButtonData(i.pattern, i.id, 0) for i in query])
 
-    if needs_an_answer:
-        await callback_query.answer()
-
+    text = await menu.get_text(source_obj=source_obj, filter_type_id=filter_type_id)
     await callback_query.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard + buttons.get_footer(path)),
+        text=text,
+        reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
     )

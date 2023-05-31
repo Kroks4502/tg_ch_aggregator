@@ -1,57 +1,57 @@
-import logging
-
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import CallbackQuery
 
-from models import Source
-from plugins.bot.menu.source.list import list_source
-from plugins.bot.utils import custom_filters, buttons
+from models import Source, Filter
+from plugins.bot.utils import custom_filters
+from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
-from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r's_\d+/:delete/') & custom_filters.admin_only,
+    filters.regex(r'/s/\d+/:delete/$') & custom_filters.admin_only,
 )
-async def delete_source(client: Client, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-
-    path = Path(callback_query.data)
-    source_obj: Source = Source.get(id=int(path.get_value('s')))
-    if path.with_confirmation:
-        source_obj.delete_instance()
-        Source.clear_actual_cache()
-
-        callback_query.data = path.get_prev(3)
-        await callback_query.answer('Источник удален')
-        await list_source(client, callback_query, needs_an_answer=False)
-
-        await send_message_to_admins(
-            client,
-            callback_query,
-            (
-                '❌ Удален источник'
-                f' **{await get_channel_formatted_link(source_obj.tg_id)}**'
-            ),
-        )
-        return
-
+async def confirmation_delete_source(_, callback_query: CallbackQuery):
     await callback_query.answer()
+
+    menu = Menu(callback_query.data)
+
+    source_id = menu.path.get_value('s')
+    source_obj: Source = Source.get(id=source_id)
+
+    menu.add_row_button('❌ Подтвердить удаление', ':y')
+
+    text = await menu.get_text(source_obj=source_obj)
+    text += '\n\nТы **удаляешь** источник!'
+
     await callback_query.message.edit_text(
-        (
-            f'Источник: **{await get_channel_formatted_link(source_obj.tg_id)}**\n\n'
-            'Ты **удаляешь** источник!'
-        ),
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        '❌ Подтвердить удаление', callback_data=f'{path}/'
-                    ),
-                ]
-            ]
-            + buttons.get_footer(path)
-        ),
+        text=text,
+        reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
     )
+
+
+@Client.on_callback_query(
+    filters.regex(r'/s/\d+/:delete/:y/$') & custom_filters.admin_only,
+)
+async def delete_source(client: Client, callback_query: CallbackQuery):
+    await callback_query.answer()
+
+    menu = Menu(callback_query.data, back_step=3)
+
+    source_id = menu.path.get_value('s')
+    source_obj: Source = Source.get(id=source_id)
+
+    source_obj.delete_instance()
+    Source.clear_actual_cache()
+    Filter.clear_actual_cache()
+
+    src_link = await get_channel_formatted_link(source_obj.tg_id)
+    text = f'✅ Источник **{src_link}** удален'
+    await callback_query.message.edit_text(
+        text=text,
+        reply_markup=menu.reply_markup,
+        disable_web_page_preview=True,
+    )
+
+    await send_message_to_admins(client, callback_query, text)

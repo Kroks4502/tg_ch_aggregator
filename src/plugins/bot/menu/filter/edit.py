@@ -17,8 +17,6 @@ from plugins.bot.utils.senders import send_message_to_admins
     filters.regex(r'/f_\d+/:edit/$') & custom_filters.admin_only,
 )
 async def edit_body_filter(client: Client, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-
     path = Path(callback_query.data)
     chat_id = callback_query.message.chat.id
     filter_id = int(path.get_value('f'))

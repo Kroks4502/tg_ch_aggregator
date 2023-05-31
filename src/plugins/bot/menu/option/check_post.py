@@ -20,8 +20,6 @@ from plugins.bot.utils.path import Path
     filters.regex(r'^/o/:check_post/$') & custom_filters.admin_only,
 )
 async def check_post(client: Client, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-
     await callback_query.answer()
     await callback_query.message.reply(
         'ОК. Ты хочешь проверить есть ли пост в истории.\n\n'
@@ -55,9 +53,7 @@ async def check_post_waiting_forwarding(_, message: Message):
     f_history_obj = None
     if source:
         m_history_obj = CategoryMessageHistory.get_or_none(
-            source=source,
-            source_message_id=message_id,
-            deleted=False
+            source=source, source_message_id=message_id, deleted=False
         )
         f_history_obj = FilterMessageHistory.get_or_none(
             source=source,
@@ -68,7 +64,7 @@ async def check_post_waiting_forwarding(_, message: Message):
         m_history_obj = CategoryMessageHistory.get_or_none(
             forward_from_chat_id=chat_id,
             forward_from_message_id=message_id,
-            deleted=False
+            deleted=False,
         )
 
     if f_history_obj:
