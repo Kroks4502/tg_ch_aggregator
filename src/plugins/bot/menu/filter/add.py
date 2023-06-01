@@ -86,7 +86,7 @@ async def ask_filter_pattern_waiting_input(
 
     if source_obj:
         src_link = await get_channel_formatted_link(source_obj.tg_id)
-        text = f'✅ Фильтр для источника {src_link}'
+        text = f'✅ Фильтр для источника {src_link} '
     else:
         text = '✅ Общий фильтр '
     text += (

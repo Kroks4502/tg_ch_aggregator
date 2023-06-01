@@ -14,7 +14,7 @@ async def send_message_to_admins(
 ):
     """Отправка сообщений всем администраторам бота."""
     f_user = callback_query.from_user
-    for admin in Admin.select().where(Admin.tg_id != f_user.id):
+    for admin_tg_id in Admin.get_cache_admins_tg_ids() - {f_user.id}:
         if f_user.username:
             b_text = f'@{f_user.username}'
         else:
@@ -25,7 +25,7 @@ async def send_message_to_admins(
             b_text = f'{full_name} ({f_user.id})' if full_name else f'{f_user.id}'
         try:
             await client.send_message(
-                admin.tg_id,
+                admin_tg_id,
                 f'{b_text}\n{text}',
                 disable_web_page_preview=True,
             )

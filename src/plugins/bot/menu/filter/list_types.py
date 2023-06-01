@@ -16,7 +16,7 @@ async def list_types_filters(_, callback_query: CallbackQuery):
     menu = Menu(callback_query.data)
 
     source_id = menu.path.get_value('s')
-    source_obj: Source = Source.get(id=source_id) if source_id else None
+    source_obj: Source = Source.get(source_id) if source_id else None
 
     if source_obj:
         query = (

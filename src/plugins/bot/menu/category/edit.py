@@ -94,7 +94,7 @@ async def edit_category_waiting_input(
         return
 
     category_id = menu.path.get_value('c')
-    category_obj: Category = Category.get(id=category_id)
+    category_obj: Category = Category.get(category_id)
 
     cat_link_old = await get_channel_formatted_link(category_obj.tg_id)
 

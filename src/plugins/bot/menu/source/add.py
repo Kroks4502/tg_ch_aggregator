@@ -89,7 +89,7 @@ async def add_source_waiting_input(
 
     Source.clear_actual_cache()
 
-    category_obj: Category = Category.get(id=category_id)
+    category_obj: Category = Category.get(category_id)
     src_link = await get_channel_formatted_link(source_obj.tg_id)
     cat_link = await get_channel_formatted_link(category_obj.tg_id)
     success_text = f'✅ Источник **{src_link}** добавлен в категорию **{cat_link}**'

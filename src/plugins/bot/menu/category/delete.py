@@ -17,7 +17,7 @@ async def confirmation_delete_category(_, callback_query: CallbackQuery):
     menu = Menu(callback_query.data)
 
     category_id = menu.path.get_value('c')
-    category_obj: Category = Category.get(id=category_id)
+    category_obj: Category = Category.get(category_id)
 
     menu.add_row_button('❌ Подтвердить удаление', ':y')
 
@@ -40,7 +40,7 @@ async def delete_category(client: Client, callback_query: CallbackQuery):
     menu = Menu(callback_query.data, back_step=3)
 
     category_id = menu.path.get_value('c')
-    category_obj: Category = Category.get(id=category_id)
+    category_obj: Category = Category.get(category_id)
 
     category_obj.delete_instance()
     Category.clear_actual_cache()

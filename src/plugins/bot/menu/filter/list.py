@@ -16,7 +16,7 @@ async def list_filters(_, callback_query: CallbackQuery):
 
     filter_type_id = menu.path.get_value('ft')
     source_id = menu.path.get_value('s')
-    source_obj: Source = Source.get(id=source_id) if source_id else None
+    source_obj: Source = Source.get(source_id) if source_id else None
 
     if is_admin(callback_query.from_user.id):
         menu.add_row_button('➕ Добавить фильтр', ':add')

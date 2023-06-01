@@ -1,42 +1,23 @@
-import logging
-
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import CallbackQuery
 
-from plugins.bot.utils import custom_filters, buttons
-from plugins.bot.utils.path import Path
+from plugins.bot.utils import custom_filters
+from plugins.bot.utils.inline_keyboard import Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/o/$') & custom_filters.admin_only,
+    filters.regex(r'/o/$') & custom_filters.admin_only,
 )
 async def options(_, callback_query: CallbackQuery):
     await callback_query.answer()
-    await callback_query.message.edit_text(
-        '**Параметры**',
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton('Администраторы', callback_data='/o/a/'),
-                ],
-                [
-                    InlineKeyboardButton('История фильтра', callback_data='/o/fh/'),
-                ],
-                [
-                    InlineKeyboardButton('История пересылки', callback_data='/o/mh/'),
-                ],
-                [
-                    InlineKeyboardButton('Статистика', callback_data='/o/statistics/'),
-                ],
-                [
-                    InlineKeyboardButton('💾 Логи', callback_data='/o/:get_logs/'),
-                ],
-                [
-                    InlineKeyboardButton(
-                        'Проверить пост', callback_data='/o/:check_post/'
-                    ),
-                ],
-            ]
-            + buttons.get_footer(Path(callback_query.data))
-        ),
-    )
+
+    menu = Menu(callback_query.data)
+    menu.add_row_button('Администраторы', 'a')
+    menu.add_row_button('История фильтра', 'fh/1')
+    menu.add_row_button('История пересылки', 'mh/1')
+    menu.add_row_button('Статистика', 'stat')
+    menu.add_row_button('💾 Логи', ':get_logs')
+    menu.add_row_button('Проверить пост', ':check_post')
+
+    text = await menu.get_text()
+    await callback_query.message.edit_text(text=text, reply_markup=menu.reply_markup)

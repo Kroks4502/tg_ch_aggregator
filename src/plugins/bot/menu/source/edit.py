@@ -17,7 +17,7 @@ async def edit_source(_, callback_query: CallbackQuery):
 
     menu = Menu(callback_query.data)
     source_id = menu.path.get_value('s')
-    source_obj: Source = Source.get(id=source_id)
+    source_obj: Source = Source.get(source_id)
     text = await menu.get_text(source_obj=source_obj)
     text += '\n\nТы **меняешь категорию** у источника.\n' 'Выбери новую категорию:'
 
@@ -50,12 +50,12 @@ async def new_source_category(client: Client, callback_query: CallbackQuery):
     menu = Menu(callback_query.data, back_step=2)
 
     source_id = menu.path.get_value('s')
-    source_obj = Source.get(id=source_id)
+    source_obj = Source.get(source_id)
 
     old_category_obj = source_obj.category
 
     new_category_id = menu.path.get_value(':edit')
-    new_category_obj = Category.get(id=new_category_id)
+    new_category_obj = Category.get(new_category_id)
 
     source_obj.category = new_category_obj
     source_obj.save()

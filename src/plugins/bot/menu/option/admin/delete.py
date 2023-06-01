@@ -1,51 +1,56 @@
-import logging
-
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery
 
 from models import Admin
-from plugins.bot.menu.option.admin.list import list_admins
-from plugins.bot.utils import custom_filters, buttons
-from plugins.bot.utils.links import get_user_formatted_link
-from plugins.bot.utils.path import Path
+from plugins.bot.utils import custom_filters
+from plugins.bot.utils.inline_keyboard import Menu
+from plugins.bot.utils.links import get_user_formatted_link, get_channel_formatted_link
 from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'u_\d+/:delete/') & custom_filters.admin_only,
+    filters.regex(r'/a/\d+/:delete/$') & custom_filters.admin_only,
 )
-async def delete_admin(client: Client, callback_query: CallbackQuery):
-    path = Path(callback_query.data)
-    admin_id = int(path.get_value('u'))
-    admin_obj: Admin = Admin.get(id=admin_id)
-    text = f'**{await get_user_formatted_link(admin_obj.tg_id)}**'
-    if path.with_confirmation:
-        q = Admin.delete().where(Admin.id == admin_id)
-        q.execute()
-
-        Admin.clear_actual_cache()
-
-        callback_query.data = path.get_prev(3)
-        await callback_query.answer('Администратор удален')
-        await list_admins(client, callback_query, needs_an_answer=False)
-
-        await send_message_to_admins(
-            client, callback_query, f'❌ Удален администратор {text}'
-        )
-        return
-
-    text += '\n\nТы **удаляешь** администратора!'
-
-    inline_keyboard = [
-        [
-            InlineKeyboardButton('❌ Подтвердить удаление', callback_data=f'{path}/'),
-        ]
-    ]
-    inline_keyboard += buttons.get_footer(path)
-
+async def confirmation_delete_admin(_, callback_query: CallbackQuery):
     await callback_query.answer()
+
+    menu = Menu(callback_query.data)
+
+    admin_id = menu.path.get_value('a')
+    admin_obj: Admin = Admin.get(admin_id)
+
+    menu.add_row_button('❌ Подтвердить удаление', ':y')
+
+    adm_link = await get_user_formatted_link(admin_obj.tg_id)
+    text = f'**{adm_link}**\n\nТы **удаляешь** администратора!'
+
     await callback_query.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        text=text,
+        reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
     )
+
+
+@Client.on_callback_query(
+    filters.regex(r'/a/\d+/:delete/:y/$') & custom_filters.admin_only,
+)
+async def delete_admin(client: Client, callback_query: CallbackQuery):
+    await callback_query.answer()
+
+    menu = Menu(callback_query.data, back_step=3)
+
+    admin_id = menu.path.get_value('a')
+    admin_obj: Admin = Admin.get(admin_id)
+
+    admin_obj.delete_instance()
+    Admin.clear_actual_cache()
+
+    adm_link = await get_user_formatted_link(admin_obj.tg_id)
+    text = f'✅ Удален администратор **{adm_link}**'
+    await callback_query.message.edit_text(
+        text=text,
+        reply_markup=menu.reply_markup,
+        disable_web_page_preview=True,
+    )
+
+    await send_message_to_admins(client, callback_query, text)

@@ -1,9 +1,8 @@
 import datetime as dt
-import logging
 from _operator import itemgetter
 
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery
 
 from common import get_shortened_text
 from models import (
@@ -13,13 +12,13 @@ from models import (
     CategoryMessageHistory,
     FilterMessageHistory,
 )
-from plugins.bot.utils import custom_filters, buttons
+from plugins.bot.utils import custom_filters
+from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
-from plugins.bot.utils.path import Path
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/o/statistics/$') & custom_filters.admin_only,
+    filters.regex(r'/stat/$') & custom_filters.admin_only,
 )
 async def statistics(_, callback_query: CallbackQuery):
     await callback_query.answer('Загрузка...')
@@ -123,6 +122,6 @@ async def statistics(_, callback_query: CallbackQuery):
 
     await callback_query.message.edit_text(
         text,
-        reply_markup=InlineKeyboardMarkup(buttons.get_footer(Path('/o/mh/'))),
+        reply_markup=Menu('/o/./').reply_markup,
         disable_web_page_preview=True,
     )

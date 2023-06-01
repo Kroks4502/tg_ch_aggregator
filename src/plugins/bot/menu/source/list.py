@@ -16,7 +16,7 @@ async def list_source(_, callback_query: CallbackQuery):
     menu = Menu(path=callback_query.data, back_step=2)
 
     category_id = menu.path.get_value('c')
-    category_obj = Category.get(id=category_id) if category_id else None
+    category_obj = Category.get(category_id) if category_id else None
     if category_obj and is_admin(callback_query.from_user.id):
         menu.add_row_many_buttons(
             ('➕', ':add'),  # Добавить источник в категорию

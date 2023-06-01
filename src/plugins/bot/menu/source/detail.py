@@ -23,7 +23,7 @@ async def detail_source(_, callback_query: CallbackQuery):
     menu.add_row_button('Фильтры', 'ft')
 
     source_id = menu.path.get_value('s')
-    source_obj: Source = Source.get(id=source_id)
+    source_obj: Source = Source.get(source_id)
     text = await menu.get_text(source_obj=source_obj)
     await callback_query.message.edit_text(
         text=text,

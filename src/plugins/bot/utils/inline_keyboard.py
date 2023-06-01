@@ -4,7 +4,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from filter_types import FILTER_TYPES_BY_ID
 from models import Category, Source, Filter
-from plugins.bot.utils.buttons import MAX_LENGTH_BUTTON_TEXT
+from plugins.bot.constants import MAX_LENGTH_BUTTON_TEXT
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.path import Path
 
@@ -47,6 +47,8 @@ class Menu:
                 return '**Источники**'
             case '/ft/':
                 return '**Фильтры**'
+            case '/o/':
+                return '**Параметры**'
 
         if filter_obj:
             source_obj = filter_obj.source
@@ -66,8 +68,8 @@ class Menu:
             text.append(f'Источник: **{link}**')
 
         if filter_type_id:
-            filter_type_id = FILTER_TYPES_BY_ID.get(filter_type_id)
-            text.append(f'Тип фильтра: **{filter_type_id}**')
+            filter_type_text = FILTER_TYPES_BY_ID.get(filter_type_id)
+            text.append(f'Тип фильтра: **{filter_type_text}**')
 
         if filter_obj:
             text.append(f'Паттерн: `{filter_obj.pattern}`')
@@ -75,16 +77,6 @@ class Menu:
         result = '\n'.join(text)
 
         return result or '<пусто>'
-
-    @property
-    async def params(self):
-        return dict(
-            reply_markup=self.reply_markup,
-            disable_web_page_preview=True,
-        )
-
-    # def add_row(self, *items: "InlineKeyboardButton") -> None:
-    #     self.inline_keyboard.append([*items])
 
     def add_row_button(self, text: str, path: str) -> None:
         """
@@ -139,15 +131,11 @@ class Menu:
     @property
     def reply_markup(self):
         if self.footer_buttons_row:
-            self.inline_keyboard.append([*self.footer_buttons_row])
+            return InlineKeyboardMarkup(
+                self.inline_keyboard + [self.footer_buttons_row]
+            )
 
         return InlineKeyboardMarkup(self.inline_keyboard)
-
-    # async def write(self, client: "Client"):
-    #     if self.footer_buttons_row:
-    #         self.inline_keyboard.append([*self.footer_buttons_row])
-    #
-    #     return await super().write(client=client)
 
     def __str__(self):
         return str(self.inline_keyboard)
@@ -156,11 +144,9 @@ class Menu:
 @dataclass
 class ButtonData:
     """
-    - title: Название кнопки.
-    - path: Относительный путь до объекта.
+    - title: Название кнопки (обязательно).
+    - path: Относительный путь до объекта (обязательно).
     - amount: Количество объектов.
-
-    -
     """
 
     title: str

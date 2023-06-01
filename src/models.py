@@ -59,6 +59,7 @@ class Category(ChannelModel):
 
 class Source(ChannelModel):
     category = ForeignKeyField(Category, backref='sources', on_delete='CASCADE')
+
     _cache_monitored_channels = None
 
     @classmethod
@@ -93,6 +94,25 @@ class Filter(BaseModel):
 class Admin(BaseModel):
     tg_id = BigIntegerField(unique=True)
     username = CharField()
+
+    _cache_admins_tg_ids = None
+
+    @classmethod
+    def get_cache_admins_tg_ids(cls):
+        cls._update_cache()
+        return cls._cache_admins_tg_ids
+
+    @classmethod
+    def _update_cache(cls):
+        if not cls._is_actual_cache:
+            cls._cache = tuple(cls.select().tuples())
+            index = 0
+            for field_name in cls._meta.sorted_field_names:
+                if field_name == 'tg_id':
+                    break
+                index += 1
+            cls._cache_admins_tg_ids = {row[index] for row in cls._cache}
+            cls._is_actual_cache = True
 
     def __str__(self):
         return self.username

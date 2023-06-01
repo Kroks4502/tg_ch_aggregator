@@ -17,7 +17,7 @@ async def confirmation_delete_source(_, callback_query: CallbackQuery):
     menu = Menu(callback_query.data)
 
     source_id = menu.path.get_value('s')
-    source_obj: Source = Source.get(id=source_id)
+    source_obj: Source = Source.get(source_id)
 
     menu.add_row_button('❌ Подтвердить удаление', ':y')
 
@@ -40,7 +40,7 @@ async def delete_source(client: Client, callback_query: CallbackQuery):
     menu = Menu(callback_query.data, back_step=3)
 
     source_id = menu.path.get_value('s')
-    source_obj: Source = Source.get(id=source_id)
+    source_obj: Source = Source.get(source_id)
 
     source_obj.delete_instance()
     Source.clear_actual_cache()
