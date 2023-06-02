@@ -7,12 +7,13 @@ from plugins.bot.utils.inline_keyboard import Menu
 
 def get_main_menu(data: Message | CallbackQuery) -> Menu:
     menu = Menu('/')
-    menu.add_row_button('🗂 Категории', 'c')
-    menu.add_row_button('📚 Все источники', 's')
-    menu.add_row_button('🚮 Общие фильтры', 'ft')
 
     if is_admin(data.from_user.id):
-        menu.add_row_button('⚙ Настройки', 'o')
+        menu.add_row_button('🗂 Категории', 'c')
+        # menu.add_row_button('📚 Все источники', 's')
+        menu.add_row_button('🪤 Общие фильтры', 'ft')
+        menu.add_row_button('🚧 Проверить пост', ':check_post')
+        menu.add_row_button('🛠 Настройки', 'o')
 
     return menu
 
