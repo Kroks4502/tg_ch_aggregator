@@ -7,7 +7,7 @@ try:
 except ValueError:
     sys.path.append(src_path)
 
-from clients import bot, user
+from clients import bot, user  # Noqa
 
 if __name__ == '__main__':
 

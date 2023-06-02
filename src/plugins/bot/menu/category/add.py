@@ -1,14 +1,8 @@
 from pyrogram import Client, filters
-from pyrogram.types import (
-    CallbackQuery,
-    Message,
-    Chat,
-    ChatPrivileges,
-)
+from pyrogram.types import CallbackQuery, Chat, ChatPrivileges, Message
 
 from clients import user
 from models import Category
-
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
@@ -55,7 +49,7 @@ async def add_category_waiting_input(
         await callback_query.message.delete()
 
     if len(message.text) > 80:
-        await reply(f'❌ Название категории не должно превышать 80 символов')
+        await reply('❌ Название категории не должно превышать 80 символов')
         return
 
     new_channel: Chat = await user.create_channel(

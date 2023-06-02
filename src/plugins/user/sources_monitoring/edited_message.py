@@ -7,8 +7,8 @@ from common import get_shortened_text
 from config import MESSAGES_EDIT_LIMIT_TD
 from models import CategoryMessageHistory, Source
 from plugins.user.sources_monitoring.blocking import (
-    blocking_received_media_groups,
     blocking_editable_messages,
+    blocking_received_media_groups,
 )
 from plugins.user.sources_monitoring.message_with_media_group import (
     message_with_media_group,

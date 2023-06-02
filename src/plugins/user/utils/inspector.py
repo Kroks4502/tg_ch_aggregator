@@ -5,7 +5,7 @@ import re
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message, MessageEntity
 
-from common import get_shortened_text, get_message_link
+from common import get_message_link, get_shortened_text
 from filter_types import FilterMessageType, FilterType
 from models import CategoryMessageHistory, Filter, Source
 from plugins.user.utils.history import add_to_filter_history

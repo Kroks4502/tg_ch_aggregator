@@ -1,6 +1,14 @@
 from datetime import datetime
 
-from peewee import *
+from peewee import (
+    BigIntegerField,
+    BooleanField,
+    CharField,
+    DateTimeField,
+    ForeignKeyField,
+    Model,
+    SmallIntegerField,
+)
 
 from config import DATABASE
 from filter_types import FilterType

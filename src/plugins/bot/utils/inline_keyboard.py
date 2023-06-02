@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from filter_types import FILTER_TYPES_BY_ID
-from models import Category, Source, Filter
+from models import Category, Filter, Source
 from plugins.bot.constants import MAX_LENGTH_BUTTON_TEXT
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.path import Path

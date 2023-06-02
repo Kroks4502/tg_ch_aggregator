@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from pyrogram.types import Message, CallbackQuery
+from pyrogram.types import CallbackQuery, Message
 
 from plugins.bot.utils.checks import is_admin
 from plugins.bot.utils.inline_keyboard import Menu

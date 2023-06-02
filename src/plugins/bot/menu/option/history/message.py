@@ -3,8 +3,8 @@ import math
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from common import get_shortened_text, get_message_link
-from models import CategoryMessageHistory, Source, Category
+from common import get_message_link, get_shortened_text
+from models import Category, CategoryMessageHistory, Source
 from plugins.bot.constants import MAX_NUM_ENTRIES_MESSAGE
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu

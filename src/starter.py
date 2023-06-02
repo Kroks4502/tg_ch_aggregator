@@ -30,7 +30,7 @@ async def startup():
     await bot.send_message(me.id, msg)
 
     if not Admin.select().where(Admin.tg_id == me.id).exists():
-        Admin.create(tg_id=me.id, username=f'UserBot')
+        Admin.create(tg_id=me.id, username='UserBot')
     await update_admin_usernames(me.id)
 
     new_messages = await get_unread_messages()

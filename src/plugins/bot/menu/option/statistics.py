@@ -1,16 +1,16 @@
 import datetime as dt
-from _operator import itemgetter
 
+from _operator import itemgetter
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from common import get_shortened_text
 from models import (
     Category,
-    Source,
-    Filter,
     CategoryMessageHistory,
+    Filter,
     FilterMessageHistory,
+    Source,
 )
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu
@@ -39,7 +39,7 @@ async def statistics(_, callback_query: CallbackQuery):
     week_ago = today - dt.timedelta(days=7)
     day_ago = today - dt.timedelta(days=1)
 
-    text += f'📰 **Переслано сообщений за последний период**\n'
+    text += '📰 **Переслано сообщений за последний период**\n'
     query = CategoryMessageHistory.select().where(
         (CategoryMessageHistory.deleted == False)
         & (CategoryMessageHistory.date > day_ago)
@@ -55,7 +55,7 @@ async def statistics(_, callback_query: CallbackQuery):
         & (CategoryMessageHistory.date > month_ago)
     )
     text += f'— Месяц: {query.count()} шт.\n\n'
-    text += f'**По категориям**\n'
+    text += '**По категориям**\n'
     for category in Category.select():
         query = CategoryMessageHistory.select().where(
             (CategoryMessageHistory.deleted == False)
@@ -70,7 +70,7 @@ async def statistics(_, callback_query: CallbackQuery):
     )
     text += f'__Всего за всё время переслано {query.count()} шт.__\n\n'
 
-    text += f'🗑 **Отфильтровано сообщений за последний период**\n'
+    text += '🗑 **Отфильтровано сообщений за последний период**\n'
     query = FilterMessageHistory.select().where(FilterMessageHistory.date > day_ago)
     text += f'— День: {query.count()} шт.\n'
     query = FilterMessageHistory.select().where(FilterMessageHistory.date > week_ago)
@@ -78,7 +78,7 @@ async def statistics(_, callback_query: CallbackQuery):
     query = FilterMessageHistory.select().where(FilterMessageHistory.date > month_ago)
     text += f'— Месяц: {query.count()} шт.\n\n'
 
-    text += f'**По источникам за последний месяц**\n'
+    text += '**По источникам за последний месяц**\n'
     lines = []
     for source in Source.select():
         query = FilterMessageHistory.select().where(
