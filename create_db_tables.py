@@ -7,8 +7,8 @@ try:
 except ValueError:
     sys.path.append(src_path)
 
-from config import DATABASE, configure_logging
-from models import (
+from config import DATABASE, configure_logging  # Noqa
+from models import (  # Noqa
     Admin,
     Category,
     CategoryMessageHistory,

@@ -5,7 +5,6 @@ from pyrogram.errors import RPCError
 from pyrogram.types import CallbackQuery, Message
 
 from models import Admin
-
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_user_formatted_link
@@ -64,7 +63,7 @@ async def add_admin_waiting_input(
     try:
         admin_obj = Admin.create(tg_id=chat.id, username=username)
     except peewee.IntegrityError:
-        await reply(f'❗️Этот пользователь уже администратор')
+        await reply('❗️Этот пользователь уже администратор')
         return
     Admin.clear_actual_cache()
 

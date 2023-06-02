@@ -7,7 +7,7 @@ from pyrogram.errors import RPCError
 from pyrogram.types import CallbackQuery, Message
 
 from clients import user
-from models import Source, Category
+from models import Category, Source
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
@@ -84,7 +84,7 @@ async def add_source_waiting_input(
             tg_id=chat.id, title=chat.title, category=category_id
         )
     except peewee.IntegrityError:
-        await edit_text(f'❗️Этот канал уже используется')
+        await edit_text('❗️Этот канал уже используется')
         return
 
     Source.clear_actual_cache()

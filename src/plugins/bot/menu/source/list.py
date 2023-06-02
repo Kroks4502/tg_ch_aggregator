@@ -2,9 +2,9 @@ import peewee
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from models import Category, Source, Filter
+from models import Category, Filter, Source
 from plugins.bot.utils.checks import is_admin
-from plugins.bot.utils.inline_keyboard import Menu, ButtonData
+from plugins.bot.utils.inline_keyboard import ButtonData, Menu
 
 
 @Client.on_callback_query(

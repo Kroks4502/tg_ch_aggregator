@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from models import Source, Filter
+from models import Filter, Source
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link

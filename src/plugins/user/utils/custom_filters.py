@@ -11,7 +11,10 @@ forward_from_chat = filters.create(is_forward_from_chat)
 
 
 async def is_monitored_channels(_, __, message):
-    return message.chat.id in Source.get_cache_monitored_channels()
+    if message.chat:
+        return message.chat.id in Source.get_cache_monitored_channels()
+    # Может прилететь message без чата
+    return False
 
 
 monitored_channels = filters.create(is_monitored_channels)

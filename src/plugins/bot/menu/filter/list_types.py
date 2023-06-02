@@ -3,8 +3,8 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from filter_types import FilterType
-from models import Source, Filter
-from plugins.bot.utils.inline_keyboard import Menu, ButtonData
+from models import Filter, Source
+from plugins.bot.utils.inline_keyboard import ButtonData, Menu
 
 
 @Client.on_callback_query(

@@ -1,12 +1,8 @@
 from pyrogram import Client, filters
-from pyrogram.types import (
-    CallbackQuery,
-    Message,
-)
+from pyrogram.types import CallbackQuery, Message
 
 from common import get_message_link
-from models import Source, CategoryMessageHistory, FilterMessageHistory
-
+from models import CategoryMessageHistory, FilterMessageHistory, Source
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.managers import input_wait_manager

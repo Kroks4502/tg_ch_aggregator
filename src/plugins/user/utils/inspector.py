@@ -5,7 +5,7 @@ import re
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message, MessageEntity
 
-from common import get_shortened_text, get_message_link
+from common import get_message_link, get_shortened_text
 from filter_types import FilterMessageType, FilterType
 from models import CategoryMessageHistory, Filter, Source
 from plugins.user.utils.history import add_to_filter_history
@@ -78,6 +78,8 @@ def get_message_history(
         ):
             return h_obj
 
+    return
+
 
 def get_message_filter(message: Message, source: Source) -> dict | None:
     """Получить информацию о прохождении фильтра, если сообщение его не проходит."""
@@ -122,11 +124,13 @@ class FilterInspector:
         for data in self._get_filters(FilterType.ONLY_WHITE_TEXT):
             if not self._search(data['pattern'], self._text):
                 return data
+        return
 
     def check_text(self) -> int | None:
         for data in self._get_filters(FilterType.TEXT):
             if self._search(data['pattern'], self._text):
                 return data
+        return
 
     def check_entities(self, entity: MessageEntity) -> int | None:
         if result := self._check_entity_type(entity):
@@ -134,10 +138,11 @@ class FilterInspector:
 
         if entity.type == MessageEntityType.HASHTAG:
             return self._check_hashtag(entity)
-        elif entity.type == MessageEntityType.TEXT_LINK:
+        if entity.type == MessageEntityType.TEXT_LINK:
             return self._check_text_link(entity)
-        elif entity.type == MessageEntityType.URL:
+        if entity.type == MessageEntityType.URL:
             return self._check_url(entity)
+        return
 
     def _check_entity_type(self, entity: MessageEntity) -> int | None:
         for data in self._get_filters(FilterType.ENTITY_TYPE):
@@ -154,11 +159,13 @@ class FilterInspector:
                 self._text[entity.offset : entity.offset + entity.length],
             ):
                 return data
+        return
 
     def _check_text_link(self, entity: MessageEntity) -> int | None:
         for data in self._get_filters(FilterType.URL):
             if self._search(data['pattern'], entity.url):
                 return data
+        return
 
     def _check_url(self, entity: MessageEntity) -> int | None:
         for data in self._get_filters(FilterType.URL):
@@ -167,6 +174,7 @@ class FilterInspector:
                 self._text[entity.offset : entity.offset + entity.length],
             ):
                 return data
+        return
 
     def _get_filters(self, f_type: FilterType):
         return itertools.chain(

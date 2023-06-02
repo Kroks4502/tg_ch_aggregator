@@ -3,7 +3,7 @@ from pyrogram.types import CallbackQuery
 
 from models import Admin
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu, ButtonData
+from plugins.bot.utils.inline_keyboard import ButtonData, Menu
 
 
 @Client.on_callback_query(
