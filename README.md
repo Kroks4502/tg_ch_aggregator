@@ -1,6 +1,7 @@
 # Агрегатор телеграм каналов
 
-[![Deploy Telegram Channel Aggregator](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/main.yml/badge.svg)](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/main.yml)
+[![Deploy Telegram Channel Aggregator](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/deploy_prod.yml/badge.svg)](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/deploy_prod.yml)
+[![codestyle](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/codestyle.yml/badge.svg)](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/codestyle.yml)
 
 [![Python][Python-badge]][Python-url]
 [![Pyrogram][Pyrogram-badge]][Pyrogram-url]
