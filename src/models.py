@@ -130,6 +130,9 @@ class MessageHistoryModel(BaseModel):
 class FilterMessageHistory(MessageHistoryModel):
     filter = ForeignKeyField(Filter, backref='history', on_delete='CASCADE')
 
+    class Meta:
+        table_name = 'filter_message_history'
+
 
 class CategoryMessageHistory(MessageHistoryModel):
     forward_from_chat_id = BigIntegerField(null=True)
@@ -138,3 +141,6 @@ class CategoryMessageHistory(MessageHistoryModel):
     message_id = BigIntegerField()
     rewritten = BooleanField()
     deleted = BooleanField(default=False)
+
+    class Meta:
+        table_name = 'category_message_history'
