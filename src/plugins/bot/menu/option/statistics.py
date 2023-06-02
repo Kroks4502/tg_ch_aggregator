@@ -122,6 +122,6 @@ async def statistics(_, callback_query: CallbackQuery):
 
     await callback_query.message.edit_text(
         text,
-        reply_markup=Menu('/o/./').reply_markup,
+        reply_markup=Menu('/o/stat/').reply_markup,
         disable_web_page_preview=True,
     )
