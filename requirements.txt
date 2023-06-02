@@ -1,8 +1,8 @@
-peewee==3.15.3
-Pyrogram==2.0.59
-python-dotenv==0.21.0
-APScheduler==3.9.1
-TgCrypto==1.2.4
-async_lru==1.0.3
+peewee==3.16.2
+Pyrogram==2.0.106
+python-dotenv==1.0.0
+APScheduler==3.10.1
+TgCrypto==1.2.5
+async_lru==2.0.2
 psycopg2-binary==2.9.6
 yoyo-migrations==8.2.0
