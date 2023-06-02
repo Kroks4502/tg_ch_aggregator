@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from models import Source
+from models import Source, Filter
 from plugins.bot.utils.checks import is_admin
 from plugins.bot.utils.inline_keyboard import Menu
 
@@ -20,10 +20,12 @@ async def detail_source(_, callback_query: CallbackQuery):
             ('✖️', ':delete'),  # Удалить источник
         )
 
-    menu.add_row_button('Фильтры', 'ft')
-
     source_id = menu.path.get_value('s')
     source_obj: Source = Source.get(source_id)
+
+    count = Filter.select().where(Filter.source == source_obj).count()
+    menu.add_row_button('Фильтры' + (f' ({count})' if count else ''), 'ft')
+
     text = await menu.get_text(source_obj=source_obj)
     await callback_query.message.edit_text(
         text=text,
