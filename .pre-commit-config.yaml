@@ -30,4 +30,8 @@ repos:
   rev: 6.0.0
   hooks:
   - id: flake8
+    additional_dependencies:
+    - pep8-naming
+    - flake8-broken-line
+    - flake8-return
     args: [--config, setup.cfg]
