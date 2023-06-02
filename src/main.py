@@ -1,15 +1,14 @@
 from pyrogram import compose
 
 from clients import bot, user
-from config import configure_logging, DEVELOP_MODE
+from config import configure_logging
 from scheduler import start_scheduler
 
 
 def main():
     configure_logging()
 
-    if not DEVELOP_MODE:
-        start_scheduler()
+    start_scheduler()
 
     compose([bot, user])
 
