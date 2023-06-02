@@ -6,7 +6,7 @@ from pyrogram.errors import RPCError
 from clients import user
 
 
-@alru_cache(maxsize=128)
+@alru_cache(maxsize=16)
 async def get_user_formatted_link(tg_id: int) -> str:
     """Получить отформатированную в markdown ссылку на пользователя по tg_id."""
     try:
@@ -24,7 +24,7 @@ async def get_user_formatted_link(tg_id: int) -> str:
     return str(tg_id)
 
 
-@alru_cache(maxsize=128)
+@alru_cache(maxsize=256)
 async def get_channel_formatted_link(tg_id: int) -> str:
     """Получить отформатированную в markdown ссылку на канал по tg_id."""
     try:

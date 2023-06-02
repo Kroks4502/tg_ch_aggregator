@@ -1,64 +1,33 @@
-import logging
-
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery
 
-from filter_types import FilterType, FILTER_TYPES_BY_ID
+from filter_types import FilterType
 from models import Filter
-from plugins.bot.utils import buttons
 from plugins.bot.utils.checks import is_admin
-from plugins.bot.utils.links import get_channel_formatted_link
-from plugins.bot.utils.path import Path
+from plugins.bot.utils.inline_keyboard import Menu
 
 
-@Client.on_callback_query(
-    filters.regex(r'/f_\d+/$'),
-)
-async def detail_filter(
-    _,
-    callback_query: CallbackQuery,
-    *,
-    needs_an_answer: bool = True,
-):
-    logging.debug(callback_query.data)
+@Client.on_callback_query(filters.regex(r'/f/\d+/$'))
+async def detail_filter(_, callback_query: CallbackQuery):
+    await callback_query.answer()
 
-    path = Path(callback_query.data)
-    filter_obj: Filter = Filter.get(id=int(path.get_value('f')))
+    menu = Menu(callback_query.data)
 
-    inline_keyboard = []
+    filter_id = menu.path.get_value('f')
+    filter_obj: Filter = Filter.get(filter_id)
+
     if is_admin(callback_query.from_user.id):
         if filter_obj.type in (
             FilterType.ENTITY_TYPE.value,
             FilterType.MESSAGE_TYPE.value,
         ):
-            inline_keyboard.append(
-                [
-                    InlineKeyboardButton('✖️', callback_data=path.add_action('delete')),
-                ],
-            )
+            menu.add_row_button('✖️', ':delete')
         else:
-            inline_keyboard.append(
-                [
-                    InlineKeyboardButton(f'📝', callback_data=path.add_action('edit')),
-                    InlineKeyboardButton('✖️', callback_data=path.add_action('delete')),
-                ],
-            )
-    inline_keyboard += buttons.get_footer(path)
+            menu.add_row_many_buttons(('📝', ':edit'), ('✖️', ':delete'))
 
-    if filter_obj.source:
-        text = (
-            f'Источник: **{await get_channel_formatted_link(filter_obj.source.tg_id)}**'
-        )
-    else:
-        text = '**Общий фильтр**'
-    text += (
-        f'\nТип фильтра: **{FILTER_TYPES_BY_ID.get(filter_obj.type)}**'
-        f'\nПаттерн: `{filter_obj.pattern}`'
-    )
-    if needs_an_answer:
-        await callback_query.answer()
+    text = await menu.get_text(filter_obj=filter_obj)
     await callback_query.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        text=text,
+        reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
     )

@@ -1,10 +1,7 @@
-import logging
-
 from pyrogram import Client, filters
 from pyrogram.types import (
     CallbackQuery,
     Message,
-    InlineKeyboardMarkup,
     Chat,
     ChatPrivileges,
 )
@@ -12,18 +9,16 @@ from pyrogram.types import (
 from clients import user
 from models import Category
 
-from plugins.bot.utils import custom_filters, buttons
+from plugins.bot.utils import custom_filters
+from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
-from plugins.bot.utils.path import Path
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/:add/$') & custom_filters.admin_only,
+    filters.regex(r'/c/:add/$') & custom_filters.admin_only,
 )
 async def add_category(client: Client, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-
     await callback_query.answer()
     await callback_query.message.reply(
         'ОК. Ты добавляешь новую категорию, '
@@ -45,7 +40,7 @@ async def add_category_waiting_input(
     message: Message,
     callback_query: CallbackQuery,
 ):
-    logging.debug(callback_query.data)
+    menu = Menu(callback_query.data)
 
     new_channel_name = f'{message.text} | Aggregator'
     new_message = await message.reply_text(f'⏳ Создаю канал «{new_channel_name}»…')
@@ -53,11 +48,11 @@ async def add_category_waiting_input(
     async def reply(text):
         await new_message.edit_text(
             text,
-            reply_markup=InlineKeyboardMarkup(
-                buttons.get_footer(Path(callback_query.data), back_title='Назад')
-            ),
+            reply_markup=menu.reply_markup,
             disable_web_page_preview=True,
         )
+        # Удаляем предыдущее меню
+        await callback_query.message.delete()
 
     if len(message.text) > 80:
         await reply(f'❌ Название категории не должно превышать 80 символов')
@@ -86,10 +81,5 @@ async def add_category_waiting_input(
         tg_id=new_channel.id,
         title=new_channel.title,
     )
-    success_text = (
-        '✅ Категория '
-        f'**{await get_channel_formatted_link(category_obj.tg_id)}'
-        '** создана'
-    )
-
-    await reply(success_text)
+    cat_link = await get_channel_formatted_link(category_obj.tg_id)
+    await reply(f'✅ Категория **{cat_link}** создана')

@@ -1,35 +1,32 @@
-import logging
 import re
 
 import peewee
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType
 from pyrogram.errors import RPCError, exceptions
-from pyrogram.types import CallbackQuery, Message, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery, Message
 
 from clients import user
 from models import Category
-from plugins.bot.menu.main import set_main_menu
-from plugins.bot.menu.source.list import list_source
-from plugins.bot.utils import custom_filters, buttons
+from plugins.bot.utils import custom_filters
+from plugins.bot.utils.inline_keyboard import Menu
+from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
-from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/c_\d+/:edit/$') & custom_filters.admin_only,
+    filters.regex(r'/c/\d+/:edit/$') & custom_filters.admin_only,
 )
 async def edit_category(client: Client, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-
     await callback_query.answer()
     await callback_query.message.reply(
         'ОК. Ты меняешь канал для категории, '
         'в который будут пересылаться сообщения из источников. '
         'Этот бот должен быть администратором канала '
         'с возможностью публиковать записи.\n\n'
-        '**Введи публичное имя канала или ссылку на канал:**'
+        '**Введи публичное имя канала, частную ссылку, '
+        'ID или перешли сообщение из него:**'
     )
 
     input_wait_manager.add(
@@ -45,63 +42,74 @@ async def edit_category_waiting_input(
     message: Message,
     callback_query: CallbackQuery,
 ):
-    logging.debug(callback_query.data)
+    menu = Menu(callback_query.data, back_step=2)
 
-    input_text = re.sub('https://t.me/', '', message.text)
-    path = Path(callback_query.data)
+    #
 
-    async def reply(text):
-        await message.reply_text(
+    new_message = await message.reply_text('⏳ Проверка…')
+
+    async def edit_text(text):
+        await new_message.edit_text(
             text,
-            reply_markup=InlineKeyboardMarkup(
-                buttons.get_footer(path, back_title='Назад')
-            ),
+            reply_markup=menu.reply_markup,
             disable_web_page_preview=True,
         )
+        # Удаляем предыдущее меню
+        await callback_query.message.delete()
 
     try:
-        chat = await user.get_chat(input_text)
+        if message.forward_from_chat:
+            chat = message.forward_from_chat
+        else:
+            try:
+                # ID, публичные имена, частные ссылки (https://t.me/+klis1as0RHthMDRi)
+                chat = await user.get_chat(message.text)
+            except RPCError:
+                # Публичная ссылка (https://t.me/mychannel)
+                input_text = re.sub('https://t.me/', '', message.text)
+                chat = await user.get_chat(input_text)
     except RPCError as e:
-        await reply(f'❌ Что-то пошло не так\n\n{e}')
+        await edit_text(f'❌ Что-то пошло не так\n\n{e}')
         return
 
     if chat.type != ChatType.CHANNEL:
-        await reply('❌ Это не канал')
+        await edit_text('❌ Это не канал')
         return
+
+    #
 
     try:
         member = await chat.get_member(client.me.id)
         if not member.privileges.can_post_messages:
-            await reply('❌ Бот не имеет прав на публикацию в этом канале')
+            await edit_text('❌ Бот не имеет прав на публикацию в этом канале')
             return
     except exceptions.bad_request_400.UserNotParticipant:
-        await reply('❌ Бот не администратор этого канала')
+        await edit_text('❌ Бот не администратор этого канала')
         return
 
     try:
         await user.join_chat(chat.username if chat.username else chat.id)
     except RPCError as e:
-        await reply(f'❌ Основной клиент не может подписаться на канал\n\n{e}')
+        await edit_text(f'❌ Основной клиент не может подписаться на канал\n\n{e}')
         return
 
+    category_id = menu.path.get_value('c')
+    category_obj: Category = Category.get(category_id)
+
+    cat_link_old = await get_channel_formatted_link(category_obj.tg_id)
+
+    category_obj.tg_id = chat.id
+    category_obj.title = chat.title
     try:
-        category_id = int(path.get_value('c'))
-        q = Category.update(
-            {Category.tg_id: chat.id, Category.title: chat.title}
-        ).where(Category.id == category_id)
-        q.execute()
-        success_text = f'✅ Категория {category_id} изменена на **{chat.title}**'
-        Category.clear_actual_cache()
+        category_obj.save()
     except peewee.IntegrityError:
-        await reply('❗️Этот канал уже используется')
+        await edit_text('❗️Этот канал уже используется')
         return
 
-    await reply(success_text)
+    Category.clear_actual_cache()
+
+    cat_link_new = await get_channel_formatted_link(category_obj.tg_id)
+    success_text = f'✅ Категория **{cat_link_old}** изменена на **{cat_link_new}**'
+    await edit_text(success_text)
 
     await send_message_to_admins(client, callback_query, success_text)
-
-    callback_query.data = path.get_prev()
-    if path.action == 'add':
-        await set_main_menu(client, callback_query, needs_an_answer=False)
-        return
-    await list_source(client, callback_query, needs_an_answer=False)

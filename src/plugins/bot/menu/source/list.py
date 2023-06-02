@@ -1,64 +1,44 @@
-import logging
-
 import peewee
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery
 
 from models import Category, Source, Filter
-from plugins.bot.utils import buttons
 from plugins.bot.utils.checks import is_admin
-from plugins.bot.utils.links import get_channel_formatted_link
-from plugins.bot.utils.path import Path
+from plugins.bot.utils.inline_keyboard import Menu, ButtonData
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/c_\d+/$'),
+    filters.regex(r'/s/$'),
 )
-async def list_source(
-    _,
-    callback_query: CallbackQuery,
-    *,
-    needs_an_answer: bool = True,
-):
-    logging.debug(callback_query.data)
+async def list_source(_, callback_query: CallbackQuery):
+    await callback_query.answer()
 
-    path = Path(callback_query.data)
-    category_id = int(path.get_value('c'))
-    category_obj: Category = Category.get(id=category_id) if category_id else None
+    menu = Menu(path=callback_query.data, back_step=2)
 
-    text = (
-        f'Категория: **{await get_channel_formatted_link(category_obj.tg_id)}**'
-        if category_obj
-        else '**Все источники**'
-    )
-
-    inline_keyboard = []
+    category_id = menu.path.get_value('c')
+    category_obj = Category.get(category_id) if category_id else None
     if category_obj and is_admin(callback_query.from_user.id):
-        inline_keyboard.append(
-            [
-                InlineKeyboardButton('➕', callback_data=path.add_action('add')),
-                InlineKeyboardButton(f'📝', callback_data=path.add_action('edit')),
-                InlineKeyboardButton('✖️', callback_data=path.add_action('delete')),
-            ]
+        menu.add_row_many_buttons(
+            ('➕', ':add'),  # Добавить источник в категорию
+            ('📝', '../:edit'),  # Редактировать категорию (изменить канал)
+            ('✖️', '../:delete'),  # Удалить категорию
         )
+
     query = (
         Source.select(
             Source.id, Source.title, peewee.fn.Count(Filter.id).alias('count')
         )
-        .where(Source.category == category_id if category_id else True)
+        .where(Source.category == category_obj.id if category_obj else True)
         .join(Filter, peewee.JOIN.LEFT_OUTER)
         .group_by(Source.id)
+    )  # Запрашиваем список источников
+    menu.add_rows_from_data(
+        data=[ButtonData(item.title, item.id, item.count) for item in query]
     )
-    inline_keyboard += buttons.get_list(
-        data={item.id: (item.title, item.count) for item in query},
-        path=path,
-        prefix_path='s',
-    ) + buttons.get_footer(path)
 
-    if needs_an_answer:
-        await callback_query.answer()
+    text = await menu.get_text(category_obj=category_obj)
     await callback_query.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard),
+        text=text,
+        reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
     )

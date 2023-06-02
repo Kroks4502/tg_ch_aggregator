@@ -1,49 +1,62 @@
-import logging
 import math
 
+from peewee import JOIN
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery
 
 from common import get_shortened_text, get_message_link
 from filter_types import FILTER_TYPES_BY_ID
-from models import FilterMessageHistory
+from models import FilterMessageHistory, Source, Filter
 from plugins.bot.constants import MAX_NUM_ENTRIES_MESSAGE
-from plugins.bot.utils import custom_filters, buttons
-from plugins.bot.utils.path import Path
+from plugins.bot.utils import custom_filters
+from plugins.bot.utils.inline_keyboard import Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/o/fh/$|^/o/fh/p_\d+/$') & custom_filters.admin_only,
+    filters.regex(r'/fh/\d+/$') & custom_filters.admin_only,
 )
 async def filter_history(_, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-    page = int(p) if (p := Path(callback_query.data).get_value('p')) else 1
-    query = FilterMessageHistory.select().order_by(FilterMessageHistory.id.desc())
-    obj_counts = query.count()
-    text = '**Список отфильтрованных сообщений в обратном порядке**\n\n'
-    for item in query.paginate(page, MAX_NUM_ENTRIES_MESSAGE):
-        text += (
-            f'{"🏞" if item.media_group else "🗞"}'
-            f'[{get_shortened_text(item.source.title, 30)}]'
-            f'({get_message_link(item.source.tg_id, item.source_message_id)})\n'
-            f'**{"Персональный" if item.filter.source else "Общий"}** фильтр '
-            f'**{FILTER_TYPES_BY_ID.get(item.filter.type)}**\n'
-            f'`{item.filter.pattern}`\n'
-            f'__{item.source_message_id} {item.date.strftime("%Y.%m.%d, %H:%M:%S")}__'
-            '\n\n'
-        )
-    text += f'Всего записей: **{obj_counts}**'
-    inline_keyboard = [[]]
-    if page > 1:
-        inline_keyboard[0].append(
-            InlineKeyboardButton('Предыдущие', callback_data=f'/o/fh/p_{page - 1}/')
-        )
-    if page < math.ceil(obj_counts / MAX_NUM_ENTRIES_MESSAGE):
-        inline_keyboard[0].append(
-            InlineKeyboardButton('Следующие', callback_data=f'/o/fh/p_{page + 1}/')
-        )
-    inline_keyboard += buttons.get_footer(Path('/o/fh/'))
     await callback_query.answer()
+
+    menu = Menu(callback_query.data, back_step=2)
+
+    page = menu.path.get_value('fh')
+
+    source_filter = Source.alias()
+    query = (
+        FilterMessageHistory.select(FilterMessageHistory, Source, Filter, source_filter)
+        .join(Source, JOIN.LEFT_OUTER)
+        .switch()
+        .join(Filter)
+        .join(source_filter, JOIN.LEFT_OUTER)
+        .order_by(FilterMessageHistory.id.desc())
+    )
+    obj_counts = query.count()
+
+    text_items = []
+    for f in query.paginate(page, MAX_NUM_ENTRIES_MESSAGE):
+        text_items.append(
+            f'{"🏞" if f.media_group else "🗞"}'
+            f'[{get_shortened_text(f.source.title, 30)}]'
+            f'({get_message_link(f.source.tg_id, f.source_message_id)})\n'
+            f'**{"П" if f.filter.source else "O"}** '
+            f'**{FILTER_TYPES_BY_ID.get(f.filter.type)}** '
+            f'`{f.filter.pattern}`\n'
+            f'__{f.source_message_id} {f.date.strftime("%Y.%m.%d, %H:%M:%S")}__'
+        )
+
+    if page > 1:
+        menu.add_row_button('Предыдущие', f'../{"" if page == 1 else page - 1}')
+    if page < math.ceil(obj_counts / MAX_NUM_ENTRIES_MESSAGE):
+        menu.add_row_button('Следующие', f'../{page + 1}')
+
+    text = (
+        '**Последние отфильтрованные сообщения**\n\n'
+        + ('\n\n'.join(text_items))
+        + f'\n\nВсего записей: **{obj_counts}**'
+    )
+
     await callback_query.message.edit_text(
-        text, reply_markup=InlineKeyboardMarkup(inline_keyboard)
+        text=text,
+        reply_markup=menu.reply_markup,
     )

@@ -1,4 +1,3 @@
-import logging
 import os
 
 from pyrogram import Client, filters
@@ -9,12 +8,11 @@ from plugins.bot.utils import custom_filters
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/o/:get_logs/$') & custom_filters.admin_only,
+    filters.regex(r'/:get_logs/$') & custom_filters.admin_only,
 )
 async def get_logs(_, callback_query: CallbackQuery):
-    logging.debug(callback_query.data)
-
     await callback_query.answer('Загрузка...')
+
     info_message = ''
     for filename in os.listdir(LOGS_DIR):
         file_path = LOGS_DIR / filename

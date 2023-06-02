@@ -1,46 +1,28 @@
-import logging
-
 from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery
 
 from models import Admin
-from plugins.bot.utils import custom_filters, buttons
-from plugins.bot.utils.path import Path
+from plugins.bot.utils import custom_filters
+from plugins.bot.utils.inline_keyboard import Menu, ButtonData
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/o/a/$') & custom_filters.admin_only,
+    filters.regex(r'/a/$') & custom_filters.admin_only,
 )
-async def list_admins(
-    _,
-    callback_query: CallbackQuery,
-    *,
-    needs_an_answer: bool = True,
-):
-    logging.debug(callback_query.data)
+async def list_admins(_, callback_query: CallbackQuery):
+    await callback_query.answer()
 
-    path = Path(callback_query.data)
+    menu = Menu(callback_query.data)
 
-    text = f'**Список администраторов:**'
-
-    inline_keyboard = [
-        [
-            InlineKeyboardButton('✖ Добавить', callback_data=path.add_action('add')),
-        ]
-    ]
+    menu.add_row_button('✖ Добавить', ':add')
 
     query = Admin.select(
         Admin.id,
         Admin.username,
     )
-    inline_keyboard += buttons.get_list(
-        data={f'{item.id}': (item.username, 0) for item in query},
-        path=path,
-        prefix_path='u',
-    )
-    inline_keyboard += buttons.get_footer(path)
-    if needs_an_answer:
-        await callback_query.answer()
+    menu.add_rows_from_data(data=[ButtonData(i.username, i.id, 0) for i in query])
+
     await callback_query.message.edit_text(
-        text, reply_markup=InlineKeyboardMarkup(inline_keyboard)
+        text='**Список администраторов:**',
+        reply_markup=menu.reply_markup,
     )
