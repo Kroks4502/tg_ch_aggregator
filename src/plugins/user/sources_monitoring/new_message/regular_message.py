@@ -2,18 +2,14 @@ import logging
 import re
 
 from pyrogram import Client, filters
-from pyrogram.errors import (
-    BadRequest,
-    ChatForwardsRestricted,
-    MediaCaptionTooLong,
-    MessageIdInvalid,
-    MessageTooLong,
-)
 from pyrogram.types import Message
 
 from common import get_shortened_text
 from config import PATTERN_AGENT
 from models import Source
+from plugins.user.sources_monitoring.new_message.common import (
+    handle_errors_on_new_message,
+)
 from plugins.user.utils import custom_filters
 from plugins.user.utils.history import add_to_category_history
 from plugins.user.utils.inspector import is_new_and_valid_post
@@ -23,6 +19,7 @@ from plugins.user.utils.rewriter import delete_agent_text_in_message
 @Client.on_message(
     custom_filters.monitored_channels & ~filters.media_group & ~filters.service,
 )
+@handle_errors_on_new_message
 async def new_regular_message(
     client: Client,
     message: Message,
@@ -49,56 +46,26 @@ async def new_regular_message(
 
     message_text = message.text or message.caption or ''
     search_result = re.search(PATTERN_AGENT, str(message_text))
-    try:
-        if search_result:
-            delete_agent_text_in_message(search_result, message)
-            message.web_page = None  # disable_web_page_preview = True
-            forwarded_message = await message.copy(
-                source.category.tg_id, disable_notification=is_resending
-            )
-        else:
-            forwarded_message = await message.forward(
-                source.category.tg_id, disable_notification=is_resending
-            )
 
-        add_to_category_history(
-            message, forwarded_message, source, rewritten=bool(search_result)
+    if search_result:
+        delete_agent_text_in_message(search_result, message)
+        message.web_page = None  # disable_web_page_preview = True
+        forwarded_message = await message.copy(
+            source.category.tg_id, disable_notification=is_resending
+        )
+    else:
+        forwarded_message = await message.forward(
+            source.category.tg_id, disable_notification=is_resending
         )
 
-        await client.read_chat_history(message.chat.id)
-        logging.info(
-            f'Сообщение {message.id} из источника'
-            f' {get_shortened_text(message.chat.title, 20)} {message.chat.id} переслано'
-            ' в категорию'
-            f' {get_shortened_text(source.category.title, 20)} {source.category.tg_id}'
-        )
-    except MessageIdInvalid as e:
-        # Случай когда почти одновременно приходит сообщение о редактировании и удалении сообщения из источника.
-        logging.warning(
-            f'Сообщение {message.id} из источника'
-            f' {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к'
-            f' ошибке {e}'
-        )
-    except ChatForwardsRestricted:
-        # todo: Перепечатывать сообщение
-        logging.error(
-            f'Источник запрещает пересылку сообщений '
-            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            'превысило лимит знаков при его перепечатывании.'
-        )
-    except (MediaCaptionTooLong, MessageTooLong):
-        # todo Обрезать и ставить надпись "Читать из источника..."
-        logging.error(
-            f'Описание медиа сообщения {message.id} из источника '
-            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            'превысило лимит знаков при его перепечатывании.'
-        )
-    except BadRequest as e:
-        logging.error(
-            (
-                f'Сообщение {message.id} из источника'
-                f' {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело'
-                f' к ошибке.\n{e}\nПолное сообщение: {message}\n'
-            ),
-            exc_info=True,
-        )
+    add_to_category_history(
+        message, forwarded_message, source, rewritten=bool(search_result)
+    )
+
+    await client.read_chat_history(message.chat.id)
+    logging.info(
+        f'Сообщение {message.id} из источника'
+        f' {get_shortened_text(message.chat.title, 20)} {message.chat.id} переслано'
+        ' в категорию'
+        f' {get_shortened_text(source.category.title, 20)} {source.category.tg_id}'
+    )
