@@ -38,7 +38,7 @@ async def edit_regular_message(client: Client, message: Message):
 
     set_deleted_on_history(history_obj)
 
-    await send_message_to_category(client, message, history_obj)
+    await send_message_to_category(client, message)
 
     blocked.remove(message.media_group_id or message.id)
 
@@ -60,11 +60,11 @@ def set_deleted_on_history(
 async def send_message_to_category(
     client: Client,
     message: Message,
-    history_obj: CategoryMessageHistory,
+    # history_obj: CategoryMessageHistory,
 ) -> None:
     await new_regular_message(
         client,
         message,
         is_resending=True,  # Удалить
-        history_obj=history_obj,  # Замена is_resending для возможности редактирования поста
+        # history_obj=history_obj,  # Замена is_resending для возможности редактирования поста
     )

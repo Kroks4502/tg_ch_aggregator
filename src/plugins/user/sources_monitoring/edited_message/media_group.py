@@ -41,7 +41,7 @@ async def edited_media_group_message(client: Client, message: Message):
 
     set_deleted_on_history(history_obj, messages_to_delete)
 
-    await send_message_to_category(client, message, history_obj)
+    await send_message_to_category(client, message)
 
     blocked.remove(message.media_group_id or message.id)
 
@@ -59,14 +59,14 @@ def set_deleted_on_history(
     history_obj: CategoryMessageHistory,
     messages_to_delete: list[int],
 ) -> None:
-    cmh = CategoryMessageHistory.alias()
-    query = cmh.update(
+    query = CategoryMessageHistory.update(
         {
-            cmh.source_message_edited: True,
-            cmh.deleted: True,
+            CategoryMessageHistory.source_message_edited: True,
+            CategoryMessageHistory.deleted: True,
         }
     ).where(
-        (cmh.category == history_obj.category) & (cmh.message_id << messages_to_delete)
+        (CategoryMessageHistory.category == history_obj.category)
+        & (CategoryMessageHistory.message_id << messages_to_delete)
     )
     query.execute()
     logging.info(
@@ -80,7 +80,7 @@ def set_deleted_on_history(
 async def send_message_to_category(
     client: Client,
     message: Message,
-    history_obj: CategoryMessageHistory,
+    # history_obj: CategoryMessageHistory,
 ) -> None:
     if b := blocking_received_media_groups.get(message.chat.id):
         b.remove(message.media_group_id)
@@ -88,5 +88,5 @@ async def send_message_to_category(
         client,
         message,
         is_resending=True,  # Удалить
-        history_obj=history_obj,  # Замена is_resending для возможности редактирования поста
+        # history_obj=history_obj,  # Замена is_resending для возможности редактирования поста
     )

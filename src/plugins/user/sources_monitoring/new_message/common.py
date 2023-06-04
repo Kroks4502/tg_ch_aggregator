@@ -18,9 +18,9 @@ def handle_errors_on_new_message(f):
     """Декоратор для отлова возможных исключений при отправке новых сообщений в категорию."""
 
     @wraps(f)
-    def decorated(client: Client, message: Message, *args, **kwargs):
+    async def decorated(client: Client, message: Message, *args, **kwargs):
         try:
-            return f(client, message, *args, **kwargs)
+            return await f(client, message, *args, **kwargs)
         except MessageIdInvalid as e:
             # Случай когда почти одновременно приходит сообщение о редактировании и удалении сообщения из источника
             logging.warning(

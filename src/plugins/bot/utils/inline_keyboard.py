@@ -135,6 +135,9 @@ class Menu:
                 self.inline_keyboard + [self.footer_buttons_row]
             )
 
+        if len(self.inline_keyboard) == 0:
+            return None
+
         return InlineKeyboardMarkup(self.inline_keyboard)
 
     def __str__(self):
