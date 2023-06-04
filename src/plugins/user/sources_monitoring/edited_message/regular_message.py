@@ -11,8 +11,8 @@ from plugins.user.sources_monitoring.edited_message.common import (
     logging_on_startup,
     try_set_blocked,
 )
-from plugins.user.sources_monitoring.message_without_media_group import (
-    message_without_media_group,
+from plugins.user.sources_monitoring.new_message.regular_message import (
+    new_regular_message,
 )
 from plugins.user.utils import custom_filters
 
@@ -62,7 +62,7 @@ async def send_message_to_category(
     message: Message,
     history_obj: CategoryMessageHistory,
 ) -> None:
-    await message_without_media_group(
+    await new_regular_message(
         client,
         message,
         is_resending=True,  # Удалить

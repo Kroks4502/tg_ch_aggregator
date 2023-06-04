@@ -2,7 +2,13 @@ import logging
 import re
 
 from pyrogram import Client, filters
-from pyrogram.errors import BadRequest, MessageIdInvalid
+from pyrogram.errors import (
+    BadRequest,
+    ChatForwardsRestricted,
+    MediaCaptionTooLong,
+    MessageIdInvalid,
+    MessageTooLong,
+)
 from pyrogram.types import Message
 
 from common import get_shortened_text
@@ -17,7 +23,7 @@ from plugins.user.utils.rewriter import delete_agent_text_in_message
 @Client.on_message(
     custom_filters.monitored_channels & ~filters.media_group & ~filters.service,
 )
-async def message_without_media_group(
+async def new_regular_message(
     client: Client,
     message: Message,
     *,
@@ -72,6 +78,20 @@ async def message_without_media_group(
             f'Сообщение {message.id} из источника'
             f' {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к'
             f' ошибке {e}'
+        )
+    except ChatForwardsRestricted:
+        # todo: Перепечатывать сообщение
+        logging.error(
+            f'Источник запрещает пересылку сообщений '
+            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+            'превысило лимит знаков при его перепечатывании.'
+        )
+    except (MediaCaptionTooLong, MessageTooLong):
+        # todo Обрезать и ставить надпись "Читать из источника..."
+        logging.error(
+            f'Описание медиа сообщения {message.id} из источника '
+            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+            'превысило лимит знаков при его перепечатывании.'
         )
     except BadRequest as e:
         logging.error(

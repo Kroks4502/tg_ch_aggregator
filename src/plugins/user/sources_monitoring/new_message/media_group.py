@@ -3,7 +3,13 @@ import logging
 import re
 
 from pyrogram import Client, filters
-from pyrogram.errors import BadRequest, MessageIdInvalid
+from pyrogram.errors import (
+    BadRequest,
+    ChatForwardsRestricted,
+    MediaCaptionTooLong,
+    MessageIdInvalid,
+    MessageTooLong,
+)
 from pyrogram.types import (
     InputMediaAudio,
     InputMediaDocument,
@@ -26,7 +32,7 @@ from plugins.user.utils.send_media_group import send_media_group
 @Client.on_message(
     custom_filters.monitored_channels & filters.media_group & ~filters.service,
 )
-async def message_with_media_group(
+async def new_media_group_message(
     client: Client,
     message: Message,
     *,
@@ -161,14 +167,26 @@ async def message_with_media_group(
             f' {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к'
             f' ошибке {e}'
         )
-    # todo: делать не пересылку когда
-    #  [400 CHAT_FORWARDS_RESTRICTED] - The chat restricts forwarding content (caused by "messages.ForwardMessages")
+    except ChatForwardsRestricted:
+        # todo: Перепечатывать сообщение
+        logging.error(
+            f'Источник запрещает пересылку сообщений '
+            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+            'превысило лимит знаков при его перепечатывании.'
+        )
+    except (MediaCaptionTooLong, MessageTooLong):
+        # todo Обрезать и ставить надпись "Читать из источника..."
+        logging.error(
+            f'Описание медиа сообщения {message.id} из источника '
+            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+            'превысило лимит знаков при его перепечатывании.'
+        )
     except BadRequest as e:
         logging.error(
             (
-                f'Сообщение {message.id} из источника'
-                f' {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело'
-                f' к ошибке\n{e}\nПолное сообщение: {message}\n'
+                f'Сообщение {message.id} из источника '
+                f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} привело '
+                f'к ошибке\n{e}\nПолное сообщение: {message}\n'
             ),
             exc_info=True,
         )

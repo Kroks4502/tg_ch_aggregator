@@ -11,8 +11,8 @@ from plugins.user.sources_monitoring.edited_message.common import (
     logging_on_startup,
     try_set_blocked,
 )
-from plugins.user.sources_monitoring.message_with_media_group import (
-    message_with_media_group,
+from plugins.user.sources_monitoring.new_message.media_group import (
+    new_media_group_message,
 )
 from plugins.user.utils import custom_filters
 from plugins.user.utils.blocking import blocking_received_media_groups
@@ -84,7 +84,7 @@ async def send_message_to_category(
 ) -> None:
     if b := blocking_received_media_groups.get(message.chat.id):
         b.remove(message.media_group_id)
-    await message_with_media_group(
+    await new_media_group_message(
         client,
         message,
         is_resending=True,  # Удалить
