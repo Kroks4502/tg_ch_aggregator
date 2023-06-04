@@ -131,8 +131,6 @@ class MessageHistoryModel(BaseModel):
     source = ForeignKeyField(Source, on_delete='CASCADE')
     source_chat_id = BigIntegerField()
     source_message_id = BigIntegerField()
-    source_message_edited = BooleanField(default=False)
-    source_message_deleted = BooleanField(default=False)
     media_group = CharField()
 
 
@@ -149,6 +147,8 @@ class CategoryMessageHistory(MessageHistoryModel):
     category = ForeignKeyField(Category, on_delete='CASCADE')
     message_id = BigIntegerField()
     rewritten = BooleanField()
+    source_message_edited = BooleanField(default=False)
+    source_message_deleted = BooleanField(default=False)
     deleted = BooleanField(default=False)
 
     class Meta:
