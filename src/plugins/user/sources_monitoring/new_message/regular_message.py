@@ -26,17 +26,7 @@ async def new_regular_message(
     *,
     is_resending: bool = None,
 ):
-    if not is_resending:
-        logging.debug(
-            f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            f'отправил сообщение {message.id}'
-        )
-    else:
-        logging.debug(
-            'Повторная отправка из источника '
-            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            f'сообщения {message.id}'
-        )
+    logging_on_startup(message, is_resending)
 
     source = Source.get(tg_id=message.chat.id)
 
@@ -64,8 +54,22 @@ async def new_regular_message(
 
     await client.read_chat_history(message.chat.id)
     logging.info(
-        f'Сообщение {message.id} из источника'
-        f' {get_shortened_text(message.chat.title, 20)} {message.chat.id} переслано'
-        ' в категорию'
-        f' {get_shortened_text(source.category.title, 20)} {source.category.tg_id}'
+        f'Сообщение {message.id} из источника '
+        f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} переслано '
+        'в категорию '
+        f'{get_shortened_text(source.category.title, 20)} {source.category.tg_id}'
     )
+
+
+def logging_on_startup(message: Message, is_resending: bool):
+    if not is_resending:
+        logging.debug(
+            f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+            f'отправил сообщение {message.id}'
+        )
+    else:
+        logging.debug(
+            'Повторная отправка из источника '
+            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
+            f'сообщения {message.id}'
+        )
