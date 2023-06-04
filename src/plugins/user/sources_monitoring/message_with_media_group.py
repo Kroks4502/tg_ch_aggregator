@@ -15,8 +15,8 @@ from pyrogram.types import (
 from common import get_shortened_text
 from config import PATTERN_AGENT
 from models import Source
-from plugins.user.sources_monitoring.blocking import blocking_received_media_groups
 from plugins.user.utils import custom_filters
+from plugins.user.utils.blocking import blocking_received_media_groups
 from plugins.user.utils.history import add_to_category_history
 from plugins.user.utils.inspector import is_new_and_valid_post
 from plugins.user.utils.rewriter import delete_agent_text_in_message
