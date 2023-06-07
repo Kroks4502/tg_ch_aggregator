@@ -9,6 +9,7 @@ from peewee import (
     Model,
     SmallIntegerField,
 )
+from playhouse.postgres_ext import JSONField
 
 from config import DATABASE
 from filter_types import FilterType
@@ -53,6 +54,15 @@ class BaseModel(Model):
         cls._is_actual_cache = False
 
 
+class GlobalSettings(BaseModel):
+    key = CharField(primary_key=True, unique=True)
+    value = JSONField()
+
+    class Meta:
+        primary_key = False
+        table_name = 'global_settings'
+
+
 class ChannelModel(BaseModel):
     tg_id = BigIntegerField(unique=True)
     title = CharField()
@@ -67,6 +77,12 @@ class Category(ChannelModel):
 
 class Source(ChannelModel):
     category = ForeignKeyField(Category, backref='sources', on_delete='CASCADE')
+
+    # Список регулярных выражений для очистки сообщений и их перепечатывания
+    cleanup_regex = JSONField(default=[])
+
+    # Формировать новое сообщение (True) или пересылать сообщение (False)
+    is_rewrite = BooleanField(default=False)
 
     _cache_monitored_channels = None
 
