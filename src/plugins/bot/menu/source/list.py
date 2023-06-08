@@ -36,7 +36,10 @@ async def list_source(_, callback_query: CallbackQuery):
         data=[ButtonData(item.title, item.id, item.count) for item in query]
     )
 
-    text = await menu.get_text(category_obj=category_obj)
+    text = await menu.get_text(
+        category_obj=category_obj,
+        last_text='' if category_obj else '**Источники**',
+    )
     await callback_query.message.edit_text(
         text=text,
         reply_markup=menu.reply_markup,

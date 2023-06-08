@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, Message
 
+from plugins.bot.constants import MAIN_MENU_TEXT
 from plugins.bot.utils.checks import is_admin
 from plugins.bot.utils.inline_keyboard import Menu
 
@@ -27,6 +28,6 @@ async def set_main_menu(_, callback_query: CallbackQuery):
     menu = get_main_menu(callback_query)
 
     await callback_query.message.edit_text(
-        await menu.get_text(),
+        text=MAIN_MENU_TEXT,
         reply_markup=menu.reply_markup,
     )

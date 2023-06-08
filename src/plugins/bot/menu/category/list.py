@@ -31,9 +31,8 @@ async def list_category(_, callback_query: CallbackQuery):
         postfix='s/',
     )
 
-    text = await menu.get_text()
     await callback_query.message.edit_text(
-        text=text,
+        text='**Категории**',
         reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
     )

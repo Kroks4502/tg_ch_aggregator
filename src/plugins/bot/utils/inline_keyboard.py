@@ -37,19 +37,8 @@ class Menu:
         source_obj: Source = None,
         filter_obj: Filter = None,
         filter_type_id: str = None,
+        last_text: str = None,
     ):
-        match self.path.path:
-            case '/':
-                return '**Агрегатор каналов**'
-            case '/c/':
-                return '**Категории**'
-            case '/s/':
-                return '**Источники**'
-            case '/ft/':
-                return '**Фильтры**'
-            case '/o/':
-                return '**Параметры**'
-
         if filter_obj:
             source_obj = filter_obj.source
             filter_type_id = filter_obj.type
@@ -57,26 +46,35 @@ class Menu:
         if source_obj:
             category_obj = source_obj.category
 
-        text = []
+        breadcrumbs = []
 
         if category_obj:
             link = await get_channel_formatted_link(category_obj.tg_id)
-            text.append(f'Категория: **{link}**')
+            breadcrumbs.append(f'Категория: **{link}**')
 
         if source_obj:
             link = await get_channel_formatted_link(source_obj.tg_id)
-            text.append(f'Источник: **{link}**')
+            breadcrumbs.append(f'Источник: **{link}**')
 
         if filter_type_id:
             filter_type_text = FILTER_TYPES_BY_ID.get(filter_type_id)
-            text.append(f'Тип фильтра: **{filter_type_text}**')
+            breadcrumbs.append(f'Тип фильтра: **{filter_type_text}**')
 
         if filter_obj:
-            text.append(f'Паттерн: `{filter_obj.pattern}`')
+            breadcrumbs.append(f'Паттерн: `{filter_obj.pattern}`')
 
-        result = '\n'.join(text)
+        bc_result = '\n'.join(breadcrumbs)
 
-        return result or '<пусто>'
+        if bc_result and last_text:
+            return f'{bc_result}\n\n{last_text}'
+
+        if bc_result:
+            return bc_result
+
+        if last_text:
+            return last_text
+
+        return '<пусто>'
 
     def add_row_button(self, text: str, path: str) -> None:
         """
