@@ -23,7 +23,7 @@ class BaseModel(Model):
         database = DATABASE
 
     @classmethod
-    def get_cache(cls, **where) -> dict:
+    def get_cache(cls, **where):
         cls._update_cache()
 
         conditions = {}
