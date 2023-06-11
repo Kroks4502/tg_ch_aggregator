@@ -57,7 +57,7 @@ def delete_agent_text_in_message(search_result: Match, message: Message):  # noq
     text_link = MessageEntity(
         type=MessageEntityType.TEXT_LINK,
         offset=0,
-        length=add_author_len,
+        length=add_author_len - 1,
         url=url,
     )
     if message.text:
