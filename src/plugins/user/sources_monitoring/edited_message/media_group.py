@@ -50,7 +50,7 @@ def get_message_to_delete(history_obj: CategoryMessageHistory) -> list[int]:
     query = CategoryMessageHistory.select().where(
         (CategoryMessageHistory.source == history_obj.source)
         & (CategoryMessageHistory.media_group == history_obj.media_group)
-        & (CategoryMessageHistory.deleted == False)
+        & (CategoryMessageHistory.deleted == False)  # noqa: E712
     )
     return [m.message_id for m in query]
 

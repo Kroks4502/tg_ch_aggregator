@@ -37,7 +37,7 @@ async def edit_category(client: Client, callback_query: CallbackQuery):
     )
 
 
-async def edit_category_waiting_input(
+async def edit_category_waiting_input(  # noqa: C901
     client: Client,
     message: Message,
     callback_query: CallbackQuery,

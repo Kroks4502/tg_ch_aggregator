@@ -7,7 +7,7 @@ from pyrogram.types import Message, MessageEntity
 from config import PATTERN_WITHOUT_SMILE
 
 
-def delete_agent_text_in_message(search_result: Match, message: Message):
+def delete_agent_text_in_message(search_result: Match, message: Message):  # noqa: C901
     separator = '\n\n'
     title = re.sub(
         PATTERN_WITHOUT_SMILE,

@@ -31,7 +31,7 @@ async def add_source(client: Client, callback_query: CallbackQuery):
     )
 
 
-async def add_source_waiting_input(
+async def add_source_waiting_input(  # noqa: C901
     client: Client,
     message: Message,
     callback_query: CallbackQuery,
