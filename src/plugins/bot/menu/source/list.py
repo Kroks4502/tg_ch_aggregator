@@ -26,14 +26,17 @@ async def list_source(_, callback_query: CallbackQuery):
 
     query = (
         Source.select(
-            Source.id, Source.title, peewee.fn.Count(Filter.id).alias('count')
+            Source.id,
+            Source.title,
+            Source.cleanup_regex,
+            peewee.fn.Count(Filter.id).alias('count'),
         )
         .where(Source.category == category_obj.id if category_obj else True)
         .join(Filter, peewee.JOIN.LEFT_OUTER)
         .group_by(Source.id)
     )  # Запрашиваем список источников
     menu.add_rows_from_data(
-        data=[ButtonData(item.title, item.id, item.count) for item in query]
+        data=[ButtonData(i.title, i.id, i.count + len(i.cleanup_regex)) for i in query]
     )
 
     text = await menu.get_text(
