@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from models import Admin
+from plugins.bot.constants import ADD_BNT_TEXT
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import ButtonData, Menu
 
@@ -14,7 +15,7 @@ async def list_admins(_, callback_query: CallbackQuery):
 
     menu = Menu(callback_query.data)
 
-    menu.add_row_button('✖ Добавить', ':add')
+    menu.add_row_button(ADD_BNT_TEXT, ':add')
 
     query = Admin.select(
         Admin.id,

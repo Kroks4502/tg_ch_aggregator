@@ -24,7 +24,15 @@ async def detail_source(_, callback_query: CallbackQuery):
     source_obj: Source = Source.get(source_id)
 
     count = Filter.select().where(Filter.source == source_obj).count()
-    menu.add_row_button('Фильтры' + (f' ({count})' if count else ''), 'ft')
+    menu.add_row_button('🪤 Фильтры' + (f' ({count})' if count else ''), 'ft')
+
+    count = len(source_obj.cleanup_regex)
+    menu.add_row_button('🧹 Очистка' + (f' ({count})' if count else ''), 'cl')
+
+    if source_obj.is_rewrite:
+        menu.add_row_button('Пересылать', ':off_rewrite')
+    else:
+        menu.add_row_button('Перепечатывать', ':on_rewrite')
 
     text = await menu.get_text(source_obj=source_obj)
     await callback_query.message.edit_text(

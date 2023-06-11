@@ -42,7 +42,7 @@ async def list_types_filters(_, callback_query: CallbackQuery):
 
     text = await menu.get_text(
         source_obj=source_obj,
-        last_text='**Фильтры**',
+        last_text='**Фильтры**' if source_obj else '**Общие фильтры**',
     )
     await callback_query.message.edit_text(
         text=text,

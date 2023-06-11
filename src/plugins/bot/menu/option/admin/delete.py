@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from models import Admin
+from plugins.bot.constants import CONF_DEL_BTN_TEXT, CONF_DEL_TEXT_TPL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_user_formatted_link
@@ -19,11 +20,12 @@ async def confirmation_delete_admin(_, callback_query: CallbackQuery):
     admin_id = menu.path.get_value('a')
     admin_obj: Admin = Admin.get(admin_id)
 
-    menu.add_row_button('❌ Подтвердить удаление', ':y')
+    menu.add_row_button(CONF_DEL_BTN_TEXT, ':y')
 
-    adm_link = await get_user_formatted_link(admin_obj.tg_id)
-    text = f'**{adm_link}**\n\nТы **удаляешь** администратора!'
-
+    text = await menu.get_text(
+        admin_obj=admin_obj,
+        last_text=CONF_DEL_TEXT_TPL.format('администратора'),
+    )
     await callback_query.message.edit_text(
         text=text,
         reply_markup=menu.reply_markup,
@@ -46,7 +48,7 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
     Admin.clear_actual_cache()
 
     adm_link = await get_user_formatted_link(admin_obj.tg_id)
-    text = f'✅ Удален администратор **{adm_link}**'
+    text = f'✅ Администратор **{adm_link}** удален'
     await callback_query.message.edit_text(
         text=text,
         reply_markup=menu.reply_markup,
