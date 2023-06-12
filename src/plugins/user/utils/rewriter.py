@@ -15,7 +15,7 @@ def rewrite_message(message: Message) -> None:
         # Делаем сдвиг сущностей на размер заголовка
         entity.offset += tg_len(header)
 
-    if message.media:
+    if message.caption:
         message.caption = header + (message.caption or '')
         message.caption_entities = header_entities + (message.caption_entities or [])
     else:

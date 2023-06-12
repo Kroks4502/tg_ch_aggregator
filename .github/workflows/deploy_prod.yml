@@ -18,11 +18,12 @@ jobs:
           key: ${{ secrets.HOST_KEY }}
           script_stop: true
           script: |
+            systemctl stop tgbot
             cd tg_ch_aggregator/
             git reset --hard HEAD
             git pull
             yoyo apply --database postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@localhost/${{ secrets.DB_NAME }}
-            systemctl restart tgbot
+            systemctl start tgbot
   send_message:
     runs-on: ubuntu-latest
     needs: deploy

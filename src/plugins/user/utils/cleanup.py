@@ -38,7 +38,7 @@ def cleanup_message(message: Message, source: Source) -> None:
 
 def remove_text(message: Message, start: int, end: int) -> int:
     separator = '\n\n'
-    text = message.caption if message.media else message.text
+    text = message.caption or message.text
     text = text[:start] + f'{separator if start != 0 else ""}' + text[end:]
 
     entities_new = []
@@ -53,7 +53,7 @@ def remove_text(message: Message, start: int, end: int) -> int:
             entity.offset -= cut_len
             entities_new.append(entity)
 
-    if message.media:
+    if message.caption:
         message.caption = text
         message.caption_entities = entities_new
     else:
