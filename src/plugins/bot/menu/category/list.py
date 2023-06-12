@@ -26,6 +26,7 @@ async def list_category(_, callback_query: CallbackQuery):
         )
         .join(Source, peewee.JOIN.LEFT_OUTER)
         .group_by(Category.id)
+        .order_by(Category.title)
     )  # Запрашиваем список категорий
     menu.add_rows_from_data(
         data=[ButtonData(i.title, i.id, i.amount) for i in query],
