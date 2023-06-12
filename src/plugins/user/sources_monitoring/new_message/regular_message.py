@@ -1,19 +1,18 @@
 import logging
-import re
 
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-from common import get_shortened_text
-from config import PATTERN_AGENT
 from models import Source
 from plugins.user.sources_monitoring.new_message.common import (
     handle_errors_on_new_message,
+    logging_on_startup,
 )
 from plugins.user.utils import custom_filters
+from plugins.user.utils.cleanup import cleanup_message
 from plugins.user.utils.history import add_to_category_history
 from plugins.user.utils.inspector import is_new_and_valid_post
-from plugins.user.utils.rewriter import delete_agent_text_in_message
+from plugins.user.utils.rewriter import rewrite_message
 
 
 @Client.on_message(
@@ -34,42 +33,29 @@ async def new_regular_message(
         await client.read_chat_history(message.chat.id)
         return
 
-    message_text = message.text or message.caption or ''
-    search_result = re.search(PATTERN_AGENT, str(message_text))
-
-    if search_result:
-        delete_agent_text_in_message(search_result, message)
+    if source.is_rewrite:
+        cleanup_message(message, source)
+        rewrite_message(message)
         message.web_page = None  # disable_web_page_preview = True
         forwarded_message = await message.copy(
-            source.category.tg_id, disable_notification=is_resending
+            source.category.tg_id,
+            disable_notification=is_resending,
         )
     else:
         forwarded_message = await message.forward(
-            source.category.tg_id, disable_notification=is_resending
+            source.category.tg_id,
+            disable_notification=is_resending,
         )
 
     add_to_category_history(
-        message, forwarded_message, source, rewritten=bool(search_result)
+        message, forwarded_message, source, rewritten=bool(source.is_rewrite)
     )
 
     await client.read_chat_history(message.chat.id)
     logging.info(
-        f'Сообщение {message.id} из источника '
-        f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} переслано '
-        'в категорию '
-        f'{get_shortened_text(source.category.title, 20)} {source.category.tg_id}'
+        'Источник %s отправил сообщение %s, is_resending %s, оно отправлено в категорию %s',
+        message.chat.id,
+        message.id,
+        is_resending,
+        source.category_id,
     )
-
-
-def logging_on_startup(message: Message, is_resending: bool):
-    if not is_resending:
-        logging.debug(
-            f'Источник {get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            f'отправил сообщение {message.id}'
-        )
-    else:
-        logging.debug(
-            'Повторная отправка из источника '
-            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            f'сообщения {message.id}'
-        )

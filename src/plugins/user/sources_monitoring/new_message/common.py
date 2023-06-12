@@ -11,7 +11,14 @@ from pyrogram.errors import (
 )
 from pyrogram.types import Message
 
-from common import get_shortened_text
+
+def logging_on_startup(message: Message, is_resending: bool):
+    logging.debug(
+        'Источник %s отправил сообщение %s, is_resending %s',
+        message.chat.id,
+        message.id,
+        is_resending,
+    )
 
 
 def handle_errors_on_new_message(f):
@@ -21,34 +28,35 @@ def handle_errors_on_new_message(f):
     async def decorated(client: Client, message: Message, *args, **kwargs):
         try:
             return await f(client, message, *args, **kwargs)
-        except MessageIdInvalid as e:
+        except MessageIdInvalid as error:
             # Случай когда почти одновременно приходит сообщение о редактировании и удалении сообщения из источника
             logging.warning(
-                f'Сообщение {message.id} из источника'
-                f' {get_shortened_text(message.chat.title, 20)} {message.chat.id} привело к'
-                f' ошибке {e}'
+                'Источник %s отправил сообщение %s, оно привело к ошибке %s',
+                message.chat.id,
+                message.id,
+                error,
             )
         except ChatForwardsRestricted:
             # todo: Перепечатывать сообщение
             logging.error(
-                f'Источник запрещает пересылку сообщений '
-                f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                'превысило лимит знаков при его перепечатывании.'
+                'Источник %s отправил сообщение %s, но запрещает пересылку сообщений',
+                message.chat.id,
+                message.id,
             )
         except (MediaCaptionTooLong, MessageTooLong):
             # todo Обрезать и ставить надпись "Читать из источника..."
             logging.error(
-                f'Описание медиа сообщения {message.id} из источника '
-                f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-                'превысило лимит знаков при его перепечатывании.'
+                'Источник %s отправил сообщение %s, но при перепечатывании оно превышает лимит знаков',
+                message.chat.id,
+                message.id,
             )
-        except BadRequest as e:
+        except BadRequest as error:
             logging.error(
-                (
-                    f'Сообщение {message.id} из источника '
-                    f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} привело '
-                    f'к непредвиденной ошибке\n{e}\nПолное сообщение: {message}\n'
-                ),
+                'Источник %s отправил сообщение %s, оно привело к непредвиденной ошибке %s. Полное сообщение: %s',
+                message.chat.id,
+                message.id,
+                error,
+                message,
                 exc_info=True,
             )
 
