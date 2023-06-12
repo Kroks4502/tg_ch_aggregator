@@ -46,7 +46,7 @@ def remove_text(message: Message, start: int, end: int) -> int:
     for entity in message.entities or message.caption_entities or []:
         # Оставляем только разметку оставшегося текста
         offset = entity.offset
-        if offset < start and offset + entity.length <= start:
+        if offset < start and offset + entity.length <= start + tg_len(separator):
             entities_new.append(entity)
         elif offset >= end:
             # Делаем сдвиг сущностей
