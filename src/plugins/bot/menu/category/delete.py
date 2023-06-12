@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from models import Category, Filter, Source
+from plugins.bot.constants import CONF_DEL_BTN_TEXT, CONF_DEL_TEXT_TPL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
@@ -19,11 +20,12 @@ async def confirmation_delete_category(_, callback_query: CallbackQuery):
     category_id = menu.path.get_value('c')
     category_obj: Category = Category.get(category_id)
 
-    menu.add_row_button('❌ Подтвердить удаление', ':y')
+    menu.add_row_button(CONF_DEL_BTN_TEXT, ':y')
 
-    text = await menu.get_text(category_obj=category_obj)
-    text += '\n\nТы **удаляешь** категорию!'
-
+    text = await menu.get_text(
+        category_obj=category_obj,
+        last_text=CONF_DEL_TEXT_TPL.format('категорию'),
+    )
     await callback_query.message.edit_text(
         text=text,
         reply_markup=menu.reply_markup,

@@ -6,7 +6,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from dotenv import load_dotenv
-from peewee import PostgresqlDatabase
+from playhouse.postgres_ext import PostgresqlExtDatabase
 
 BASE_DIR = Path(__file__).parent
 SESSIONS_DIR = BASE_DIR.parent / 'sessions'
@@ -20,22 +20,12 @@ API_HASH = os.getenv('api_hash')
 BOT_TOKEN = os.getenv('bot_token')
 DEVELOP_MODE = os.getenv('develop_mode')
 
-PATTERN_AGENT = re.compile(
-    (
-        r'\s*Д*АН*ОЕ\sСООБЩЕНИЕ[\w\s().,]+ИНОСТРАННОГО\s(АГЕНТА|)*[\s.]*\s*|\s*([\d'
-        r' +]+|)НАСТОЯЩИЙ МАТЕРИАЛ'
-        r'[\w \t\x0B\f\r().,+]+[\r\n]*'
-    ),
-    flags=re.IGNORECASE,
-)
 PATTERN_WITHOUT_SMILE = re.compile(
     r'[^а-яА-ЯЁёa-zA-z0-9 |-]+',
     flags=re.IGNORECASE,
 )
 
-# DATABASE = SqliteDatabase(DB_FILEPATH, pragmas={'foreign_keys': 1})
-
-DATABASE = PostgresqlDatabase(
+DATABASE = PostgresqlExtDatabase(
     os.getenv('postgresql_database'),
     user=os.getenv('postgresql_user'),
     password=os.getenv('postgresql_password'),

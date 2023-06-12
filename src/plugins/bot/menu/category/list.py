@@ -3,6 +3,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from models import Category, Source
+from plugins.bot.constants import ADD_BNT_TEXT
 from plugins.bot.utils.checks import is_admin
 from plugins.bot.utils.inline_keyboard import ButtonData, Menu
 
@@ -15,7 +16,7 @@ async def list_category(_, callback_query: CallbackQuery):
 
     menu = Menu(callback_query.data)
     if is_admin(callback_query.from_user.id):
-        menu.add_row_button('➕ Добавить категорию', ':add')
+        menu.add_row_button(ADD_BNT_TEXT + ' категорию', ':add')
 
     query = (
         Category.select(
@@ -31,9 +32,8 @@ async def list_category(_, callback_query: CallbackQuery):
         postfix='s/',
     )
 
-    text = await menu.get_text()
     await callback_query.message.edit_text(
-        text=text,
+        text='**Категории**',
         reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
     )
