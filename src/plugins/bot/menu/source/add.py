@@ -9,6 +9,7 @@ from pyrogram.types import CallbackQuery, Message
 from clients import user
 from models import Category, Source
 from plugins.bot.utils import custom_filters
+from plugins.bot.utils.chat_warnings import get_chat_warnings
 from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
@@ -92,7 +93,11 @@ async def add_source_waiting_input(  # noqa: C901
     category_obj: Category = Category.get(category_id)
     src_link = await get_channel_formatted_link(source_obj.tg_id)
     cat_link = await get_channel_formatted_link(category_obj.tg_id)
-    success_text = f'✅ Источник **{src_link}** добавлен в категорию **{cat_link}**'
+
+    warnings = await get_chat_warnings(source_obj)
+    success_text = (
+        f'✅ Источник **{src_link}** добавлен в категорию **{cat_link}**\n\n{warnings}'
+    )
     await edit_text(success_text)
 
     await send_message_to_admins(client, callback_query, success_text)

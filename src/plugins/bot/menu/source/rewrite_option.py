@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
+from clients import user
 from models import Source
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu
@@ -25,9 +26,13 @@ async def set_rewrite(client: Client, callback_query: CallbackQuery):
     if callback_query.data.endswith('off_rewrite/'):
         source_obj.is_rewrite = False
         text = REWRITE_TEXT_TPL.format('пересылки', src_link)
+        chat = await user.get_chat(source_obj.tg_id)
+        if chat.has_protected_content:
+            text += ', но канал запрещает пересылку сообщений! ⚠'
     else:
         source_obj.is_rewrite = True
         text = REWRITE_TEXT_TPL.format('перепечатывания', src_link)
+
     source_obj.save()
 
     await callback_query.message.edit_text(

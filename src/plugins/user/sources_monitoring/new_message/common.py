@@ -11,6 +11,8 @@ from pyrogram.errors import (
 )
 from pyrogram.types import Message
 
+from plugins.user.utils.senders import send_error_to_admins
+
 
 def logging_on_startup(message: Message, is_resending: bool):
     logging.debug(
@@ -37,11 +39,14 @@ def handle_errors_on_new_message(f):
                 error,
             )
         except ChatForwardsRestricted:
-            # todo: Перепечатывать сообщение
             logging.error(
                 'Источник %s отправил сообщение %s, но запрещает пересылку сообщений',
                 message.chat.id,
                 message.id,
+            )
+            await send_error_to_admins(
+                f'⚠ Источник {message.chat.title} запрещает пересылку сообщений. '
+                'Установите режим перепечатывания сообщений.'
             )
         except (MediaCaptionTooLong, MessageTooLong):
             # todo Обрезать и ставить надпись "Читать из источника..."
