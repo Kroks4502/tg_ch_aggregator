@@ -42,7 +42,7 @@ async def edit_regular_message(client: Client, message: Message):
         source = Source.get(tg_id=message.chat.id)
         cleanup_message(message, source)
         rewrite_message(message)
-        
+
         if message.caption:
             await client.edit_message_caption(
                 chat_id=history_obj.category.tg_id,
