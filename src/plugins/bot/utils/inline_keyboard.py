@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from filter_types import FILTER_TYPES_BY_ID
-from models import Category, Filter, Source
+from models import Admin, Category, Filter, Source
 from plugins.bot.constants import MAX_LENGTH_BUTTON_TEXT
-from plugins.bot.utils.links import get_channel_formatted_link
+from plugins.bot.utils.links import get_channel_formatted_link, get_user_formatted_link
 from plugins.bot.utils.path import Path
 
 
@@ -30,26 +30,18 @@ class Menu:
                 InlineKeyboardButton(f'🔙 {back_title}', callback_data=prev_path)
             )
 
-    async def get_text(
+    async def get_text(  # noqa: C901
         self,
         *,
         category_obj: Category = None,
         source_obj: Source = None,
         filter_obj: Filter = None,
         filter_type_id: str = None,
+        cleanup_pattern: str = None,
+        admin_obj: Admin = None,
+        start_text: str = None,
+        last_text: str = None,
     ):
-        match self.path.path:
-            case '/':
-                return '**Агрегатор каналов**'
-            case '/c/':
-                return '**Категории**'
-            case '/s/':
-                return '**Источники**'
-            case '/ft/':
-                return '**Фильтры**'
-            case '/o/':
-                return '**Параметры**'
-
         if filter_obj:
             source_obj = filter_obj.source
             filter_type_id = filter_obj.type
@@ -57,26 +49,48 @@ class Menu:
         if source_obj:
             category_obj = source_obj.category
 
-        text = []
+        breadcrumbs = []
 
         if category_obj:
             link = await get_channel_formatted_link(category_obj.tg_id)
-            text.append(f'Категория: **{link}**')
+            breadcrumbs.append(f'Категория: **{link}**')
 
         if source_obj:
             link = await get_channel_formatted_link(source_obj.tg_id)
-            text.append(f'Источник: **{link}**')
+            breadcrumbs.append(f'Источник: **{link}**')
 
         if filter_type_id:
+            if not source_obj:
+                breadcrumbs.append('**Общие фильтры**')
             filter_type_text = FILTER_TYPES_BY_ID.get(filter_type_id)
-            text.append(f'Тип фильтра: **{filter_type_text}**')
+            breadcrumbs.append(f'Тип фильтра: **{filter_type_text}**')
 
         if filter_obj:
-            text.append(f'Паттерн: `{filter_obj.pattern}`')
+            breadcrumbs.append(f'Паттерн: `{filter_obj.pattern}`')
 
-        result = '\n'.join(text)
+        if cleanup_pattern:
+            if not source_obj:
+                breadcrumbs.append('**Общая очистка текста**')
+            breadcrumbs.append(f'Паттерн очистки текста: `{cleanup_pattern}`')
 
-        return result or '<пусто>'
+        if admin_obj:
+            link = await get_user_formatted_link(admin_obj.tg_id)
+            breadcrumbs.append(f'**{link}**')
+
+        text = ''
+        if start_text:
+            text += start_text
+
+        if breadcrumbs:
+            text += '\n\n' + '\n'.join(breadcrumbs)
+
+        if last_text:
+            text += f'\n\n{last_text}'
+
+        if text:
+            return text.strip('\n')
+
+        return '<пусто>'
 
     def add_row_button(self, text: str, path: str) -> None:
         """
@@ -134,6 +148,9 @@ class Menu:
             return InlineKeyboardMarkup(
                 self.inline_keyboard + [self.footer_buttons_row]
             )
+
+        if len(self.inline_keyboard) == 0:
+            return None
 
         return InlineKeyboardMarkup(self.inline_keyboard)
 

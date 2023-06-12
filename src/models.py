@@ -9,6 +9,7 @@ from peewee import (
     Model,
     SmallIntegerField,
 )
+from playhouse.postgres_ext import JSONField
 
 from config import DATABASE
 from filter_types import FilterType
@@ -22,7 +23,7 @@ class BaseModel(Model):
         database = DATABASE
 
     @classmethod
-    def get_cache(cls, **where) -> dict:
+    def get_cache(cls, **where):
         cls._update_cache()
 
         conditions = {}
@@ -53,6 +54,15 @@ class BaseModel(Model):
         cls._is_actual_cache = False
 
 
+class GlobalSettings(BaseModel):
+    key = CharField(primary_key=True, unique=True)
+    value = JSONField()
+
+    class Meta:
+        primary_key = False
+        table_name = 'global_settings'
+
+
 class ChannelModel(BaseModel):
     tg_id = BigIntegerField(unique=True)
     title = CharField()
@@ -67,6 +77,12 @@ class Category(ChannelModel):
 
 class Source(ChannelModel):
     category = ForeignKeyField(Category, backref='sources', on_delete='CASCADE')
+
+    # Список регулярных выражений для очистки сообщений и их перепечатывания
+    cleanup_regex = JSONField(default=[])
+
+    # Формировать новое сообщение (True) или пересылать сообщение (False)
+    is_rewrite = BooleanField(default=False)
 
     _cache_monitored_channels = None
 
@@ -129,9 +145,8 @@ class Admin(BaseModel):
 class MessageHistoryModel(BaseModel):
     date = DateTimeField(default=datetime.now)
     source = ForeignKeyField(Source, on_delete='CASCADE')
+    source_chat_id = BigIntegerField()
     source_message_id = BigIntegerField()
-    source_message_edited = BooleanField(default=False)
-    source_message_deleted = BooleanField(default=False)
     media_group = CharField()
 
 
@@ -148,6 +163,8 @@ class CategoryMessageHistory(MessageHistoryModel):
     category = ForeignKeyField(Category, on_delete='CASCADE')
     message_id = BigIntegerField()
     rewritten = BooleanField()
+    source_message_edited = BooleanField(default=False)
+    source_message_deleted = BooleanField(default=False)
     deleted = BooleanField(default=False)
 
     class Meta:

@@ -8,12 +8,20 @@ from filter_types import (
     FilterType,
 )
 from models import Filter, Source
+from plugins.bot.constants import INVALID_PATTERN_TEXT
 from plugins.bot.utils import custom_filters
+from plugins.bot.utils.checks import is_valid_pattern
 from plugins.bot.utils.inline_keyboard import ButtonData, Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
 from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
+
+ASK_TEXT_TPL = (
+    'ОК. Ты добавляешь {} типа **{}**. Паттерн является регулярным выражением '
+    'с игнорированием регистра.\n\n**Введи паттерн:**'
+)
+SUC_TEXT_TPL = '✅ {} типа **{}** c паттерном `{}` добавлен'
 
 
 @Client.on_callback_query(
@@ -41,21 +49,15 @@ async def ask_filter_pattern(client: Client, callback_query: CallbackQuery):
 
     filter_type_id = path.get_value('ft')
     source_id = path.get_value('s')  # Может быть 0
-    source_obj: Source = Source.get_or_none(id=source_id)
+    source_obj: Source = Source.get(id=source_id) if source_id else None
 
-    text = 'ОК. Ты добавляешь '
     if source_obj:
         src_link = await get_channel_formatted_link(source_obj.tg_id)
-        text += f'фильтр для источника {src_link} '
+        title = f'фильтр для источника {src_link}'
     else:
-        text += 'общий фильтр '
+        title = 'общий фильтр'
     filter_type_text = FILTER_TYPES_BY_ID.get(filter_type_id)
-    text += (
-        f'типа **{filter_type_text}**. '
-        'Паттерн является регулярным выражением '
-        'с игнорированием регистра.\n\n'
-        '**Введи паттерн нового фильтра:**'
-    )
+    text = ASK_TEXT_TPL.format(title, filter_type_text)
 
     await callback_query.message.reply(text, disable_web_page_preview=True)
     input_wait_manager.add(
@@ -77,8 +79,22 @@ async def ask_filter_pattern_waiting_input(
 ):
     menu = Menu(callback_query.data)
 
+    async def reply(t):
+        await message.reply_text(
+            text=t,
+            reply_markup=menu.reply_markup,
+            disable_web_page_preview=True,
+        )
+        # Удаляем предыдущее меню
+        await callback_query.message.delete()
+
+    pattern = message.text
+    if not is_valid_pattern(pattern):
+        await reply(INVALID_PATTERN_TEXT)
+        return
+
     filter_obj = Filter.create(
-        pattern=message.text,
+        pattern=pattern,
         type=filter_type,
         source=source_obj,
     )
@@ -86,21 +102,13 @@ async def ask_filter_pattern_waiting_input(
 
     if source_obj:
         src_link = await get_channel_formatted_link(source_obj.tg_id)
-        text = f'✅ Фильтр для источника {src_link} '
+        title = f'Фильтр для источника {src_link}'
     else:
-        text = '✅ Общий фильтр '
-    text += (
-        f'типа **{FILTER_TYPES_BY_ID.get(filter_obj.type)}** '
-        f'с паттерном `{filter_obj.pattern}` добавлен'
-    )
+        title = 'Общий фильтр'
+    filter_type_text = FILTER_TYPES_BY_ID.get(filter_obj.type)
+    text = SUC_TEXT_TPL.format(title, filter_type_text, filter_obj.pattern)
 
-    await message.reply_text(
-        text=text,
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
-    )
-    # Удаляем предыдущее меню
-    await callback_query.message.delete()
+    await reply(text)
 
     await send_message_to_admins(client, callback_query, text)
 
@@ -111,7 +119,7 @@ async def add_filter_with_choice(callback_query: CallbackQuery):
     filter_type_id = menu.path.get_value('ft')
 
     source_id = menu.path.get_value('s')  # Может быть 0
-    source_obj: Source = Source.get_or_none(id=source_id)
+    source_obj: Source = Source.get(id=source_id) if source_id else None
 
     query = Filter.select().where(
         (Filter.type == filter_type_id) & (Filter.source == source_obj)
@@ -148,7 +156,7 @@ async def select_filter_value(client: Client, callback_query: CallbackQuery):
     menu = Menu(callback_query.data, back_step=2)
 
     source_id = menu.path.get_value('s')
-    source_obj: Source = Source.get_or_none(id=source_id)
+    source_obj: Source = Source.get(id=source_id) if source_id else None
 
     filter_type_id = menu.path.get_value('ft')
     filter_value = menu.path.get_value(':add')
@@ -158,7 +166,7 @@ async def select_filter_value(client: Client, callback_query: CallbackQuery):
     else:
         pattern = FILTER_MESSAGE_TYPES_BY_ID.get(filter_value)
 
-    filter_obj = Filter.create(
+    Filter.create(
         pattern=pattern,
         type=filter_type_id,
         source=source_obj,
@@ -167,13 +175,11 @@ async def select_filter_value(client: Client, callback_query: CallbackQuery):
 
     if source_obj:
         src_link = await get_channel_formatted_link(source_obj.tg_id)
-        text = f'✅ Фильтр для источника {src_link}'
+        title = f'Фильтр для источника {src_link}'
     else:
-        text = '✅ Общий фильтр '
-    text += (
-        f'типа **{FILTER_TYPES_BY_ID.get(filter_obj.type)}** '
-        f'со значением `{filter_obj.pattern}` добавлен'
-    )
+        title = 'Общий фильтр'
+    filter_type_text = FILTER_TYPES_BY_ID.get(filter_type_id)
+    text = SUC_TEXT_TPL.format(title, filter_type_text, pattern)
 
     await callback_query.message.edit_text(
         text=text,

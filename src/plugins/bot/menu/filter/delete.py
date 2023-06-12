@@ -3,10 +3,13 @@ from pyrogram.types import CallbackQuery
 
 from filter_types import FILTER_TYPES_BY_ID
 from models import Filter
+from plugins.bot.constants import CONF_DEL_BTN_TEXT, CONF_DEL_TEXT_TPL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.senders import send_message_to_admins
+
+SUC_TEXT_TPL = '✅ {} типа **{}** c паттерном `{}` удален'
 
 
 @Client.on_callback_query(
@@ -20,10 +23,12 @@ async def confirmation_delete_filter(_, callback_query: CallbackQuery):
     filter_id = menu.path.get_value('f')
     filter_obj: Filter = Filter.get(filter_id)
 
-    menu.add_row_button('❌ Подтвердить удаление', ':y')
+    menu.add_row_button(CONF_DEL_BTN_TEXT, ':y')
 
-    text = await menu.get_text(filter_obj=filter_obj)
-    text += '\n\nТы **удаляешь** фильтр!'
+    text = await menu.get_text(
+        filter_obj=filter_obj,
+        last_text=CONF_DEL_TEXT_TPL.format('фильтр'),
+    )
     await callback_query.message.edit_text(
         text=text,
         reply_markup=menu.reply_markup,
@@ -45,13 +50,13 @@ async def delete_filter(client: Client, callback_query: CallbackQuery):
     filter_obj.delete_instance()
     Filter.clear_actual_cache()
 
-    filter_type_text = FILTER_TYPES_BY_ID.get(filter_obj.type)
-    mid_text = f'типа **{filter_type_text}** c паттерном `{filter_obj.pattern}` удален'
     if filter_obj.source:
         src_link = await get_channel_formatted_link(filter_obj.source.tg_id)
-        text = f'✅ Фильтр {mid_text} из источника **{src_link}**'
+        title = f'Фильтр источника **{src_link}**'
     else:
-        text = f'✅ Общий фильтр {mid_text}'
+        title = 'Общий фильтр'
+    filter_type_text = FILTER_TYPES_BY_ID.get(filter_obj.type)
+    text = SUC_TEXT_TPL.format(title, filter_type_text, filter_obj.pattern)
 
     await callback_query.message.edit_text(
         text=text,

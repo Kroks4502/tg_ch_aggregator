@@ -64,7 +64,7 @@ async def check_post_waiting_forwarding(_, message: Message):
         msg_link = get_message_link(
             f_history_obj.source.tg_id, f_history_obj.source_message_id
         )
-        await reply(f'⚠️ [Пост]({msg_link}) был отфильтрован')
+        await reply(f'⚠ [Пост]({msg_link}) был отфильтрован')
         return
 
     msg_link = get_message_link(

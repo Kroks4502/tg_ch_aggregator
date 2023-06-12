@@ -18,5 +18,7 @@ async def options(_, callback_query: CallbackQuery):
     menu.add_row_button('Статистика', 'stat')
     menu.add_row_button('💾 Логи', ':get_logs')
 
-    text = await menu.get_text()
-    await callback_query.message.edit_text(text=text, reply_markup=menu.reply_markup)
+    await callback_query.message.edit_text(
+        text='**Параметры**',
+        reply_markup=menu.reply_markup,
+    )

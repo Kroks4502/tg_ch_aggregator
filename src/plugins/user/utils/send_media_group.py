@@ -7,7 +7,7 @@ from pyrogram import Client, raw, types, utils
 from pyrogram.file_id import FileType
 
 
-async def send_media_group(
+async def send_media_group(  # noqa: C901
     client: Client,
     chat_id: Union[int, str],
     media: List[
