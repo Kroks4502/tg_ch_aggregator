@@ -4,6 +4,7 @@ import re
 from pyrogram.types import Message
 
 from models import GlobalSettings, Source
+from plugins.user.utils.tg_len import tg_len
 
 
 def cleanup_message(message: Message, source: Source) -> None:
@@ -15,7 +16,11 @@ def cleanup_message(message: Message, source: Source) -> None:
         global_cleanup_regex,
         source.cleanup_regex,
     ):
-        find_result = re.finditer(pattern, message.caption or message.text)
+        find_result = re.finditer(
+            pattern,
+            string=message.caption or message.text,
+            flags=re.IGNORECASE,
+        )
         cut_len = 0
         for match in find_result:
             start = match.start()
@@ -33,7 +38,7 @@ def remove_text(message: Message, start: int, end: int) -> int:
     text = text[:start] + f'{separator if start != 0 else ""}' + text[end:]
 
     entities_new = []
-    cut_len = end - start - (len(separator) if start != 0 else 0)
+    cut_len = end - start - (tg_len(separator) if start != 0 else 0)
     for entity in message.entities or message.caption_entities or []:
         # Оставляем только разметку оставшегося текста
         offset = entity.offset

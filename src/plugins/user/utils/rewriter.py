@@ -5,6 +5,7 @@ from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message, MessageEntity
 
 from config import PATTERN_WITHOUT_SMILE
+from plugins.user.utils.tg_len import tg_len
 
 
 def rewrite_message(message: Message) -> None:
@@ -12,7 +13,7 @@ def rewrite_message(message: Message) -> None:
 
     for entity in message.entities or message.caption_entities or []:
         # Делаем сдвиг сущностей на размер заголовка
-        entity.offset += len(header)
+        entity.offset += tg_len(header)
 
     if message.media:
         message.caption = header + (message.caption or '')
@@ -31,12 +32,12 @@ def get_header(message: Message) -> tuple[str, list[MessageEntity]]:
         MessageEntity(
             type=MessageEntityType.BOLD,
             offset=0,
-            length=len(src_text),
+            length=tg_len(src_text),
         ),
         MessageEntity(
             type=MessageEntityType.TEXT_LINK,
             offset=0,
-            length=len(src_text),
+            length=tg_len(src_text),
             url=message.link,
         ),
     ]
@@ -44,8 +45,8 @@ def get_header(message: Message) -> tuple[str, list[MessageEntity]]:
         header_entities.append(
             MessageEntity(
                 type=MessageEntityType.TEXT_LINK,
-                offset=len(src_text) + 1,  # len(src_text) + len('\n')
-                length=len(fwd_text),
+                offset=tg_len(src_text) + 1,  # len(src_text) + len('\n')
+                length=tg_len(fwd_text),
                 url=(
                     f'https://t.me/{message.forward_from_chat.username}'
                     f'/{message.forward_from_message_id}'
@@ -61,9 +62,7 @@ def get_src_text(message: Message) -> str:
         '',
         message.chat.title,
     )
-    return (
-        f'Источник: {title if title else message.chat.id}'  # 💬 len(💬)=1, but tg len=2
-    )
+    return f'💬 Источник: {title if title else message.chat.id}'
 
 
 def get_fwd_text(message: Message) -> str:
@@ -108,12 +107,12 @@ def delete_agent_text_in_message(search_result: Match, message: Message):  # noq
             + message.caption[end:]
         )
 
-    cut_text_len = search_result.end() - search_result.start() - len(separator)
+    cut_text_len = search_result.end() - search_result.start() - tg_len(separator)
     for entity in message.entities or message.caption_entities or []:
         if entity.offset > search_result.start():
             entity.offset -= cut_text_len
 
-    add_author_len = len(author)
+    add_author_len = tg_len(author)
     for entity in message.entities or message.caption_entities or []:
         entity.offset += add_author_len + 1
 
