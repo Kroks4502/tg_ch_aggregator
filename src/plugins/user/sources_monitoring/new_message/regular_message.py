@@ -48,7 +48,7 @@ async def new_regular_message(
         )
 
     add_to_category_history(
-        message, forwarded_message, source, rewritten=bool(source.is_rewrite)
+        message, forwarded_message, source, rewritten=source.is_rewrite
     )
 
     await client.read_chat_history(message.chat.id)
