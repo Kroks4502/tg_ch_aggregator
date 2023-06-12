@@ -1,5 +1,8 @@
 import logging
+from functools import wraps
 
+from pyrogram import Client
+from pyrogram.errors import BadRequest, MessageNotModified
 from pyrogram.types import Message
 
 from config import MESSAGES_EDIT_LIMIT_TD
@@ -85,3 +88,30 @@ def set_edited_on_history(history_obj: CategoryMessageHistory) -> None:
         history_obj.source_message_id,
         history_obj.category_id,
     )
+
+
+def handle_errors_on_edited_message(f):
+    """Декоратор для отлова возможных исключений при отправке отредактированных сообщений в категорию."""
+
+    @wraps(f)
+    async def decorated(client: Client, message: Message, *args, **kwargs):
+        try:
+            return await f(client, message, *args, **kwargs)
+        except MessageNotModified as error:
+            logging.info(
+                'Источник %s изменил сообщение %s, перепечатать сообщение в категории не удалось %s',
+                message.chat.id,
+                message.id,
+                error,
+            )
+        except BadRequest as error:
+            logging.error(
+                'Источник %s изменил сообщение %s, оно привело к непредвиденной ошибке %s. Полное сообщение: %s',
+                message.chat.id,
+                message.id,
+                error,
+                message,
+                exc_info=True,
+            )
+
+    return decorated

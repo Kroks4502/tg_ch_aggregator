@@ -6,6 +6,7 @@ from pyrogram.types import Message
 from models import CategoryMessageHistory, Source
 from plugins.user.sources_monitoring.edited_message.common import (
     get_history_obj,
+    handle_errors_on_edited_message,
     is_out_edit_timeout,
     logging_on_startup,
     set_edited_on_history,
@@ -23,6 +24,7 @@ from plugins.user.utils.rewriter import rewrite_message
 @Client.on_edited_message(
     custom_filters.monitored_channels & filters.media_group,
 )
+@handle_errors_on_edited_message
 async def edited_media_group_message(client: Client, message: Message):
     logging_on_startup(message)
 
