@@ -16,9 +16,13 @@ def cleanup_message(message: Message, source: Source) -> None:
         global_cleanup_regex,
         source.cleanup_regex,
     ):
+        text = message.caption or message.text
+        if not text:
+            break
+
         find_result = re.finditer(
             pattern,
-            string=message.caption or message.text,
+            string=text,
             flags=re.IGNORECASE,
         )
         cut_len = 0
