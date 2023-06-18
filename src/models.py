@@ -83,7 +83,7 @@ class Source(BaseModel):
     _cache_monitored_channels = None
 
     @classmethod
-    def get_cache_monitored_channels(cls):
+    def get_cache_monitored_channels(cls) -> set:
         cls._update_cache()
         return cls._cache_monitored_channels
 
@@ -93,7 +93,7 @@ class Source(BaseModel):
             cls._cache = tuple(cls.select().tuples())
             index = 0
             for field_name in cls._meta.sorted_field_names:
-                if field_name == 'tg_id':
+                if field_name == 'id':
                     break
                 index += 1
             cls._cache_monitored_channels = {row[index] for row in cls._cache}
@@ -125,7 +125,7 @@ class Admin(BaseModel):
             cls._cache = tuple(cls.select().tuples())
             index = 0
             for field_name in cls._meta.sorted_field_names:
-                if field_name == 'tg_id':
+                if field_name == 'id':
                     break
                 index += 1
             cls._cache_admins_tg_ids = {row[index] for row in cls._cache}
