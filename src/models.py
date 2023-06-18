@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from peewee import (
+    BigAutoField,
     BigIntegerField,
     BooleanField,
     CharField,
@@ -9,7 +10,7 @@ from peewee import (
     Model,
     SmallIntegerField,
 )
-from playhouse.postgres_ext import JSONField
+from playhouse.postgres_ext import BinaryJSONField, JSONField
 
 from config import DATABASE
 from filter_types import FilterType
@@ -63,23 +64,18 @@ class GlobalSettings(BaseModel):
         table_name = 'global_settings'
 
 
-class ChannelModel(BaseModel):
-    tg_id = BigIntegerField(unique=True)
+class Category(BaseModel):
+    id = BigIntegerField(primary_key=True)
     title = CharField()
 
-    def __str__(self):
-        return self.title
 
-
-class Category(ChannelModel):
-    ...
-
-
-class Source(ChannelModel):
+class Source(BaseModel):
+    id = BigIntegerField(primary_key=True)
+    title = CharField()
     category = ForeignKeyField(Category, backref='sources', on_delete='CASCADE')
 
     # Список регулярных выражений для очистки сообщений и их перепечатывания
-    cleanup_regex = JSONField(default=[])
+    cleanup_list = JSONField(default=[])
 
     # Формировать новое сообщение (True) или пересылать сообщение (False)
     is_rewrite = BooleanField(default=False)
@@ -111,12 +107,9 @@ class Filter(BaseModel):
     )
     source = ForeignKeyField(Source, null=True, backref='filters', on_delete='CASCADE')
 
-    def __str__(self):
-        return self.pattern
-
 
 class Admin(BaseModel):
-    tg_id = BigIntegerField(unique=True)
+    id = BigIntegerField(primary_key=True)
     username = CharField()
 
     _cache_admins_tg_ids = None
@@ -142,30 +135,33 @@ class Admin(BaseModel):
         return self.username
 
 
-class MessageHistoryModel(BaseModel):
-    date = DateTimeField(default=datetime.now)
-    source = ForeignKeyField(Source, on_delete='CASCADE')
-    source_chat_id = BigIntegerField()
+class MessageHistory(BaseModel):
+    id = BigAutoField(primary_key=True)
+
+    source = ForeignKeyField(
+        Source, backref='history', on_delete='CASCADE'
+    )  # source_id
     source_message_id = BigIntegerField()
-    media_group = CharField()
+    source_media_group = CharField(default=None, null=True)
+    source_forward_from_chat_id = BigIntegerField(default=None, null=True)
+    source_forward_from_message_id = BigIntegerField(default=None, null=True)
 
+    category = ForeignKeyField(
+        Category, backref='history', on_delete='CASCADE'
+    )  # category_id
+    category_message_id = BigIntegerField(default=None, null=True)
+    category_media_group = CharField(default=None, null=True)
+    category_rewritten = BooleanField(default=None, null=True)
 
-class FilterMessageHistory(MessageHistoryModel):
-    filter = ForeignKeyField(Filter, backref='history', on_delete='CASCADE')
+    filter = ForeignKeyField(
+        Filter, backref='history', on_delete='SET NULL', null=True, default=None
+    )
+
+    created_at = DateTimeField(default=datetime.now)
+    edited_at = DateTimeField(default=None, null=True)
+    deleted_at = DateTimeField(default=None, null=True)
+
+    data = BinaryJSONField()
 
     class Meta:
-        table_name = 'filter_message_history'
-
-
-class CategoryMessageHistory(MessageHistoryModel):
-    forward_from_chat_id = BigIntegerField(null=True)
-    forward_from_message_id = BigIntegerField(null=True)
-    category = ForeignKeyField(Category, on_delete='CASCADE')
-    message_id = BigIntegerField()
-    rewritten = BooleanField()
-    source_message_edited = BooleanField(default=False)
-    source_message_deleted = BooleanField(default=False)
-    deleted = BooleanField(default=False)
-
-    class Meta:
-        table_name = 'category_message_history'
+        table_name = 'message_history'
