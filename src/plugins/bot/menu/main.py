@@ -3,7 +3,7 @@ from pyrogram.types import CallbackQuery, Message
 
 from plugins.bot.constants import MAIN_MENU_TEXT
 from plugins.bot.utils.checks import is_admin
-from plugins.bot.utils.inline_keyboard import Menu
+from plugins.bot.utils.menu import Menu
 
 
 def get_main_menu(data: Message | CallbackQuery) -> Menu:

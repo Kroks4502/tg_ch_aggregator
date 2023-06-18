@@ -3,7 +3,7 @@ from pyrogram.types import CallbackQuery
 
 from models import GlobalSettings, Source
 from plugins.bot.utils.checks import is_admin
-from plugins.bot.utils.inline_keyboard import Menu
+from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(

@@ -7,7 +7,7 @@ from common import get_message_link, get_shortened_text
 from models import Category, CategoryMessageHistory, Source
 from plugins.bot.constants import MAX_NUM_ENTRIES_MESSAGE
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
+from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(

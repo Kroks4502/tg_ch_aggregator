@@ -4,8 +4,8 @@ from pyrogram.types import CallbackQuery
 
 from models import Category, Source
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import ButtonData, Menu
 from plugins.bot.utils.links import get_channel_formatted_link
+from plugins.bot.utils.menu import ButtonData, Menu
 from plugins.bot.utils.senders import send_message_to_admins
 
 

@@ -4,8 +4,8 @@ from pyrogram.types import CallbackQuery
 from clients import user
 from models import Source
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
+from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.senders import send_message_to_admins
 
 REWRITE_TEXT_TPL = '✅ Установлен режим {} сообщений для источника {}'

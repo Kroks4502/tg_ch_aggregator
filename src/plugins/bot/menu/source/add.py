@@ -10,9 +10,9 @@ from clients import user
 from models import Category, Source
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.chat_warnings import get_chat_warnings
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.senders import send_message_to_admins
 
 

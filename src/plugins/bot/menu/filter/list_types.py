@@ -4,7 +4,7 @@ from pyrogram.types import CallbackQuery
 
 from filter_types import FilterType
 from models import Filter, Source
-from plugins.bot.utils.inline_keyboard import ButtonData, Menu
+from plugins.bot.utils.menu import ButtonData, Menu
 
 
 @Client.on_callback_query(

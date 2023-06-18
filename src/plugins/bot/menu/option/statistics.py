@@ -13,8 +13,8 @@ from models import (
     Source,
 )
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
+from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(

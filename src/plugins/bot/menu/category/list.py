@@ -5,7 +5,7 @@ from pyrogram.types import CallbackQuery
 from models import Category, Source
 from plugins.bot.constants import ADD_BNT_TEXT
 from plugins.bot.utils.checks import is_admin
-from plugins.bot.utils.inline_keyboard import ButtonData, Menu
+from plugins.bot.utils.menu import ButtonData, Menu
 
 
 @Client.on_callback_query(

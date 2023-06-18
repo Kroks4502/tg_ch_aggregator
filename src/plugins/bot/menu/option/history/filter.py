@@ -9,7 +9,7 @@ from filter_types import FILTER_TYPES_BY_ID
 from models import Filter, FilterMessageHistory, Source
 from plugins.bot.constants import MAX_NUM_ENTRIES_MESSAGE
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
+from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(
