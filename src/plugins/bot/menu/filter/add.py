@@ -52,7 +52,7 @@ async def ask_filter_pattern(client: Client, callback_query: CallbackQuery):
     source_obj: Source = Source.get(id=source_id) if source_id else None
 
     if source_obj:
-        src_link = await get_channel_formatted_link(source_obj.tg_id)
+        src_link = await get_channel_formatted_link(source_obj.id)
         title = f'фильтр для источника {src_link}'
     else:
         title = 'общий фильтр'
@@ -101,7 +101,7 @@ async def ask_filter_pattern_waiting_input(
     Filter.clear_actual_cache()
 
     if source_obj:
-        src_link = await get_channel_formatted_link(source_obj.tg_id)
+        src_link = await get_channel_formatted_link(source_obj.id)
         title = f'Фильтр для источника {src_link}'
     else:
         title = 'Общий фильтр'
@@ -174,7 +174,7 @@ async def select_filter_value(client: Client, callback_query: CallbackQuery):
     Filter.clear_actual_cache()
 
     if source_obj:
-        src_link = await get_channel_formatted_link(source_obj.tg_id)
+        src_link = await get_channel_formatted_link(source_obj.id)
         title = f'Фильтр для источника {src_link}'
     else:
         title = 'Общий фильтр'

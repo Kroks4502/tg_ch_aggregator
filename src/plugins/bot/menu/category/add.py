@@ -72,8 +72,8 @@ async def add_category_waiting_input(
     )
 
     category_obj: Category = Category.create(
-        tg_id=new_channel.id,
+        id=new_channel.id,
         title=new_channel.title,
     )
-    cat_link = await get_channel_formatted_link(category_obj.tg_id)
+    cat_link = await get_channel_formatted_link(category_obj.id)
     await reply(f'✅ Категория **{cat_link}** создана')

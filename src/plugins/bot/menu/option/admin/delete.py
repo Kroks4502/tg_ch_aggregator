@@ -47,7 +47,7 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
     admin_obj.delete_instance()
     Admin.clear_actual_cache()
 
-    adm_link = await get_user_formatted_link(admin_obj.tg_id)
+    adm_link = await get_user_formatted_link(admin_obj.id)
     text = f'✅ Администратор **{adm_link}** удален'
     await callback_query.message.edit_text(
         text=text,

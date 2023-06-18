@@ -52,11 +52,11 @@ class Menu:
         breadcrumbs = []
 
         if category_obj:
-            link = await get_channel_formatted_link(category_obj.tg_id)
+            link = await get_channel_formatted_link(category_obj.id)
             breadcrumbs.append(f'Категория: **{link}**')
 
         if source_obj:
-            link = await get_channel_formatted_link(source_obj.tg_id)
+            link = await get_channel_formatted_link(source_obj.id)
             breadcrumbs.append(f'Источник: **{link}**')
 
         if filter_type_id:
@@ -74,7 +74,7 @@ class Menu:
             breadcrumbs.append(f'Паттерн очистки текста: `{cleanup_pattern}`')
 
         if admin_obj:
-            link = await get_user_formatted_link(admin_obj.tg_id)
+            link = await get_user_formatted_link(admin_obj.id)
             breadcrumbs.append(f'**{link}**')
 
         text = ''

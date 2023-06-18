@@ -28,7 +28,7 @@ async def list_source(_, callback_query: CallbackQuery):
         Source.select(
             Source.id,
             Source.title,
-            Source.cleanup_regex,
+            Source.cleanup_list,
             peewee.fn.Count(Filter.id).alias('count'),
         )
         .where(Source.category == category_obj.id if category_obj else True)
@@ -37,7 +37,7 @@ async def list_source(_, callback_query: CallbackQuery):
         .order_by(Source.title)
     )  # Запрашиваем список источников
     menu.add_rows_from_data(
-        data=[ButtonData(i.title, i.id, i.count + len(i.cleanup_regex)) for i in query]
+        data=[ButtonData(i.title, i.id, i.count + len(i.cleanup_list)) for i in query]
     )
 
     text = await menu.get_text(

@@ -4,7 +4,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from common import get_message_link, get_shortened_text
-from models import Category, CategoryMessageHistory, Source
+from models import Category, MessageHistory, Source
 from plugins.bot.constants import MAX_NUM_ENTRIES_MESSAGE
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.menu import Menu
@@ -21,27 +21,27 @@ async def message_history(_, callback_query: CallbackQuery):
     page = menu.path.get_value('mh')
 
     query = (
-        CategoryMessageHistory.select(CategoryMessageHistory, Source, Category)
+        MessageHistory.select(MessageHistory, Source, Category)
         .join(Source)
         .switch()
         .join(Category)
-        .order_by(CategoryMessageHistory.id.desc())
+        .order_by(MessageHistory.id.desc())
     )
     obj_counts = query.count()
 
     text_items = []
     for item in query.paginate(page, MAX_NUM_ENTRIES_MESSAGE):
         text_items.append(
-            f'{"🏞" if item.media_group else "🗞"}'
-            f'{">📝" if item.source_message_edited else ""}'
-            f'{">🗑" if item.source_message_deleted else ""}'
+            f'{"🏞" if item.source_media_group else "🗞"}'
+            f'{">📝" if item.edited_at else ""}'
+            f'{">🗑" if item.deleted_at else ""}'
             f' [{get_shortened_text(item.source.title, 30)}]'
-            f'({get_message_link(item.source.tg_id, item.source_message_id)})\n'
-            f'✅{">🖨" if item.rewritten else ""}'
-            f'{">🗑" if item.deleted else ""}'
+            f'({get_message_link(item.source_id, item.source_message_id)})\n'
+            f'✅{">🖨" if item.category_rewritten else ""}'
+            f'{">🗑" if item.deleted_at else ""}'
             f' [{get_shortened_text(item.category.title, 30)}]'
-            f'({get_message_link(item.category.tg_id, item.message_id)})\n'
-            f'__{item.source_message_id} {item.date.strftime("%Y.%m.%d, %H:%M:%S")}__'
+            f'({get_message_link(item.category_id, item.category_message_id)})\n'
+            f'__{item.source_message_id} {item.created_at.strftime("%Y.%m.%d, %H:%M:%S")}__'
         )
 
     if page > 1:

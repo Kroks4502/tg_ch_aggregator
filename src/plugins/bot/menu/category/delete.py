@@ -10,7 +10,7 @@ from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'/c/\d+/:delete/$') & custom_filters.admin_only,
+    filters.regex(r'/c/-\d+/:delete/$') & custom_filters.admin_only,
 )
 async def confirmation_delete_category(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -34,7 +34,7 @@ async def confirmation_delete_category(_, callback_query: CallbackQuery):
 
 
 @Client.on_callback_query(
-    filters.regex(r'/c/\d+/:delete/:y/$') & custom_filters.admin_only,
+    filters.regex(r'/c/-\d+/:delete/:y/$') & custom_filters.admin_only,
 )
 async def delete_category(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -49,7 +49,7 @@ async def delete_category(client: Client, callback_query: CallbackQuery):
     Source.clear_actual_cache()
     Filter.clear_actual_cache()
 
-    cat_link = await get_channel_formatted_link(category_obj.tg_id)
+    cat_link = await get_channel_formatted_link(category_obj.id)
     text = f'✅ Категория **{cat_link}** удалена'
     await callback_query.message.edit_text(
         text=text,

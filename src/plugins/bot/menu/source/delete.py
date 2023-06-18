@@ -48,7 +48,7 @@ async def delete_source(client: Client, callback_query: CallbackQuery):
     Source.clear_actual_cache()
     Filter.clear_actual_cache()
 
-    src_link = await get_channel_formatted_link(source_obj.tg_id)
+    src_link = await get_channel_formatted_link(source_obj.id)
     text = f'✅ Источник **{src_link}** удален'
     await callback_query.message.edit_text(
         text=text,

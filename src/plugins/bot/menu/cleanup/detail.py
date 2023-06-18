@@ -19,10 +19,10 @@ async def detail_cleanup_regex(_, callback_query: CallbackQuery):
     source_id = menu.path.get_value('s')
     source_obj: Source = Source.get(source_id) if source_id else None
     if source_obj:
-        pattern = source_obj.cleanup_regex[cleanup_id]
+        pattern = source_obj.cleanup_list[cleanup_id]
     else:
-        cleanup_regex = GlobalSettings.get(key='cleanup_regex').value
-        pattern = cleanup_regex[cleanup_id]
+        cleanup_list = GlobalSettings.get(key='cleanup_list').value
+        pattern = cleanup_list[cleanup_id]
 
     if is_admin(callback_query.from_user.id):
         menu.add_row_many_buttons(('📝', ':edit'), ('✖️', ':delete'))

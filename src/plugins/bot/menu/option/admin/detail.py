@@ -18,7 +18,7 @@ async def detail_admin(_, callback_query: CallbackQuery):
     admin_id = menu.path.get_value('a')
     admin_obj: Admin = Admin.get(admin_id)
 
-    if admin_obj.tg_id != user.me.id:
+    if admin_obj.id != user.me.id:
         menu.add_row_button('✖️ Удалить', ':delete')
 
     text = await menu.get_text(admin_obj=admin_obj)

@@ -61,13 +61,13 @@ async def add_admin_waiting_input(
             f'{chat.last_name + " " if chat.last_name else ""}'
         )
     try:
-        admin_obj = Admin.create(tg_id=chat.id, username=username)
+        admin_obj = Admin.create(id=chat.id, username=username)
     except peewee.IntegrityError:
         await reply('❗️Этот пользователь уже администратор')
         return
     Admin.clear_actual_cache()
 
-    adm_link = await get_user_formatted_link(admin_obj.tg_id)
+    adm_link = await get_user_formatted_link(admin_obj.id)
     text = f'✅ Администратор **{adm_link}** добавлен'
     await reply(text)
 

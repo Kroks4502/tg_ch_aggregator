@@ -8,7 +8,7 @@ from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/s/\d+/$'),
+    filters.regex(r'/s/-\d+/$'),
 )
 async def detail_source(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -30,7 +30,7 @@ async def detail_source(_, callback_query: CallbackQuery):
     menu.add_row_button('🪤 Фильтры' + (f' ({count})' if count else ''), 'ft')
 
     if source_obj.is_rewrite:
-        count = len(source_obj.cleanup_regex)
+        count = len(source_obj.cleanup_list)
         menu.add_row_button('🧹 Очистка' + (f' ({count})' if count else ''), 'cl')
         menu.add_row_button('Пересылать', ':off_rewrite')
     else:
