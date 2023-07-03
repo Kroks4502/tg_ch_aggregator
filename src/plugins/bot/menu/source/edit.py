@@ -10,7 +10,7 @@ from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'/s/\d+/:edit/$') & custom_filters.admin_only,
+    filters.regex(r'/s/-\d+/:edit/$') & custom_filters.admin_only,
 )
 async def edit_source(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -42,7 +42,7 @@ async def edit_source(_, callback_query: CallbackQuery):
 
 
 @Client.on_callback_query(
-    filters.regex(r'/s/\d+/:edit/\d+/$') & custom_filters.admin_only,
+    filters.regex(r'/s/-\d+/:edit/-\d+/$') & custom_filters.admin_only,
 )
 async def new_source_category(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()

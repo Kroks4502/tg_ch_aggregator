@@ -17,7 +17,7 @@ from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/c/\d+/s/:add/$') & custom_filters.admin_only,
+    filters.regex(r'^/c/-\d+/s/:add/$') & custom_filters.admin_only,
 )
 async def add_source(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()

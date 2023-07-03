@@ -10,7 +10,7 @@ from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'/s/\d+/:delete/$') & custom_filters.admin_only,
+    filters.regex(r'/s/-\d+/:delete/$') & custom_filters.admin_only,
 )
 async def confirmation_delete_source(_, callback_query: CallbackQuery):
     await callback_query.answer()
