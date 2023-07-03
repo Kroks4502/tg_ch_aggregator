@@ -32,12 +32,12 @@ async def message_history(_, callback_query: CallbackQuery):
     text_items = []
     for item in query.paginate(page, MAX_NUM_ENTRIES_MESSAGE):
         text_items.append(
-            f'{"🏞" if item.source_media_group else "🗞"}'
+            f'{"🏞" if item.source_media_group_id else "🗞"}'
             f'{">📝" if item.edited_at else ""}'
             f'{">🗑" if item.deleted_at else ""}'
             f' [{get_shortened_text(item.source.title, 30)}]'
             f'({get_message_link(item.source_id, item.source_message_id)})\n'
-            f'✅{">🖨" if item.category_rewritten else ""}'
+            f'✅{">🖨" if item.category_message_rewritten else ""}'
             f'{">🗑" if item.deleted_at else ""}'
             f' [{get_shortened_text(item.category.title, 30)}]'
             f'({get_message_link(item.category_id, item.category_message_id)})\n'

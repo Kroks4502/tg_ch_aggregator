@@ -36,7 +36,7 @@ async def filter_history(_, callback_query: CallbackQuery):
     text_items = []
     for f in query.paginate(page, MAX_NUM_ENTRIES_MESSAGE):
         text_items.append(
-            f'{"🏞" if f.source_media_group else "🗞"}'
+            f'{"🏞" if f.source_media_group_id else "🗞"}'
             f'[{get_shortened_text(f.source.title, 30)}]'
             f'({get_message_link(f.source_id, f.source_message_id)})\n'
             f'**{"П" if f.filter.source else "O"}** '

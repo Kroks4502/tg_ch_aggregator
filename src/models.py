@@ -142,7 +142,7 @@ class MessageHistory(BaseModel):
         Source, backref='history', on_delete='CASCADE'
     )  # source_id
     source_message_id = BigIntegerField()
-    source_media_group = CharField(default=None, null=True)
+    source_media_group_id = CharField(default=None, null=True)
     source_forward_from_chat_id = BigIntegerField(default=None, null=True)
     source_forward_from_message_id = BigIntegerField(default=None, null=True)
 
@@ -150,9 +150,12 @@ class MessageHistory(BaseModel):
         Category, backref='history', on_delete='CASCADE'
     )  # category_id
     category_message_id = BigIntegerField(default=None, null=True)
-    category_media_group = CharField(default=None, null=True)
-    category_rewritten = BooleanField(default=None, null=True)
+    category_media_group_id = CharField(default=None, null=True)
+    category_message_rewritten = BooleanField(default=None, null=True)
 
+    repeat_history = ForeignKeyField(
+        'self', on_delete='SET NULL', null=True, default=None
+    )
     filter = ForeignKeyField(
         Filter, backref='history', on_delete='SET NULL', null=True, default=None
     )

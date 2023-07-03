@@ -3,13 +3,14 @@ CREATE TABLE IF NOT EXISTS "message_history"
     "id"                             bigserial NOT NULL PRIMARY KEY,
     "source_id"                      bigint    NOT NULL,
     "source_message_id"              bigint    NOT NULL,
-    "source_media_group"             varchar(255),
+    "source_media_group_id"          varchar(255),
     "source_forward_from_chat_id"    bigint,
     "source_forward_from_message_id" bigint,
     "category_id"                    bigint    NOT NULL,
     "category_message_id"            bigint,
-    "category_media_group"           varchar(255),
-    "category_rewritten"             boolean,
+    "category_media_group_id"        varchar(255),
+    "category_message_rewritten"     boolean,
+    "repeat_history_id"              bigint,
     "filter_id"                      integer,
     "created_at"                     timestamp NOT NULL,
     "edited_at"                      timestamp,
@@ -17,7 +18,8 @@ CREATE TABLE IF NOT EXISTS "message_history"
     "data"                           JSONB     NOT NULL DEFAULT '[]'::jsonb,
     FOREIGN KEY ("source_id") REFERENCES "source" ("id") ON DELETE CASCADE,
     FOREIGN KEY ("category_id") REFERENCES "category" ("id") ON DELETE CASCADE,
-    FOREIGN KEY ("filter_id") REFERENCES "filter" ("id") ON DELETE SET NULL
+    FOREIGN KEY ("filter_id") REFERENCES "filter" ("id") ON DELETE SET NULL,
+    FOREIGN KEY ("repeat_history_id") REFERENCES "message_history" ("id") ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS "message_history_source_id" ON "message_history" ("source_id");
@@ -26,32 +28,32 @@ CREATE INDEX IF NOT EXISTS "message_history_filter_id" ON "message_history" ("fi
 
 ---
 
-INSERT INTO message_history(source_id, source_message_id, source_media_group, source_forward_from_chat_id,
-                            source_forward_from_message_id, category_id, category_message_id, category_media_group,
-                            category_rewritten, filter_id, created_at, edited_at, deleted_at)
+INSERT INTO message_history(source_id, source_message_id, source_media_group_id, source_forward_from_chat_id,
+                            source_forward_from_message_id, category_id, category_message_id, category_media_group_id,
+                            category_message_rewritten, filter_id, created_at, edited_at, deleted_at)
 SELECT *
 FROM (SELECT t.source_id,
              t.source_message_id,
-             t.source_media_group,
+             t.source_media_group_id,
              t.source_forward_from_chat_id,
              t.source_forward_from_message_id,
              t.category_id,
              CASE WHEN ch.deleted THEN NULL ELSE t.category_message_id END AS category_message_id,
-             t.category_media_group,
-             t.category_rewritten,
+             t.category_media_group_id,
+             t.category_message_rewritten,
              t.filter_id,
              t.created_at,
              t.edited_at,
              t.deleted_at
       FROM (SELECT ch.source_id,
                    ch.source_message_id,
-                   ch.media_group             AS source_media_group,
+                   ch.media_group             AS source_media_group_id,
                    ch.forward_from_chat_id    AS source_forward_from_chat_id,
                    ch.forward_from_message_id AS source_forward_from_message_id,
                    ch.category_id,
                    MAX(ch.message_id)         AS category_message_id,
-                   NULL                       AS category_media_group,
-                   ch.rewritten               AS category_rewritten,
+                   NULL                       AS category_media_group_id,
+                   ch.rewritten               AS category_message_rewritten,
                    MAX(fh.filter_id)          AS filter_id,
                    MIN(ch.date)               AS created_at,
                    MAX(CASE
@@ -80,13 +82,13 @@ FROM (SELECT t.source_id,
 
       SELECT fh.source_id,
              fh.source_message_id,
-             fh.media_group AS source_media_group,
+             fh.media_group AS source_media_group_id,
              NULL           AS source_forward_from_chat_id,
              NULL           AS source_forward_from_message_id,
              s.category_id,
              NULL           AS category_message_id,
-             NULL           AS category_media_group,
-             NULL           AS category_rewritten,
+             NULL           AS category_media_group_id,
+             NULL           AS category_message_rewritten,
              fh.filter_id,
              fh.date        AS created_at,
              NULL           AS edited_at,
