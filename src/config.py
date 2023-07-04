@@ -1,7 +1,6 @@
 import datetime
 import logging
 import os
-import re
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -21,11 +20,6 @@ API_ID = os.getenv('api_id')
 API_HASH = os.getenv('api_hash')
 BOT_TOKEN = os.getenv('bot_token')
 DEVELOP_MODE = os.getenv('develop_mode')
-
-PATTERN_WITHOUT_SMILE = re.compile(
-    r'[^а-яА-ЯЁёa-zA-z0-9 |-]+',
-    flags=re.IGNORECASE,
-)
 
 
 def patch_psycopg2():

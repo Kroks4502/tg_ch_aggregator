@@ -7,12 +7,7 @@ from pyrogram.types import Dialog
 
 from clients import bot, user
 from models import Admin, Category, Source
-from plugins.user.sources_monitoring.new_message.media_group import (
-    new_media_group_message,
-)
-from plugins.user.sources_monitoring.new_message.regular_message import (
-    new_regular_message,
-)
+from plugins.user.sources_monitoring.new_message import new_message
 
 
 async def startup():
@@ -35,10 +30,7 @@ async def startup():
 
     new_messages = await get_unread_messages()
     for message in sorted(new_messages, key=attrgetter('date')):
-        if message.media_group_id:
-            await new_media_group_message(user, message)
-        else:
-            await new_regular_message(user, message)
+        await new_message(user, message)
 
     logging.info(
         f'Начальный скрипт завершил работу. Обработано сообщений: {len(new_messages)}.'

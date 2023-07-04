@@ -6,40 +6,22 @@ from typing import Iterable
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message, MessageEntity
 
-from common import get_shortened_text
 from filter_types import FilterMessageType, FilterType
-from models import CategoryMessageHistory, Filter, Source
-from plugins.user.utils.history import add_to_filter_history
+from models import Filter, MessageHistory, Source
 
 
-def is_new_and_valid_post(message: Message, source: Source) -> bool:
-    """Сообщения ещё нет в истории и оно проходит фильтр."""
-    if not is_new_post(message, source.category_id):
-        logging.info(
-            f'Сообщение {message.id} из источника '
-            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            f'{"в составе медиагруппы " + str(message.media_group_id) + " " if message.media_group_id else ""}'
-            'уже есть в канале категории'
-            f' {get_shortened_text(source.category.title, 20)} {source.category.tg_id}'
-            f'ИЛИ было отфильтровано.'
-        )
-        return False
-
+def get_filter_id_or_none(message: Message, source: Source) -> int | None:
+    """
+    Получить фильтр под который подходит текст сообщения.
+    """
     if data := check_message_filter(message, source):
-        add_to_filter_history(message, data['id'], source)
-        logging.info(
-            f'Сообщение {message.id} из источника '
-            f'{get_shortened_text(message.chat.title, 20)} {message.chat.id} '
-            f'{"в составе медиагруппы " + str(message.media_group_id) + " " if message.media_group_id else ""}'
-            f'отфильтровано: {data}'
-        )
-        return False
+        return data['id']
 
-    return True
+    return
 
 
-def is_new_post(message: Message, category_id: int) -> bool:
-    """Проверка уникальности сообщения."""
+def get_history_id_or_none(message: Message, category_id: int) -> int | None:
+    """Получить id истории сообщения."""
     if message.forward_from_chat:
         # Сообщение переслано в источник из другого чата
 
@@ -66,28 +48,55 @@ def is_new_post(message: Message, category_id: int) -> bool:
             'forward_from_chat_id и forward_from_message_id должны быть всегда для выполнения запроса по индексам!'
         )
 
-    h_a = CategoryMessageHistory.alias()
-    h_obj = h_a.select().where(
-        (
-            h_a.category_id == category_id
-        )  # Все проверки выполняем в рамках одной категории
-        & (
-            (
-                (h_a.source_chat_id == source_chat_id)
-                & (h_a.source_message_id == source_message_id)
-            )
-            | (
-                (h_a.forward_from_chat_id == forward_from_chat_id)
-                & (h_a.forward_from_message_id == forward_from_message_id)
-            )
-        )
-        & ~h_a.deleted  # Удаленные сообщения не учитываем
-    )  # Работает по индексам
+    history_obj = get_history_obj_or_none(
+        category_id=category_id,
+        source_chat_id=source_chat_id,
+        source_message_id=source_message_id,
+        forward_from_chat_id=forward_from_chat_id,
+        forward_from_message_id=forward_from_message_id,
+    )
+    if history_obj:
+        return history_obj.id
+    return
 
-    if h_obj.exists():
-        return False
 
-    return True
+def get_history_obj_or_none(
+    category_id: int,
+    source_chat_id: int,
+    source_message_id: int,
+    forward_from_chat_id: int,
+    forward_from_message_id: int,
+) -> MessageHistory | None:
+    """Получить объект истории сообщения."""
+    try:
+        mh: type[MessageHistory] = MessageHistory.alias()
+        history_obj = (
+            mh.select(mh.id)
+            .where(
+                (
+                    mh.category_id == category_id
+                )  # Все проверки выполняем в рамках одной категории
+                & (
+                    (
+                        (mh.source_id == source_chat_id)
+                        & (mh.source_message_id == source_message_id)
+                    )
+                    | (
+                        (mh.source_forward_from_chat_id == forward_from_chat_id)
+                        & (mh.source_forward_from_message_id == forward_from_message_id)
+                    )
+                )
+                & (
+                    mh.category_message_id
+                    != None  # noqa E711 Отсутствующие сообщения в категории не учитываем
+                )
+            )
+            .get()
+        )  # Работает по индексам
+
+        return history_obj
+    except MessageHistory.DoesNotExist:
+        return
 
 
 def check_message_filter(message: Message, source: Source) -> dict | None:
