@@ -1,33 +1,34 @@
 import json
 import logging
 
-from pyrogram import Client, filters
-from pyrogram.errors import (
-    BadRequest,
-    ChatForwardsRestricted,
-    MediaCaptionTooLong,
-    MessageIdInvalid,
-    MessageTooLong,
-)
+from pyrogram import Client
+from pyrogram import errors as pyrogram_errors
+from pyrogram import filters
 from pyrogram.types import Message
 
 from models import MessageHistory, Source
 from plugins.user.exceptions import (
-    FilteredMessageError,
-    MediaMessageWithoutCaptionError,
-    RepeatedMessageError,
+    MessageBadRequestError,
+    MessageBaseError,
+    MessageFilteredError,
+    MessageForwardsRestrictedError,
+    MessageIdInvalidError,
+    MessageRepeatedError,
+    MessageTooLongError,
+    Operation,
 )
+from plugins.user.sources_monitoring.common import get_filter_id_or_none, set_blocking
 from plugins.user.utils import (
     custom_filters,
     get_input_media,
     is_media_message_with_caption,
 )
-from plugins.user.utils.blocking import blocking_messages
 from plugins.user.utils.cleanup import cleanup_message
-from plugins.user.utils.inspector import get_filter_id_or_none, get_history_id_or_none
 from plugins.user.utils.rewriter import Header, add_header
 from plugins.user.utils.send_media_group import send_media_group
 from plugins.user.utils.senders import send_error_to_admins
+
+NEW = Operation.NEW
 
 
 @Client.on_message(
@@ -47,40 +48,29 @@ async def new_message(  # noqa C901
         is_resending,
     )
 
-    blocked = blocking_messages.get(key=message.chat.id)
-    if blocked.contains(key=message.media_group_id):
-        logging.warning(  # todo low level? Ибо их будет много, так как это медиа группа
-            'Источник %s отправил сообщение %s, но медиа группа %s уже заблокирована %s',
-            message.chat.id,
-            message.id,
-            message.media_group_id,
-            blocked,
-        )
-        return
-    if blocked.contains(key=message.id):
-        logging.warning(
-            'Источник %s отправил сообщение %s, но оно уже заблокировано %s',
-            message.chat.id,
-            message.id,
-            blocked,
-        )
-        return
-    blocked.add(value=message.media_group_id or message.id)
-
-    if not source:
-        source = Source.get(message.chat.id)
-
-    if message.media_group_id:
-        source_messages = await message.get_media_group()  # Первый await !
-    else:
-        source_messages = [message]
-
-    repeated = False
-    filtered = False
+    blocked = None
+    source_messages = None
+    history = dict()
+    exc = None
     try:
-        history = dict()
+        blocked = set_blocking(
+            operation=NEW,
+            message=message,
+            block_value=message.media_group_id or message.id,
+        )
+
+        if not source:
+            source = Source.get(message.chat.id)
+
+        if message.media_group_id:
+            source_messages = await message.get_media_group()  # Первый await !
+        else:
+            source_messages = [message]
+
+        repeated = False
+        filtered = False
         for msg in source_messages:
-            repeat_history_id = get_history_id_or_none(
+            repeat_history_id = get_repeated_history_id_or_none(
                 message=msg, category_id=source.category_id
             )
             repeated = True if repeat_history_id else repeated
@@ -114,10 +104,10 @@ async def new_message(  # noqa C901
             )
 
         if repeated:
-            raise RepeatedMessageError()
+            raise MessageRepeatedError(operation=NEW, message=message)
 
         if filtered:
-            raise FilteredMessageError()
+            raise MessageFilteredError(operation=NEW, message=message)
 
         if not message.media_group_id:
             category_messages = [
@@ -161,67 +151,83 @@ async def new_message(  # noqa C901
             history_obj.data[-1]['category'] = json.loads(cat_msg.__str__())
             history_obj.save()
 
-    except MediaMessageWithoutCaptionError:
-        logging.info(
-            'Источник %s отправил сообщение %s, но оно не может содержать подпись.',
-            message.chat.id,
-            message.id,
-        )
-    except RepeatedMessageError:
-        logging.info(
-            'Источник %s отправил сообщение %s медиа группы %s, оно уже есть в категории.',
-            message.chat.id,
-            message.id,
-            message.media_group_id,
-        )
-    except FilteredMessageError:
-        logging.info(
-            'Источник %s отправил сообщение %s медиа группы %s, оно было отфильтровано.',
-            message.chat.id,
-            message.id,
-            message.media_group_id,
-        )
-    except MessageIdInvalid as error:
-        # Случай когда почти одновременно приходит сообщение о редактировании и удалении сообщения из источника
-        logging.warning(
-            'Источник %s отправил сообщение %s, оно привело к ошибке %s',
-            message.chat.id,
-            message.id,
-            error,
-        )
-    except ChatForwardsRestricted:
-        logging.error(
-            'Источник %s отправил сообщение %s, но запрещает пересылку сообщений',
-            message.chat.id,
-            message.id,
-        )
+    except MessageBaseError as e:
+        exc = e
+    except pyrogram_errors.MessageIdInvalid as error:
+        exc = MessageIdInvalidError(operation=NEW, message=message, error=error)
+    except pyrogram_errors.ChatForwardsRestricted:
+        exc = MessageForwardsRestrictedError(operation=NEW, message=message)
         await send_error_to_admins(
             f'⚠ Источник {message.chat.title} запрещает пересылку сообщений. '
             'Установите режим перепечатывания сообщений.'
         )
-    except (MediaCaptionTooLong, MessageTooLong):
-        # todo Обрезать и ставить надпись "Читать из источника..."
-        logging.error(
-            'Источник %s отправил сообщение %s, но при перепечатывании оно превышает лимит знаков',
-            message.chat.id,
-            message.id,
-        )
-    except BadRequest as error:
-        logging.error(
-            'Источник %s отправил сообщение %s, оно привело к непредвиденной ошибке %s. Полное сообщение: %s',
-            message.chat.id,
-            message.id,
-            error,
-            message,
-            exc_info=True,
-        )
+    except (pyrogram_errors.MediaCaptionTooLong, pyrogram_errors.MessageTooLong):
+        exc = MessageTooLongError(operation=NEW, message=message)
+    except pyrogram_errors.BadRequest as error:
+        exc = MessageBadRequestError(operation=NEW, message=message, error=error)
     finally:
-        blocked.remove(value=message.media_group_id or message.id)
+        if blocked:
+            blocked.remove(value=message.media_group_id or message.id)
 
-        await client.read_chat_history(
-            chat_id=source.id,
-            max_id=max(msg.id for msg in source_messages),
-        )
+        if exc and (history_obj := history.get(message.id)):
+            history_obj.data[-1]['exception'] = exc.text
+            history_obj.save()
+
+        if source_messages:
+            await client.read_chat_history(
+                chat_id=source.id,
+                max_id=max(msg.id for msg in source_messages),
+            )
+
+
+def get_repeated_history_id_or_none(message: Message, category_id: int) -> int | None:
+    """Получить id из истории сообщения."""
+    if message.forward_from_chat:  # Сообщение переслано в источник из другого чата
+        # Сообщение уже может быть в истории по этому чату, если он является источником
+        source_chat_id = message.forward_from_chat.id
+        source_message_id = message.forward_from_message_id
+
+        # Проверяем не пересылалось ли уже в других источниках это сообщение
+        forward_from_chat_id = message.forward_from_chat.id
+        forward_from_message_id = message.forward_from_message_id
+    else:  # Сообщение не является пересланным
+        # Проверяем наличие этого сообщения в истории
+        source_chat_id = message.chat.id
+        source_message_id = message.id
+
+        # Проверяем не получили ли мы это сообщение ранее как пересланное из другого источника
+        forward_from_chat_id = message.chat.id
+        forward_from_message_id = message.id
+
+    mh: type[MessageHistory] = MessageHistory.alias()
+    try:
+        history_obj = (
+            mh.select(mh.id)
+            .where(
+                (mh.category_id == category_id)
+                # Все проверки выполняем в рамках одной категории
+                & (
+                    (
+                        (mh.source_id == source_chat_id)
+                        & (mh.source_message_id == source_message_id)
+                    )
+                    | (
+                        (mh.source_forward_from_chat_id == forward_from_chat_id)
+                        & (mh.source_forward_from_message_id == forward_from_message_id)
+                    )
+                    # В том числе как уже пересланное из другого источника
+                )
+                & (
+                    mh.category_message_id != None  # noqa E711
+                )  # Отсутствующие сообщения в категории не учитываем
+            )
+            .get()
+        )  # Работает по индексам
+
+    except MessageHistory.DoesNotExist:
+        return  # noqa R502
+
+    return history_obj.id
 
 
 async def new_regular_message(
@@ -238,7 +244,7 @@ async def new_regular_message(
             disable_notification=disable_notification,
         )
 
-    is_media = is_media_message_with_caption(message=message)
+    is_media = is_media_message_with_caption(operation=NEW, message=message)
 
     cleanup_message(message=message, source=source, is_media=is_media)
     add_header(obj=message, header=Header(message), is_media=is_media)

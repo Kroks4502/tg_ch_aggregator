@@ -9,7 +9,7 @@ from pyrogram.types import (
     Message,
 )
 
-from plugins.user.exceptions import MediaMessageWithoutCaptionError
+from plugins.user.exceptions import MessageMediaWithoutCaptionError, Operation
 
 
 def tg_len(text: str) -> int:
@@ -17,11 +17,11 @@ def tg_len(text: str) -> int:
     return len(text.encode('utf-16-le')) // 2
 
 
-def is_media_message_with_caption(message: Message):
+def is_media_message_with_caption(operation: Operation, message: Message):
     """
     Сообщение является медиа с возможностью подписи.
 
-    :raise MediaMessageWithoutCaptionError: Сообщение является медиа, но не может содержать подпись.
+    :raise MessageMediaWithoutCaptionError: Сообщение является медиа, но не может содержать подпись.
     """
     if not message.media:
         return False
@@ -35,7 +35,7 @@ def is_media_message_with_caption(message: Message):
     ):
         return True
 
-    raise MediaMessageWithoutCaptionError()
+    raise MessageMediaWithoutCaptionError(operation=operation, message=message)
 
 
 def get_input_media(
