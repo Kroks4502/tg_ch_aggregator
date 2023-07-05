@@ -1,6 +1,7 @@
 import json
 import logging
 
+from peewee import DoesNotExist
 from pyrogram import Client
 from pyrogram import errors as pyrogram_errors
 from pyrogram import filters
@@ -34,19 +35,14 @@ NEW = Operation.NEW
 @Client.on_message(
     custom_filters.monitored_channels & ~filters.service,
 )
-async def new_message(  # noqa C901
-    client: Client,
-    message: Message,
-    *,
-    source: Source = None,  # При повторной отправке, можем сразу передать источник
-    is_resending: bool = None,
-):
+async def new_message(client: Client, message: Message):  # noqa C901
     logging.debug(
-        'Источник %s отправил сообщение %s, is_resending %s',
+        'Источник %s отправил сообщение %s',
         message.chat.id,
         message.id,
-        is_resending,
     )
+
+    source = Source.get(message.chat.id)
 
     blocked = None
     source_messages = None
@@ -58,9 +54,6 @@ async def new_message(  # noqa C901
             message=message,
             block_value=message.media_group_id or message.id,
         )
-
-        if not source:
-            source = Source.get(message.chat.id)
 
         if message.media_group_id:
             source_messages = await message.get_media_group()  # Первый await !
@@ -114,15 +107,13 @@ async def new_message(  # noqa C901
                 await new_regular_message(
                     message=message,
                     source=source,
-                    disable_notification=is_resending,
                 )
             ]
 
             logging.info(
-                'Источник %s отправил сообщение %s, is_resending %s, оно отправлено в категорию %s',
+                'Источник %s отправил сообщение %s, оно отправлено в категорию %s',
                 message.chat.id,
                 message.id,
-                is_resending,
                 source.category_id,
             )
         else:  # Медиа группа
@@ -130,16 +121,14 @@ async def new_message(  # noqa C901
                 client=client,
                 messages=source_messages,
                 source=source,
-                disable_notification=is_resending,
             )
 
             logging.info(
-                'Источник %s отправил сообщение %s медиа группы %s, is_resending %s, '
+                'Источник %s отправил сообщение %s в составе медиа группы %s, '
                 'сообщения отправлены в категорию %s',
                 message.chat.id,
                 message.id,
                 message.media_group_id,
-                is_resending,
                 source.category_id,
             )
 
@@ -224,7 +213,7 @@ def get_repeated_history_id_or_none(message: Message, category_id: int) -> int |
             .get()
         )  # Работает по индексам
 
-    except MessageHistory.DoesNotExist:
+    except DoesNotExist:
         return  # noqa R502
 
     return history_obj.id
