@@ -5,6 +5,7 @@ from peewee import DoesNotExist
 from pyrogram import Client
 from pyrogram import errors as pyrogram_errors
 from pyrogram import filters
+from pyrogram.enums import MessageMediaType
 from pyrogram.types import Message
 
 from models import MessageHistory, Source
@@ -14,20 +15,17 @@ from plugins.user.exceptions import (
     MessageFilteredError,
     MessageForwardsRestrictedError,
     MessageIdInvalidError,
+    MessageMediaWithoutCaptionError,
     MessageRepeatedError,
     MessageTooLongError,
     Operation,
 )
 from plugins.user.sources_monitoring.common import get_filter_id_or_none, set_blocking
-from plugins.user.utils import (
-    custom_filters,
-    get_input_media,
-    is_media_message_with_caption,
-)
+from plugins.user.utils import custom_filters, get_input_media
 from plugins.user.utils.cleanup import cleanup_message
 from plugins.user.utils.rewriter import Header, add_header
-from plugins.user.utils.send_media_group import send_media_group
 from plugins.user.utils.senders import send_error_to_admins
+from pyrogram_fork.send_media_group import SendMediaGroup
 
 NEW = Operation.NEW
 
@@ -279,9 +277,30 @@ async def new_media_group_messages(
     if not media_has_caption:
         add_header(obj=media[0], header=Header(messages[0]), is_media=True)
 
-    return await send_media_group(
-        client=client,
+    return await SendMediaGroup.send_media_group(
+        client,
         chat_id=source.category.id,
         media=media,
         disable_notification=disable_notification,
     )
+
+
+def is_media_message_with_caption(operation: Operation, message: Message):
+    """
+    Сообщение является медиа с возможностью подписи.
+
+    :raise MessageMediaWithoutCaptionError: Сообщение является медиа, но не может содержать подпись.
+    """
+    if not message.media:
+        return False
+
+    if message.media in (
+        MessageMediaType.VOICE,
+        MessageMediaType.VIDEO,
+        MessageMediaType.AUDIO,
+        MessageMediaType.PHOTO,
+        MessageMediaType.DOCUMENT,
+    ):
+        return True
+
+    raise MessageMediaWithoutCaptionError(operation=operation, message=message)
