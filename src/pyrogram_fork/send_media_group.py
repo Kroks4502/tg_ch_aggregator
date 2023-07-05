@@ -389,7 +389,9 @@ class SendMediaGroup:
                 raw.types.InputSingleMedia(
                     media=media,
                     random_id=self.rnd_id(),
-                    **await self.parser.parse(i.caption, i.parse_mode)
+                    message=str(i.caption if i.caption else "").strip(),  # kr added
+                    entities=i.caption_entities or None,  # kr added
+                    # **await self.parser.parse(i.caption, i.parse_mode)
                 )
             )
 

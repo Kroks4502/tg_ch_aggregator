@@ -86,13 +86,14 @@ class EditMessageMedia:
                 await app.edit_message_media(chat_id, message_id,
                     InputMediaAudio("new_audio.mp3"))
         """
-        caption = media.caption
-        parse_mode = media.parse_mode
+        # caption = media.caption
+        # parse_mode = media.parse_mode
 
-        message, entities = None, None
+        # message, entities = None, None
+        message, entities = media.caption, media.caption_entities  # kr added
 
-        if caption is not None:
-            message, entities = (await self.parser.parse(caption, parse_mode)).values()
+        # if caption is not None:
+        #     message, entities = (await self.parser.parse(caption, parse_mode)).values()
 
         if isinstance(media, types.InputMediaPhoto):
             if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
