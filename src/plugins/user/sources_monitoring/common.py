@@ -6,9 +6,10 @@ from plugins.user.exceptions import (
     MessageBlockedByMediaGroupError,
     Operation,
 )
-from plugins.user.utils.blocking import blocking_messages
-from plugins.user.utils.chats_locks import MessagesLocks
+from plugins.user.utils.chats_locks import ChatsLocks, MessagesLocks
 from plugins.user.utils.inspector import FilterInspector
+
+blocking_messages = ChatsLocks('all')
 
 
 def set_blocking(
