@@ -36,7 +36,7 @@ async def deleted_messages(client: Client, messages: list[Message]):
             source_message_id=message.id,
         )
         history_obj.deleted_at = dt.datetime.now()  # todo check timezone !
-        history_obj.data.append(dict(deleted=json.loads(message.__str__())))
+        history_obj.data.append(dict(source=json.loads(message.__str__())))
 
         exc = None
         try:
@@ -47,7 +47,8 @@ async def deleted_messages(client: Client, messages: list[Message]):
                 raise MessageNotOnCategoryError(operation=DELETE, message=message)
 
             await client.delete_messages(
-                history_obj.category.tg_id, history_obj.message_id
+                chat_id=history_obj.category.id,
+                message_ids=history_obj.category_message_id,
             )
 
             history_obj.category_message_id = None
