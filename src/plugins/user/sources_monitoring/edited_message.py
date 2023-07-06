@@ -1,7 +1,6 @@
 import json
 import logging
 
-from peewee import DoesNotExist
 from pyrogram import Client
 from pyrogram import errors as pyrogram_errors
 from pyrogram import filters
@@ -81,6 +80,7 @@ async def edit_regular_message(client: Client, message: Message):  # noqa C901
         if message.text:
             cleanup_message(message=message, source=source, is_media=False)
             add_header(obj=message, header=Header(message), is_media=False)
+
             category_message = await client.edit_message_text(
                 chat_id=history_obj.category_id,
                 message_id=history_obj.category_message_id,
@@ -92,12 +92,6 @@ async def edit_regular_message(client: Client, message: Message):  # noqa C901
         else:
             cleanup_message(message=message, source=source, is_media=True)
             add_header(obj=message, header=Header(message), is_media=True)
-
-            # category_message = await client.edit_message_media(
-            #     chat_id=history_obj.category_id,
-            #     message_id=history_obj.category_message_id,
-            #     media=get_input_media(message=message),
-            # )  # todo теряет caption_entities !
 
             category_message = await EditMessageMedia.edit_message_media(
                 client,
@@ -133,29 +127,3 @@ async def edit_regular_message(client: Client, message: Message):  # noqa C901
             history_obj.data[-1]['exception'] = dict(operation=EDIT.name, text=exc.text)
 
         history_obj.save()
-
-
-# todo del
-def get_history_obj_or_none(
-    category_id: int,
-    source_chat_id: int,
-    source_message_id: int,
-) -> MessageHistory | None:
-    """Получить объект истории сообщения."""
-    #  ??? мб так?
-
-    try:
-        mh: type[MessageHistory] = MessageHistory.alias()
-        history_obj = (
-            mh.select()
-            .where(
-                (mh.source_id == source_chat_id)
-                & (mh.source_message_id == source_message_id)
-                # Только как сообщение источника
-            )
-            .get()  # todo get_or_none() ?
-        )  # Работает по индексам
-
-        return history_obj
-    except DoesNotExist:
-        return  # noqa R502

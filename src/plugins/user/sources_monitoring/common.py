@@ -87,20 +87,20 @@ def get_input_media(
         for key in inspect.signature(entity.type.value).parameters.keys():
             entity_params.update({key: possible_entity_params[key]})
         raw_caption_entities.append(entity.type.value(**entity_params))
-    # raw_caption_entities = message.caption_entities  # todo del
+
     if message.photo:
         return InputMediaPhoto(
             media=message.photo.file_id,
             caption=message.caption,
             parse_mode=None,
             caption_entities=raw_caption_entities,
-            has_spoiler=message.has_media_spoiler,  # todo NEW check !
+            has_spoiler=message.has_media_spoiler,
         )
 
     if message.audio:
         return InputMediaAudio(
             media=message.audio.file_id,
-            thumb=message.audio.thumbs,  # todo NEW check !
+            thumb=message.audio.thumbs,
             caption=message.caption,
             parse_mode=None,
             caption_entities=raw_caption_entities,
@@ -112,7 +112,7 @@ def get_input_media(
     if message.document:
         return InputMediaDocument(
             media=message.document.file_id,
-            thumb=message.document.thumbs,  # todo NEW check !
+            thumb=message.document.thumbs,
             caption=message.caption,
             parse_mode=None,
             caption_entities=raw_caption_entities,
@@ -121,7 +121,7 @@ def get_input_media(
     if message.video:
         return InputMediaVideo(
             media=message.video.file_id,
-            thumb=message.video.thumbs,  # todo NEW check !
+            thumb=message.video.thumbs,
             caption=message.caption,
             parse_mode=None,
             caption_entities=raw_caption_entities,
@@ -129,7 +129,7 @@ def get_input_media(
             height=message.video.height,
             duration=message.video.duration,
             supports_streaming=message.video.supports_streaming,
-            has_spoiler=message.has_media_spoiler,  # todo NEW check !
+            has_spoiler=message.has_media_spoiler,
         )
 
     raise ValueError(f'Message with this type {message.media} can`t be copied.')
