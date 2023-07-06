@@ -20,8 +20,12 @@ from plugins.user.exceptions import (
     MessageTooLongError,
     Operation,
 )
-from plugins.user.sources_monitoring.common import get_filter_id_or_none, set_blocking
-from plugins.user.utils import custom_filters, get_input_media
+from plugins.user.sources_monitoring.common import (
+    get_filter_id_or_none,
+    get_input_media,
+    set_blocking,
+)
+from plugins.user.utils import custom_filters
 from plugins.user.utils.cleanup import cleanup_message
 from plugins.user.utils.rewriter import Header, add_header
 from plugins.user.utils.senders import send_error_to_admins
@@ -69,12 +73,7 @@ async def new_message(client: Client, message: Message):  # noqa C901
             filter_id = get_filter_id_or_none(message=msg, source=source)
             filtered = True if filter_id else filtered
 
-            #   mb cleanup тут ? НЕТ
-            #   mb add_header тут ? НЕТ
-
-            # todo оптимизировать до одного запроса bulk_create, принимает объекты и заполняет их RETURNING в Postgresql
-            #  https://docs.peewee-orm.com/en/latest/peewee/querying.html#alternatives
-            history[msg.id] = MessageHistory.create(
+            history[msg.id] = MessageHistory(
                 source_id=source.id,
                 source_message_id=msg.id,
                 source_media_group_id=msg.media_group_id,
@@ -83,14 +82,9 @@ async def new_message(client: Client, message: Message):  # noqa C901
                 else None,
                 source_forward_from_message_id=msg.forward_from_message_id,
                 category_id=source.category_id,
-                # category_message_id=...,
-                # category_media_group_id=...,
-                # category_message_rewritten=...,
                 repeat_history_id=repeat_history_id,
                 filter_id=filter_id,
                 created_at=msg.date,
-                # edited_at=...,
-                # deleted_at=...,
                 data=[dict(source=json.loads(msg.__str__()))],
             )
 
@@ -136,7 +130,6 @@ async def new_message(client: Client, message: Message):  # noqa C901
             history_obj.category_message_id = cat_msg.id
             history_obj.category_media_group_id = cat_msg.media_group_id
             history_obj.data[-1]['category'] = json.loads(cat_msg.__str__())
-            history_obj.save()
 
     except MessageBaseError as e:
         exc = e
@@ -157,7 +150,9 @@ async def new_message(client: Client, message: Message):  # noqa C901
             blocked.remove(value=message.media_group_id or message.id)
 
         if exc and (history_obj := history.get(message.id)):
-            history_obj.data[-1]['exception'] = exc.text
+            history_obj.data[-1]['exception'] = dict(operation=NEW.name, text=exc.text)
+
+        for history_obj in history.values():
             history_obj.save()
 
         if source_messages:

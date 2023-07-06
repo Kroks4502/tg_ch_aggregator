@@ -2,7 +2,7 @@ from pyrogram.enums import MessageEntityType
 from pyrogram.raw.types import MessageEntityBold, MessageEntityTextUrl
 from pyrogram.types import InputMedia, Message, MessageEntity
 
-from plugins.user.utils import tg_len
+from plugins.user.utils.text_length import tg_len
 
 
 class Header:

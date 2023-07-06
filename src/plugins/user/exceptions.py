@@ -18,6 +18,7 @@ class UserBaseError(Exception):
 
 
 class MessageBaseError(UserBaseError):
+    stack_info = False
     exc_info = None
     logging_level = logging.INFO
     start_tmpl = "Источник {source_id} {operation} сообщение {message_id}"
@@ -29,8 +30,9 @@ class MessageBaseError(UserBaseError):
         self.text = self.generate_exc_text(**kwargs)
         logging.log(
             level=self.logging_level,
-            msg=self.text,
+            msg=f'{self.__class__.__name__} : {self.text}',
             exc_info=self.exc_info,
+            stack_info=self.stack_info,
         )
 
     def generate_exc_text(self, **kwargs):
@@ -80,12 +82,6 @@ class MessageNotFoundOnHistoryError(MessageBaseError):
 
     logging_level = logging.WARNING
     end_tmpl = 'его нет в истории'
-
-
-class MessageForwardedFromAnySourceError(MessageBaseError):
-    """Сообщение было переслано из другого источника."""
-
-    end_tmpl = 'оно было переслано из другого источника и не может быть изменено'
 
 
 class MessageNotOnCategoryError(MessageBaseError):
@@ -157,6 +153,7 @@ class MessageTooLongError(MessageBaseError):
 class MessageBadRequestError(MessageBaseError):
     """Сообщение привело к непредвиденной ошибке."""
 
+    stack_info = True
     logging_level = logging.ERROR
     end_tmpl = 'оно привело к непредвиденной ошибке {error}'
 

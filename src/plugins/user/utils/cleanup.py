@@ -4,7 +4,7 @@ import re
 from pyrogram.types import Message
 
 from models import GlobalSettings, Source
-from plugins.user.utils import tg_len
+from plugins.user.utils.text_length import tg_len
 
 
 def cleanup_message(message: Message, source: Source, is_media: bool) -> None:

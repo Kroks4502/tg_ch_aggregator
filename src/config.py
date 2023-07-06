@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).parent
 SESSIONS_DIR = BASE_DIR.parent / 'sessions'
 
 LOGS_DIR = BASE_DIR.parent / 'logs'
-LOG_FORMAT = '%(asctime)s : %(levelname)s : %(module)s : %(funcName)s : %(message)s'
+LOG_FORMAT = '%(asctime)s : %(levelname)s : %(message)s'
 
 load_dotenv(BASE_DIR.parent / '.env')
 API_ID = os.getenv('api_id')
