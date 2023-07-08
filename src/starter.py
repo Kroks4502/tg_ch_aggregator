@@ -102,7 +102,7 @@ def update_source_title(dialog: Dialog, db_channels: dict):
         if db_channels[dialog.chat.id][1] != dialog.chat.title:
             model = db_channels[dialog.chat.id][0]
             q = model.update({model.title: dialog.chat.title}).where(
-                model.tg_id == dialog.chat.id
+                model.id == dialog.chat.id
             )
             q.execute()
 
@@ -114,6 +114,6 @@ async def check_sources_in_dialogs(db_channels: dict):
             logging.warning(mgs)
             for admin in Admin.select():
                 try:
-                    await bot.send_message(admin.tg_id, mgs)
+                    await bot.send_message(admin.id, mgs)
                 except RPCError as e:
                     logging.error(e, exc_info=True)
