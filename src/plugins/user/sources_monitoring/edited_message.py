@@ -115,8 +115,11 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
         exc = MessageNotModifiedError(operation=EDIT, message=message, error=error)
     except pyrogram_errors.MessageIdInvalid as error:
         exc = MessageIdInvalidError(operation=EDIT, message=message, error=error)
-    except (pyrogram_errors.MediaCaptionTooLong, pyrogram_errors.MessageTooLong):
-        exc = MessageTooLongError(operation=EDIT, message=message)
+    except (
+        pyrogram_errors.MediaCaptionTooLong,
+        pyrogram_errors.MessageTooLong,
+    ) as error:
+        exc = MessageTooLongError(operation=EDIT, message=message, error=error)
     except pyrogram_errors.BadRequest as error:
         exc = MessageBadRequestError(operation=EDIT, message=message, error=error)
     finally:

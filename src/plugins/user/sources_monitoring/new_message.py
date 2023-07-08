@@ -142,8 +142,11 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             f'⚠ Источник {message.chat.title} запрещает пересылку сообщений. '
             'Установите режим перепечатывания сообщений.'
         )
-    except (pyrogram_errors.MediaCaptionTooLong, pyrogram_errors.MessageTooLong):
-        exc = MessageTooLongError(operation=NEW, message=message)
+    except (
+        pyrogram_errors.MediaCaptionTooLong,
+        pyrogram_errors.MessageTooLong,
+    ) as error:
+        exc = MessageTooLongError(operation=NEW, message=message, error=error)
     except pyrogram_errors.BadRequest as error:
         exc = MessageBadRequestError(operation=NEW, message=message, error=error)
     finally:
