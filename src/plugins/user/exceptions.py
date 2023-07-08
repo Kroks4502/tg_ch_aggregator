@@ -81,7 +81,15 @@ class MessageNotFoundOnHistoryError(MessageBaseError):
     """Сообщения нет в истории."""
 
     logging_level = logging.WARNING
-    end_tmpl = 'его нет в истории'
+    end_tmpl = 'его нет в истории date={date}, edit_date={edit_date}'
+
+    def __init__(self, operation: Operation, message: Message):
+        super().__init__(
+            operation=operation,
+            message=message,
+            date=message.date,
+            edit_date=message.edit_date,
+        )
 
 
 class MessageNotOnCategoryError(MessageBaseError):
