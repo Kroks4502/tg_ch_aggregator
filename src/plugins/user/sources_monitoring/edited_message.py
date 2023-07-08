@@ -123,7 +123,10 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
         if blocked:
             blocked.remove(value=message.id)
 
-        if exc and history_obj:
-            history_obj.data[-1]['exception'] = dict(operation=EDIT.name, text=exc.text)
-
-        history_obj.save()
+        if history_obj:
+            if exc:
+                history_obj.data[-1]['exception'] = dict(
+                    operation=EDIT.name,
+                    text=exc.text,
+                )
+            history_obj.save()
