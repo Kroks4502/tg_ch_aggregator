@@ -1,4 +1,3 @@
-import datetime
 import logging
 import os
 from logging.handlers import RotatingFileHandler
@@ -46,9 +45,6 @@ DATABASE = PostgresqlExtDatabase(
     host=os.getenv('postgresql_host'),
     port=os.getenv('postgresql_port'),
 )
-
-# Период в течение которого при редактировании сообщения в источнике, происходит пересылка в категорию
-MESSAGES_EDIT_LIMIT_TD = datetime.timedelta(minutes=60)
 
 
 def configure_logging():
