@@ -125,8 +125,5 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
 
         if history_obj:
             if exc:
-                history_obj.data[-1]['exception'] = dict(
-                    operation=EDIT.name,
-                    text=exc.text,
-                )
+                history_obj.data[-1]['exception'] = exc.to_dict()
             history_obj.save()
