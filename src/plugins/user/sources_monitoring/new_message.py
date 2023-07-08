@@ -12,6 +12,7 @@ from models import MessageHistory, Source
 from plugins.user.exceptions import (
     MessageBadRequestError,
     MessageBaseError,
+    MessageCleanedFullyError,
     MessageFilteredError,
     MessageForwardsRestrictedError,
     MessageIdInvalidError,
@@ -229,6 +230,10 @@ async def new_regular_message(
     is_media = is_media_message_with_caption(operation=NEW, message=message)
 
     cleanup_message(message=message, source=source, is_media=is_media)
+
+    if not (message.text or is_media):
+        raise MessageCleanedFullyError(operation=NEW, message=message)
+
     add_header(obj=message, header=Header(message), is_media=is_media)
     message.web_page = None  # disable_web_page_preview = True
 

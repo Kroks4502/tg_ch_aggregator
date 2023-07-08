@@ -162,6 +162,14 @@ class MessageBadRequestError(MessageBaseError):
         self.exc_info = error
 
 
+class MessageCleanedFullyError(MessageBaseError):
+    """Сообщение было полностью очищено от текста."""
+
+    end_tmpl = (
+        'оно было полностью очищено от текста и не будет опубликовано в категории'
+    )
+
+
 if __name__ == "__main__":
     raise MessageMediaWithoutCaptionError(
         Operation.NEW, Message(id=0, chat=Chat(id=0, type=ChatType.CHANNEL))
