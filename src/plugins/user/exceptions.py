@@ -1,6 +1,7 @@
 import logging
 from enum import Enum
 
+from pyrogram import errors as pyrogram_errors
 from pyrogram.enums import ChatType
 from pyrogram.types import Chat, Message
 
@@ -64,7 +65,6 @@ class MessageBaseError(UserBaseError):
 class MessageBlockedByMediaGroupError(MessageBaseError):
     """Сообщение было ранее заблокировано по message.media_group_id."""
 
-    logging_level = logging.WARNING
     end_tmpl = 'но медиа группа {media_group_id} уже заблокирована {blocked}'
 
     def __init__(self, operation: Operation, message: Message, blocked: MessagesLocks):
@@ -79,7 +79,6 @@ class MessageBlockedByMediaGroupError(MessageBaseError):
 class MessageBlockedByIdError(MessageBaseError):
     """Сообщение было ранее заблокировано по message.id."""
 
-    logging_level = logging.WARNING
     end_tmpl = 'но оно уже заблокировано {blocked}'
 
     def __init__(self, operation: Operation, message: Message, blocked: MessagesLocks):
@@ -121,7 +120,12 @@ class MessageNotModifiedError(MessageBaseError):
 
     end_tmpl = 'перепечатать сообщение в категории не удалось {error}'
 
-    def __init__(self, operation: Operation, message: Message, error):
+    def __init__(
+        self,
+        operation: Operation,
+        message: Message,
+        error: pyrogram_errors.MessageNotModified,
+    ):
         super().__init__(operation=operation, message=message, error=error)
 
 
@@ -149,7 +153,12 @@ class MessageIdInvalidError(MessageBaseError):
     logging_level = logging.WARNING
     end_tmpl = 'оно привело к ошибке {error}'
 
-    def __init__(self, operation: Operation, message: Message, error):
+    def __init__(
+        self,
+        operation: Operation,
+        message: Message,
+        error: pyrogram_errors.MessageIdInvalid,
+    ):
         super().__init__(operation=operation, message=message, error=error)
 
 
@@ -164,7 +173,15 @@ class MessageTooLongError(MessageBaseError):
     """Сообщение содержит слишком длинный текст."""
 
     logging_level = logging.ERROR
-    end_tmpl = 'но при перепечатывании оно превышает лимит знаков'
+    end_tmpl = 'но при перепечатывании оно превышает лимит знаков {error}'
+
+    def __init__(
+        self,
+        operation: Operation,
+        message: Message,
+        error: pyrogram_errors.MediaCaptionTooLong | pyrogram_errors.MessageTooLong,
+    ):
+        super().__init__(operation=operation, message=message, error=error)
 
 
 class MessageBadRequestError(MessageBaseError):
@@ -174,7 +191,12 @@ class MessageBadRequestError(MessageBaseError):
     logging_level = logging.ERROR
     end_tmpl = 'оно привело к непредвиденной ошибке {error}'
 
-    def __init__(self, operation: Operation, message: Message, error):
+    def __init__(
+        self,
+        operation: Operation,
+        message: Message,
+        error: pyrogram_errors.BadRequest,
+    ):
         super().__init__(operation=operation, message=message, error=error)
         self.exc_info = error
 
