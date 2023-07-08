@@ -151,7 +151,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             blocked.remove(value=message.media_group_id or message.id)
 
         if exc and (history_obj := history.get(message.id)):
-            history_obj.data[-1]['exception'] = dict(operation=NEW.name, text=exc.text)
+            history_obj.data[-1]['exception'] = exc.to_dict()
 
         for history_obj in history.values():
             history_obj.save()

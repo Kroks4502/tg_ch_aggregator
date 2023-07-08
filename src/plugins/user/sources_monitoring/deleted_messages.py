@@ -64,10 +64,7 @@ async def deleted_messages(client: Client, messages: list[Message]):
             exc = MessageBadRequestError(operation=DELETE, message=message, error=error)
         finally:
             if exc and history_obj:
-                history_obj.data[-1]['exception'] = dict(
-                    operation=DELETE.name,
-                    text=exc.text,
-                )
+                history_obj.data[-1]['exception'] = exc.to_dict()
 
             if history_obj:
                 history_obj.save()

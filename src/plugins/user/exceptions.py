@@ -28,6 +28,7 @@ class MessageBaseError(UserBaseError):
         self.message = message
         self.operation = operation
         self.text = self.generate_exc_text(**kwargs)
+        self.kwargs = kwargs
         logging.log(
             level=self.logging_level,
             msg=f'{self.__class__.__name__} : {self.text}',
@@ -47,6 +48,14 @@ class MessageBaseError(UserBaseError):
             return f'{start_text}.'
 
         return f'{start_text}, {end_text}.'
+
+    def to_dict(self):
+        return dict(
+            name=self.__class__.__name__,
+            text=self.text,
+            operation=self.operation.name,
+            kwargs=str(self.kwargs),
+        )
 
     def __str__(self):
         return self.text
