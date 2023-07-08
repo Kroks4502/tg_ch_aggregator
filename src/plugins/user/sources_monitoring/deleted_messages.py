@@ -69,4 +69,5 @@ async def deleted_messages(client: Client, messages: list[Message]):
                     text=exc.text,
                 )
 
-            history_obj.save()
+            if history_obj:
+                history_obj.save()
