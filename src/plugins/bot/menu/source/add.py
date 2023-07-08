@@ -10,14 +10,14 @@ from clients import user
 from models import Category, Source
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.chat_warnings import get_chat_warnings
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/c/\d+/s/:add/$') & custom_filters.admin_only,
+    filters.regex(r'^/c/-\d+/s/:add/$') & custom_filters.admin_only,
 )
 async def add_source(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -81,9 +81,7 @@ async def add_source_waiting_input(  # noqa: C901
 
     category_id = menu.path.get_value('c')
     try:
-        source_obj = Source.create(
-            tg_id=chat.id, title=chat.title, category=category_id
-        )
+        source_obj = Source.create(id=chat.id, title=chat.title, category=category_id)
     except peewee.IntegrityError:
         await edit_text('❗️Этот канал уже используется')
         return
@@ -91,8 +89,8 @@ async def add_source_waiting_input(  # noqa: C901
     Source.clear_actual_cache()
 
     category_obj: Category = Category.get(category_id)
-    src_link = await get_channel_formatted_link(source_obj.tg_id)
-    cat_link = await get_channel_formatted_link(category_obj.tg_id)
+    src_link = await get_channel_formatted_link(source_obj.id)
+    cat_link = await get_channel_formatted_link(category_obj.id)
 
     warnings = await get_chat_warnings(source_obj)
     success_text = (

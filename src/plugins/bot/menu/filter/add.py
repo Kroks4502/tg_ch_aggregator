@@ -11,9 +11,9 @@ from models import Filter, Source
 from plugins.bot.constants import INVALID_PATTERN_TEXT
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.checks import is_valid_pattern
-from plugins.bot.utils.inline_keyboard import ButtonData, Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.menu import ButtonData, Menu
 from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
@@ -52,7 +52,7 @@ async def ask_filter_pattern(client: Client, callback_query: CallbackQuery):
     source_obj: Source = Source.get(id=source_id) if source_id else None
 
     if source_obj:
-        src_link = await get_channel_formatted_link(source_obj.tg_id)
+        src_link = await get_channel_formatted_link(source_obj.id)
         title = f'фильтр для источника {src_link}'
     else:
         title = 'общий фильтр'
@@ -101,7 +101,7 @@ async def ask_filter_pattern_waiting_input(
     Filter.clear_actual_cache()
 
     if source_obj:
-        src_link = await get_channel_formatted_link(source_obj.tg_id)
+        src_link = await get_channel_formatted_link(source_obj.id)
         title = f'Фильтр для источника {src_link}'
     else:
         title = 'Общий фильтр'
@@ -174,7 +174,7 @@ async def select_filter_value(client: Client, callback_query: CallbackQuery):
     Filter.clear_actual_cache()
 
     if source_obj:
-        src_link = await get_channel_formatted_link(source_obj.tg_id)
+        src_link = await get_channel_formatted_link(source_obj.id)
         title = f'Фильтр для источника {src_link}'
     else:
         title = 'Общий фильтр'

@@ -28,8 +28,7 @@
 
 1. Клонировать репозиторий
 2. Создать .env файл согласно шаблону [.env.template](.env.template)
-3. Выполнить создание таблиц БД c [create_db_tables.py](create_db_tables.py) по текущим моделям, либо применить все
-   миграции
+3. Применить миграции
     ```shell
     apt install yoyo
     yoyo apply --database postgresql://{{ db_user }}:{{ db_pass }}@localhost/{{ db_name }}

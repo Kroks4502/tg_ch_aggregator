@@ -4,17 +4,15 @@ import re
 from pyrogram.types import Message
 
 from models import GlobalSettings, Source
-from plugins.user.utils.tg_len import tg_len
+from plugins.user.utils.text_length import tg_len
 
 
-def cleanup_message(message: Message, source: Source) -> None:
-    if not (message.caption or message.text):
-        return
-    global_cleanup_regex = next(GlobalSettings.get_cache(key='cleanup_regex'))['value']
+def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
+    global_cleanup_list = next(GlobalSettings.get_cache(key='cleanup_list'))['value']
 
     for pattern in itertools.chain(
-        global_cleanup_regex,
-        source.cleanup_regex,
+        global_cleanup_list,
+        source.cleanup_list,
     ):
         text = message.caption or message.text
         if not text:
@@ -33,12 +31,14 @@ def cleanup_message(message: Message, source: Source) -> None:
                 message=message,
                 start=start - cut_len,
                 end=end - cut_len,
+                is_media=is_media,
             )
 
 
-def remove_text(message: Message, start: int, end: int) -> int:
+def remove_text(message: Message, start: int, end: int, is_media: bool) -> int:
     separator = '\n\n'
-    text = message.caption or message.text
+    # message.Str to str
+    text = str(message.caption or message.text)
     text = text[:start] + f'{separator if start != 0 else ""}' + text[end:]
 
     entities_new = []
@@ -53,7 +53,7 @@ def remove_text(message: Message, start: int, end: int) -> int:
             entity.offset -= cut_len
             entities_new.append(entity)
 
-    if message.caption:
+    if is_media:
         message.caption = text
         message.caption_entities = entities_new
     else:

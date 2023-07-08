@@ -1,3 +1,4 @@
+exclude: (migrations|.github|pyrogram_fork)
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.3.0
@@ -23,7 +24,6 @@ repos:
   rev: 23.3.0
   hooks:
   - id: black
-    exclude: (migrations|.github)
     args: [-t, py310, --skip-string-normalization]
 
 - repo: https://github.com/pycqa/flake8
@@ -34,4 +34,5 @@ repos:
     - pep8-naming
     - flake8-broken-line
     - flake8-return
+    - flake8-print
     args: [--config, setup.cfg]

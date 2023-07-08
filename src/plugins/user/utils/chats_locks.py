@@ -16,6 +16,9 @@ class ChatsLocks:
         if len(self.__chats) > 5:
             self.__chats.pop(list(self.__chats.keys())[0])
 
+    def __str__(self):
+        return str(self.__chats)
+
 
 class MessagesLocks:
     def __init__(self, name: str, chat_id, chat: set):
@@ -44,3 +47,6 @@ class MessagesLocks:
 
     def contains(self, key) -> bool:
         return key in self.__chat
+
+    def __str__(self):
+        return str(self.__chat)

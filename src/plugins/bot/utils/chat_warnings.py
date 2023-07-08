@@ -3,7 +3,7 @@ from models import Source
 
 
 async def get_chat_warnings(source_obj: Source) -> str:
-    chat = await user.get_chat(source_obj.tg_id)
+    chat = await user.get_chat(source_obj.id)
     text = []
     if chat.is_verified:
         text.append(f'Проверен: {chat.is_verified} ✅')

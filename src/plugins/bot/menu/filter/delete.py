@@ -5,8 +5,8 @@ from filter_types import FILTER_TYPES_BY_ID
 from models import Filter
 from plugins.bot.constants import CONF_DEL_BTN_TEXT, CONF_DEL_TEXT_TPL
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
+from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.senders import send_message_to_admins
 
 SUC_TEXT_TPL = '✅ {} типа **{}** c паттерном `{}` удален'
@@ -51,7 +51,7 @@ async def delete_filter(client: Client, callback_query: CallbackQuery):
     Filter.clear_actual_cache()
 
     if filter_obj.source:
-        src_link = await get_channel_formatted_link(filter_obj.source.tg_id)
+        src_link = await get_channel_formatted_link(filter_obj.source.id)
         title = f'Фильтр источника **{src_link}**'
     else:
         title = 'Общий фильтр'

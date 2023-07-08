@@ -9,12 +9,16 @@ class Path:
         self.path = path
 
     def get_prev(self, step: int = 1) -> str:
-        result = self._search_first_group(r'([\w/:]*/)([\w/:]*/){' + str(step) + r'}$')
+        result = self._search_first_group(
+            r'([\w/:-]*/)([\w/:-]*/){' + str(step) + r'}$'
+        )
         return result or '/'
 
     def get_value(self, prefix: str) -> int | None:
         try:
-            return int(self._search_first_group(r'/' + prefix + r'/(\d+)/', self.path))
+            return int(
+                self._search_first_group(r'/' + prefix + r'/([\d-]+)/', self.path)
+            )
         except ValueError:
             return None
 

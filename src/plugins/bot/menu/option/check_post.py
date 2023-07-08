@@ -2,10 +2,10 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, Message
 
 from common import get_message_link
-from models import CategoryMessageHistory, FilterMessageHistory, Source
+from models import MessageHistory
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(
@@ -40,29 +40,21 @@ async def check_post_waiting_forwarding(_, message: Message):
 
     chat_id = message.forward_from_chat.id
     message_id = message.forward_from_message_id
-    source = Source.get_or_none(tg_id=chat_id)
-    m_history_obj = None
-    f_history_obj = None
-    if source:
-        m_history_obj = CategoryMessageHistory.get_or_none(
-            source=source, source_message_id=message_id, deleted=False
-        )
-        f_history_obj = FilterMessageHistory.get_or_none(
-            source=source,
-            source_message_id=message_id,
+
+    history_obj: MessageHistory = MessageHistory.get_or_none(
+        source_id=chat_id, source_message_id=message_id
+    )
+
+    if not history_obj:
+        history_obj = MessageHistory.get_or_none(
+            source_forward_from_chat_id=chat_id,
+            source_forward_from_message_id=message_id,
         )
 
-    if not m_history_obj:
-        m_history_obj = CategoryMessageHistory.get_or_none(
-            forward_from_chat_id=chat_id,
-            forward_from_message_id=message_id,
-            deleted=False,
-        )
-
-    if f_history_obj:
-        menu.add_row_button('Перейти к фильтру', f'f/{f_history_obj.filter.id}')
+    if history_obj.filter_id:
+        menu.add_row_button('Перейти к фильтру', f'f/{history_obj.filter_id}')
         msg_link = get_message_link(
-            f_history_obj.source.tg_id, f_history_obj.source_message_id
+            history_obj.source_id, history_obj.source_message_id
         )
         await reply(f'⚠ [Пост]({msg_link}) был отфильтрован')
         return
@@ -70,13 +62,13 @@ async def check_post_waiting_forwarding(_, message: Message):
     msg_link = get_message_link(
         message.forward_from_chat.id, message.forward_from_message_id
     )
-    if not m_history_obj:
+    if not history_obj:
         await reply(f'❌ [Поста]({msg_link}) нет в истории')
         return
 
     await reply(
         f'✅ [Пост]({msg_link}) '
-        f'из источника `{m_history_obj.source.title}` '
-        f'был опубликован в категории [{m_history_obj.category.title}]'
-        f'({get_message_link(m_history_obj.category.tg_id, m_history_obj.message_id)})'
+        f'из источника `{history_obj.source.title}` '
+        f'был опубликован в категории [{history_obj.category.title}]'
+        f'({get_message_link(history_obj.category_id, history_obj.category_message_id)})'
     )

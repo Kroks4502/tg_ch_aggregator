@@ -9,14 +9,14 @@ from pyrogram.types import CallbackQuery, Message
 from clients import user
 from models import Category
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'/c/\d+/:edit/$') & custom_filters.admin_only,
+    filters.regex(r'/c/-\d+/:edit/$') & custom_filters.admin_only,
 )
 async def edit_category(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -96,9 +96,9 @@ async def edit_category_waiting_input(  # noqa: C901
     category_id = menu.path.get_value('c')
     category_obj: Category = Category.get(category_id)
 
-    cat_link_old = await get_channel_formatted_link(category_obj.tg_id)
+    cat_link_old = await get_channel_formatted_link(category_obj.id)
 
-    category_obj.tg_id = chat.id
+    category_obj.id = chat.id
     category_obj.title = chat.title
     try:
         category_obj.save()
@@ -108,7 +108,7 @@ async def edit_category_waiting_input(  # noqa: C901
 
     Category.clear_actual_cache()
 
-    cat_link_new = await get_channel_formatted_link(category_obj.tg_id)
+    cat_link_new = await get_channel_formatted_link(category_obj.id)
     success_text = f'✅ Категория **{cat_link_old}** изменена на **{cat_link_new}**'
     await edit_text(success_text)
 

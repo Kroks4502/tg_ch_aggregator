@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
+from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(

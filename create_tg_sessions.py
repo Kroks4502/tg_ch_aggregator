@@ -7,7 +7,7 @@ try:
 except ValueError:
     sys.path.append(src_path)
 
-from clients import bot, user  # Noqa
+from clients import bot, user  # noqa: E402
 
 if __name__ == '__main__':
 

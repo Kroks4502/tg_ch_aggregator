@@ -4,13 +4,13 @@ from pyrogram.types import CallbackQuery
 from models import Filter, Source
 from plugins.bot.constants import CONF_DEL_BTN_TEXT, CONF_DEL_TEXT_TPL
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
+from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'/s/\d+/:delete/$') & custom_filters.admin_only,
+    filters.regex(r'/s/-\d+/:delete/$') & custom_filters.admin_only,
 )
 async def confirmation_delete_source(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -48,7 +48,7 @@ async def delete_source(client: Client, callback_query: CallbackQuery):
     Source.clear_actual_cache()
     Filter.clear_actual_cache()
 
-    src_link = await get_channel_formatted_link(source_obj.tg_id)
+    src_link = await get_channel_formatted_link(source_obj.id)
     text = f'✅ Источник **{src_link}** удален'
     await callback_query.message.edit_text(
         text=text,

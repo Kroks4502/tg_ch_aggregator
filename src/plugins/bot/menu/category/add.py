@@ -4,9 +4,9 @@ from pyrogram.types import CallbackQuery, Chat, ChatPrivileges, Message
 from clients import user
 from models import Category
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(
@@ -72,8 +72,8 @@ async def add_category_waiting_input(
     )
 
     category_obj: Category = Category.create(
-        tg_id=new_channel.id,
+        id=new_channel.id,
         title=new_channel.title,
     )
-    cat_link = await get_channel_formatted_link(category_obj.tg_id)
+    cat_link = await get_channel_formatted_link(category_obj.id)
     await reply(f'✅ Категория **{cat_link}** создана')

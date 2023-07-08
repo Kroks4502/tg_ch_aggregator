@@ -6,9 +6,9 @@ from models import Filter
 from plugins.bot.constants import INVALID_PATTERN_TEXT
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.checks import is_valid_pattern
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
@@ -30,7 +30,7 @@ async def edit_body_filter(client: Client, callback_query: CallbackQuery):
     filter_obj: Filter = Filter.get(id=filter_id) if filter_id else None
 
     if filter_obj.source:
-        src_link = {await get_channel_formatted_link(filter_obj.source.tg_id)}
+        src_link = {await get_channel_formatted_link(filter_obj.source.id)}
         title = f'фильтр для источника {src_link}'
     else:
         title = 'общий фильтр'
@@ -76,7 +76,7 @@ async def edit_body_filter_wait_input(
     Filter.clear_actual_cache()
 
     if filter_obj.source:
-        src_link = await get_channel_formatted_link(filter_obj.source.tg_id)
+        src_link = await get_channel_formatted_link(filter_obj.source.id)
         title = f'Фильтр для источника {src_link}'
     else:
         title = 'Общий фильтр'

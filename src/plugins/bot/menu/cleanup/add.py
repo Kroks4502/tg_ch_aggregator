@@ -7,9 +7,9 @@ from models import GlobalSettings, Source
 from plugins.bot.constants import INVALID_PATTERN_TEXT
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.checks import is_valid_pattern
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
@@ -28,7 +28,7 @@ async def add_cleanup_regex(client: Client, callback_query: CallbackQuery):
     source_obj: Source = Source.get(source_id) if source_id else None
 
     if source_obj:
-        src_link = await get_channel_formatted_link(source_obj.tg_id)
+        src_link = await get_channel_formatted_link(source_obj.id)
         text = ASK_TEXT_TPL.format('паттерн', f' для источника {src_link}')
     else:
         text = ASK_TEXT_TPL.format('общий паттерн', '')
@@ -66,13 +66,13 @@ async def add_cleanup_regex_waiting_input(
         return
 
     if source_obj:
-        source_obj.cleanup_regex.append(pattern)
+        source_obj.cleanup_list.append(pattern)
         source_obj.save()
 
-        src_link = await get_channel_formatted_link(source_obj.tg_id)
+        src_link = await get_channel_formatted_link(source_obj.id)
         text = SUC_TEXT_TPL.format('Паттерн', pattern, f'для источника {src_link}')
     else:
-        global_settings_obj = GlobalSettings.get(key='cleanup_regex')
+        global_settings_obj = GlobalSettings.get(key='cleanup_list')
         global_settings_obj.value.append(pattern)
         global_settings_obj.save()
         GlobalSettings.clear_actual_cache()

@@ -6,9 +6,9 @@ from pyrogram.types import CallbackQuery, Message
 
 from models import Admin
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_user_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.senders import send_message_to_admins
 
 
@@ -61,13 +61,13 @@ async def add_admin_waiting_input(
             f'{chat.last_name + " " if chat.last_name else ""}'
         )
     try:
-        admin_obj = Admin.create(tg_id=chat.id, username=username)
+        admin_obj = Admin.create(id=chat.id, username=username)
     except peewee.IntegrityError:
         await reply('❗️Этот пользователь уже администратор')
         return
     Admin.clear_actual_cache()
 
-    adm_link = await get_user_formatted_link(admin_obj.tg_id)
+    adm_link = await get_user_formatted_link(admin_obj.id)
     text = f'✅ Администратор **{adm_link}** добавлен'
     await reply(text)
 

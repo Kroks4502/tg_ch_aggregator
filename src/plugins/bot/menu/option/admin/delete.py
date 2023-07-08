@@ -4,8 +4,8 @@ from pyrogram.types import CallbackQuery
 from models import Admin
 from plugins.bot.constants import CONF_DEL_BTN_TEXT, CONF_DEL_TEXT_TPL
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
 from plugins.bot.utils.links import get_user_formatted_link
+from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.senders import send_message_to_admins
 
 
@@ -47,7 +47,7 @@ async def delete_admin(client: Client, callback_query: CallbackQuery):
     admin_obj.delete_instance()
     Admin.clear_actual_cache()
 
-    adm_link = await get_user_formatted_link(admin_obj.tg_id)
+    adm_link = await get_user_formatted_link(admin_obj.id)
     text = f'✅ Администратор **{adm_link}** удален'
     await callback_query.message.edit_text(
         text=text,

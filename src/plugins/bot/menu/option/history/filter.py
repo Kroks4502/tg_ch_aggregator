@@ -6,10 +6,10 @@ from pyrogram.types import CallbackQuery
 
 from common import get_message_link, get_shortened_text
 from filter_types import FILTER_TYPES_BY_ID
-from models import Filter, FilterMessageHistory, Source
+from models import Filter, MessageHistory, Source
 from plugins.bot.constants import MAX_NUM_ENTRIES_MESSAGE
 from plugins.bot.utils import custom_filters
-from plugins.bot.utils.inline_keyboard import Menu
+from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(
@@ -24,25 +24,25 @@ async def filter_history(_, callback_query: CallbackQuery):
 
     source_filter = Source.alias()
     query = (
-        FilterMessageHistory.select(FilterMessageHistory, Source, Filter, source_filter)
+        MessageHistory.select(MessageHistory, Source, Filter, source_filter)
         .join(Source, JOIN.LEFT_OUTER)
         .switch()
         .join(Filter)
         .join(source_filter, JOIN.LEFT_OUTER)
-        .order_by(FilterMessageHistory.id.desc())
+        .order_by(MessageHistory.id.desc())
     )
     obj_counts = query.count()
 
     text_items = []
     for f in query.paginate(page, MAX_NUM_ENTRIES_MESSAGE):
         text_items.append(
-            f'{"🏞" if f.media_group else "🗞"}'
+            f'{"🏞" if f.source_media_group_id else "🗞"}'
             f'[{get_shortened_text(f.source.title, 30)}]'
-            f'({get_message_link(f.source.tg_id, f.source_message_id)})\n'
+            f'({get_message_link(f.source_id, f.source_message_id)})\n'
             f'**{"П" if f.filter.source else "O"}** '
             f'**{FILTER_TYPES_BY_ID.get(f.filter.type)}** '
             f'`{f.filter.pattern}`\n'
-            f'__{f.source_message_id} {f.date.strftime("%Y.%m.%d, %H:%M:%S")}__'
+            f'__{f.source_message_id} {f.created_at.strftime("%Y.%m.%d, %H:%M:%S")}__'
         )
 
     if page > 1:
