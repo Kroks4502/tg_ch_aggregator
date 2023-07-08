@@ -34,4 +34,5 @@ repos:
     - pep8-naming
     - flake8-broken-line
     - flake8-return
+    - flake8-print
     args: [--config, setup.cfg]
