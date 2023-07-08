@@ -37,7 +37,8 @@ def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
 
 def remove_text(message: Message, start: int, end: int, is_media: bool) -> int:
     separator = '\n\n'
-    text = message.caption or message.text
+    # message.Str to str
+    text = str(message.caption or message.text)
     text = text[:start] + f'{separator if start != 0 else ""}' + text[end:]
 
     entities_new = []
