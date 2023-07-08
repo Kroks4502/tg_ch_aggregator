@@ -30,13 +30,13 @@ class FilterInspector:
         for data in self._get_filters(FilterType.ONLY_WHITE_TEXT):
             if not self._search(data['pattern'], self._text):
                 return data
-        return
+        return  # noqa: R502
 
     def check_text(self) -> dict | None:
         for data in self._get_filters(FilterType.TEXT):
             if self._search(data['pattern'], self._text):
                 return data
-        return
+        return  # noqa: R502
 
     def check_entities(self, entity: MessageEntity) -> dict | None:
         if result := self._check_entity_type(entity):
@@ -48,7 +48,7 @@ class FilterInspector:
             return self._check_text_link(entity)
         if entity.type == MessageEntityType.URL:
             return self._check_url(entity)
-        return
+        return  # noqa: R502
 
     def _check_entity_type(self, entity: MessageEntity) -> dict | None:
         for data in self._get_filters(FilterType.ENTITY_TYPE):
@@ -57,7 +57,7 @@ class FilterInspector:
                     return data
             except AttributeError as e:
                 logging.error(e, exc_info=True)
-        return
+        return  # noqa: R502
 
     def _check_hashtag(self, entity: MessageEntity) -> dict | None:
         for data in self._get_filters(FilterType.HASHTAG):
@@ -66,13 +66,13 @@ class FilterInspector:
                 self._text[entity.offset : entity.offset + entity.length],
             ):
                 return data
-        return
+        return  # noqa: R502
 
     def _check_text_link(self, entity: MessageEntity) -> dict | None:
         for data in self._get_filters(FilterType.URL):
             if self._search(data['pattern'], entity.url):
                 return data
-        return
+        return  # noqa: R502
 
     def _check_url(self, entity: MessageEntity) -> dict | None:
         for data in self._get_filters(FilterType.URL):
@@ -81,7 +81,7 @@ class FilterInspector:
                 self._text[entity.offset : entity.offset + entity.length],
             ):
                 return data
-        return
+        return  # noqa: R502
 
     def _get_filters(self, f_type: FilterType) -> Iterable[dict]:
         return itertools.chain(

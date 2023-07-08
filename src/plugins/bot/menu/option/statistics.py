@@ -36,19 +36,19 @@ async def statistics(_, callback_query: CallbackQuery):
     text += '📰 **Переслано сообщений за последний период**\n'
 
     query = MessageHistory.select().where(
-        (MessageHistory.category_message_id != None)  # noqa
+        (MessageHistory.category_message_id != None)  # noqa: E711
         & (MessageHistory.created_at > day_ago)
     )
     text += f'— День: {query.count()} шт.\n'
 
     query = MessageHistory.select().where(
-        (MessageHistory.category_message_id != None)  # noqa
+        (MessageHistory.category_message_id != None)  # noqa: E711
         & (MessageHistory.created_at > week_ago)
     )
     text += f'— Неделя: {query.count()} шт.\n'
 
     query = MessageHistory.select().where(
-        (MessageHistory.category_message_id != None)  # noqa
+        (MessageHistory.category_message_id != None)  # noqa: E711
         & (MessageHistory.created_at > month_ago)
     )
     text += f'— Месяц: {query.count()} шт.\n\n'
@@ -56,7 +56,7 @@ async def statistics(_, callback_query: CallbackQuery):
     text += '**По категориям**\n'
     for category in Category.select():
         query = MessageHistory.select().where(
-            (MessageHistory.category_message_id != None)  # noqa
+            (MessageHistory.category_message_id != None)  # noqa: E711
             & (MessageHistory.category == category)
         )
         text += (
@@ -64,26 +64,26 @@ async def statistics(_, callback_query: CallbackQuery):
             f' {query.count()} шт.\n'
         )
     query = MessageHistory.select().where(
-        MessageHistory.category_message_id != None  # noqa
+        MessageHistory.category_message_id != None  # noqa: E711
     )
     text += f'__Всего за всё время переслано {query.count()} шт.__\n\n'
 
     text += '🗑 **Отфильтровано сообщений за последний период**\n'
 
     query = MessageHistory.select().where(
-        (MessageHistory.filter_id != None)  # noqa
+        (MessageHistory.filter_id != None)  # noqa: E711
         & (MessageHistory.created_at > day_ago)
     )
     text += f'— День: {query.count()} шт.\n'
 
     query = MessageHistory.select().where(
-        (MessageHistory.filter_id != None)  # noqa
+        (MessageHistory.filter_id != None)  # noqa: E711
         & (MessageHistory.created_at > week_ago)
     )
     text += f'— Неделя: {query.count()} шт.\n'
 
     query = MessageHistory.select().where(
-        (MessageHistory.filter_id != None)  # noqa
+        (MessageHistory.filter_id != None)  # noqa: E711
         & (MessageHistory.created_at > month_ago)
     )
     text += f'— Месяц: {query.count()} шт.\n\n'
@@ -93,7 +93,7 @@ async def statistics(_, callback_query: CallbackQuery):
     for source in Source.select():
         query = MessageHistory.select().where(
             (MessageHistory.source == source)
-            & (MessageHistory.filter_id != None)  # noqa
+            & (MessageHistory.filter_id != None)  # noqa: E711
             & (MessageHistory.created_at > month_ago)
         )
         query_count = query.count()
@@ -121,7 +121,9 @@ async def statistics(_, callback_query: CallbackQuery):
         ]
     )
 
-    query = MessageHistory.select().where(MessageHistory.filter_id != None)  # noqa
+    query = MessageHistory.select().where(
+        MessageHistory.filter_id != None  # noqa: E711
+    )
     query_count = query.count()
 
     query = MessageHistory.select()

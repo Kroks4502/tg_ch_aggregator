@@ -38,7 +38,7 @@ NEW = Operation.NEW
 @Client.on_message(
     custom_filters.monitored_channels & ~filters.service,
 )
-async def new_message(client: Client, message: Message):  # noqa C901
+async def new_message(client: Client, message: Message):  # noqa: C901
     logging.debug(
         'Источник %s отправил сообщение %s',
         message.chat.id,
@@ -201,14 +201,14 @@ def get_repeated_history_id_or_none(message: Message, category_id: int) -> int |
                     # В том числе как уже пересланное из другого источника
                 )
                 & (
-                    mh.category_message_id != None  # noqa E711
+                    mh.category_message_id != None  # noqa: E711
                 )  # Отсутствующие сообщения в категории не учитываем
             )
             .get()
         )  # Работает по индексам
 
     except DoesNotExist:
-        return  # noqa R502
+        return  # noqa: R502
 
     return history_obj.id
 

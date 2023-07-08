@@ -64,7 +64,7 @@ def get_filter_id_or_none(message: Message, source_id: int) -> int | None:
             if result := inspector.check_entities(entity):
                 return result['id']
 
-    return  # noqa R502
+    return  # noqa: R502
 
 
 def get_input_media(
