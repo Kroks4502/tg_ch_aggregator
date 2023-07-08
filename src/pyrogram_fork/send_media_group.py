@@ -35,7 +35,6 @@ log = logging.getLogger(__name__)
 
 
 class SendMediaGroup:
-    # TODO: Add progress parameter
     async def send_media_group(
         self: "pyrogram.Client",
         chat_id: Union[int, str],

@@ -11,7 +11,7 @@ def get_main_menu(data: Message | CallbackQuery) -> Menu:
 
     if is_admin(data.from_user.id):
         menu.add_row_button('🗂 Категории', 'c')
-        # menu.add_row_button('📚 Все источники', 's')  # todo pagination
+        # menu.add_row_button('📚 Все источники', 's')
         menu.add_row_button('🪤 Общие фильтры', 'ft')
         menu.add_row_button('🧹 Общая очистка', 'cl')
         menu.add_row_button('🚧 Проверить пост', ':check_post')
