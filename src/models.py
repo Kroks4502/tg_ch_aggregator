@@ -80,7 +80,7 @@ class Source(BaseModel):
     # Формировать новое сообщение (True) или пересылать сообщение (False)
     is_rewrite = BooleanField(default=False)
 
-    _cache_monitored_channels = None
+    _cache_monitored_channels = set()
 
     @classmethod
     def get_cache_monitored_channels(cls) -> set:
@@ -112,10 +112,10 @@ class Admin(BaseModel):
     id = BigIntegerField(primary_key=True)
     username = CharField()
 
-    _cache_admins_tg_ids = None
+    _cache_admins_tg_ids = set()
 
     @classmethod
-    def get_cache_admins_tg_ids(cls):
+    def get_cache_admins_tg_ids(cls) -> set:
         cls._update_cache()
         return cls._cache_admins_tg_ids
 
@@ -132,7 +132,7 @@ class Admin(BaseModel):
             cls._is_actual_cache = True
 
     def __str__(self):
-        return self.username
+        return str(self.username)
 
 
 class MessageHistory(BaseModel):

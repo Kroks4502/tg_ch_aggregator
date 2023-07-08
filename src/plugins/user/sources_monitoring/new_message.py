@@ -45,8 +45,6 @@ async def new_message(client: Client, message: Message):  # noqa C901
         message.id,
     )
 
-    source = Source.get(message.chat.id)
-
     blocked = None
     source_messages = None
     history = dict()
@@ -63,6 +61,8 @@ async def new_message(client: Client, message: Message):  # noqa C901
         else:
             source_messages = [message]
 
+        source = Source.get(message.chat.id)
+
         repeated = False
         filtered = False
         for msg in source_messages:
@@ -71,7 +71,7 @@ async def new_message(client: Client, message: Message):  # noqa C901
             )
             repeated = True if repeat_history_id else repeated
 
-            filter_id = get_filter_id_or_none(message=msg, source=source)
+            filter_id = get_filter_id_or_none(message=msg, source_id=source.id)
             filtered = True if filter_id else filtered
 
             history[msg.id] = MessageHistory(
@@ -158,7 +158,7 @@ async def new_message(client: Client, message: Message):  # noqa C901
 
         if source_messages:
             await client.read_chat_history(
-                chat_id=source.id,
+                chat_id=message.chat.id,
                 max_id=max(msg.id for msg in source_messages),
             )
 

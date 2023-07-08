@@ -7,14 +7,14 @@ from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message, MessageEntity
 
 from filter_types import FilterMessageType, FilterType
-from models import Filter, Source
+from models import Filter
 
 
 class FilterInspector:
-    def __init__(self, message: Message, source: Source):
+    def __init__(self, message: Message, source_id: int):
         self._message = message
         self._text = message.text or message.caption
-        self._source = source
+        self._source_id = source_id
 
     def check_message_type(self) -> dict | None:
         for data in self._get_filters(FilterType.MESSAGE_TYPE):
@@ -85,7 +85,7 @@ class FilterInspector:
 
     def _get_filters(self, f_type: FilterType) -> Iterable[dict]:
         return itertools.chain(
-            Filter.get_cache(source=self._source.id, type=f_type.value),
+            Filter.get_cache(source=self._source_id, type=f_type.value),
             Filter.get_cache(source=None, type=f_type.value),
         )
 

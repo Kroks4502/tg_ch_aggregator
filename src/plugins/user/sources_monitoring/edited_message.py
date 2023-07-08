@@ -42,8 +42,6 @@ async def edit_regular_message(client: Client, message: Message):  # noqa C901
         message.id,
     )
 
-    source = Source.get(message.chat.id)
-
     blocked = None
     history_obj = None
     exc = None
@@ -70,7 +68,9 @@ async def edit_regular_message(client: Client, message: Message):  # noqa C901
         if not history_obj.category_message_rewritten:
             raise MessageNotRewrittenError(operation=EDIT, message=message)
 
-        filter_id = get_filter_id_or_none(message=message, source=source)
+        source = Source.get(message.chat.id)
+
+        filter_id = get_filter_id_or_none(message=message, source_id=source.id)
         history_obj.filter_id = filter_id
         if filter_id:
             raise MessageFilteredError(operation=EDIT, message=message)

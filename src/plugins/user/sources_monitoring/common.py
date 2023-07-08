@@ -8,7 +8,6 @@ from pyrogram.types import (
     Message,
 )
 
-from models import Source
 from plugins.user.exceptions import (
     MessageBlockedByIdError,
     MessageBlockedByMediaGroupError,
@@ -46,9 +45,9 @@ def set_blocking(
     return blocked
 
 
-def get_filter_id_or_none(message: Message, source: Source) -> int | None:
+def get_filter_id_or_none(message: Message, source_id: int) -> int | None:
     """Получить ID фильтра, который не прошёл текст сообщения."""
-    inspector = FilterInspector(message, source)
+    inspector = FilterInspector(message=message, source_id=source_id)
 
     if result := inspector.check_message_type():
         return result['id']

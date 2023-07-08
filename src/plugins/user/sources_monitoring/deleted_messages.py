@@ -35,7 +35,7 @@ async def deleted_messages(client: Client, messages: list[Message]):
             source_id=message.chat.id,
             source_message_id=message.id,
         )
-        history_obj.deleted_at = dt.datetime.now()  # todo check timezone !
+        history_obj.deleted_at = dt.datetime.now()
         history_obj.data.append(dict(source=json.loads(message.__str__())))
 
         exc = None
