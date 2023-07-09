@@ -35,13 +35,14 @@ async def deleted_messages(client: Client, messages: list[Message]):
             source_id=message.chat.id,
             source_message_id=message.id,
         )
-        history_obj.deleted_at = dt.datetime.now()
-        history_obj.data.append(dict(source=json.loads(message.__str__())))
 
         exc = None
         try:
             if not history_obj:
                 raise MessageNotFoundOnHistoryError(operation=DELETE, message=message)
+
+            history_obj.deleted_at = dt.datetime.now()
+            history_obj.data.append(dict(source=json.loads(message.__str__())))
 
             if not history_obj.category_message_id:
                 raise MessageNotOnCategoryError(operation=DELETE, message=message)
