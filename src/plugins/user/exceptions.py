@@ -187,7 +187,6 @@ class MessageTooLongError(MessageBaseError):
 class MessageBadRequestError(MessageBaseError):
     """Сообщение привело к непредвиденной ошибке."""
 
-    stack_info = True
     logging_level = logging.ERROR
     end_tmpl = 'оно привело к непредвиденной ошибке {error}'
 
@@ -198,7 +197,6 @@ class MessageBadRequestError(MessageBaseError):
         error: pyrogram_errors.BadRequest,
     ):
         super().__init__(operation=operation, message=message, error=error)
-        self.exc_info = error
 
 
 class MessageCleanedFullyError(MessageBaseError):
