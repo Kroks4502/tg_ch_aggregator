@@ -20,13 +20,14 @@ from plugins.user.exceptions import (
     Operation,
 )
 from plugins.user.sources_monitoring.common import (
+    add_header,
+    cut_long_message,
     get_filter_id_or_none,
     get_input_media,
     set_blocking,
 )
 from plugins.user.utils import custom_filters
 from plugins.user.utils.cleanup import cleanup_message
-from plugins.user.utils.rewriter import Header, add_header
 from pyrogram_fork.edit_media_message import EditMessageMedia
 
 EDIT = Operation.EDIT
@@ -76,11 +77,21 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
             raise MessageFilteredError(operation=EDIT, message=message)
 
         # Первый await !
+        is_media = not message.text
 
-        if message.text:
-            cleanup_message(message=message, source=source, is_media=False)
-            add_header(obj=message, header=Header(message), is_media=False)
+        if message.text or message.caption:
+            cleanup_message(message=message, source=source, is_media=is_media)
+            add_header(message=message)
+            cut_long_message(message=message)
 
+        if is_media:
+            category_message = await EditMessageMedia.edit_message_media(
+                client,
+                chat_id=history_obj.category_id,
+                message_id=history_obj.category_message_id,
+                media=get_input_media(message=message),
+            )
+        else:
             category_message = await client.edit_message_text(
                 chat_id=history_obj.category_id,
                 message_id=history_obj.category_message_id,
@@ -88,16 +99,6 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
                 parse_mode=None,
                 entities=message.entities,
                 disable_web_page_preview=True,
-            )
-        else:
-            cleanup_message(message=message, source=source, is_media=True)
-            add_header(obj=message, header=Header(message), is_media=True)
-
-            category_message = await EditMessageMedia.edit_message_media(
-                client,
-                chat_id=history_obj.category_id,
-                message_id=history_obj.category_message_id,
-                media=get_input_media(message=message),
             )
 
         logging.info(

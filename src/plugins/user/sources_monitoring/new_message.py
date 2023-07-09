@@ -22,13 +22,14 @@ from plugins.user.exceptions import (
     Operation,
 )
 from plugins.user.sources_monitoring.common import (
+    add_header,
+    cut_long_message,
     get_filter_id_or_none,
     get_input_media,
     set_blocking,
 )
 from plugins.user.utils import custom_filters
 from plugins.user.utils.cleanup import cleanup_message
-from plugins.user.utils.rewriter import Header, add_header
 from plugins.user.utils.senders import send_error_to_admins
 from pyrogram_fork.send_media_group import SendMediaGroup
 
@@ -97,7 +98,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
 
         if not message.media_group_id:
             category_messages = [
-                await new_regular_message(
+                await new_one_message(
                     message=message,
                     source=source,
                 )
@@ -216,7 +217,7 @@ def get_repeated_history_id_or_none(message: Message, category_id: int) -> int |
     return history_obj.id
 
 
-async def new_regular_message(
+async def new_one_message(
     message: Message,
     source: Source,
     disable_notification: bool = False,
@@ -237,9 +238,10 @@ async def new_regular_message(
     if not (message.text or is_media):
         raise MessageCleanedFullyError(operation=NEW, message=message)
 
-    add_header(obj=message, header=Header(message), is_media=is_media)
-    message.web_page = None  # disable_web_page_preview = True
+    add_header(message=message)
+    cut_long_message(message=message)
 
+    message.web_page = None  # disable_web_page_preview = True
     return await message.copy(
         chat_id=source.category.id,
         disable_notification=disable_notification,
@@ -263,27 +265,21 @@ async def new_media_group_messages(
             disable_notification=disable_notification,
         )
 
-    media = []
-
     media_has_caption = False
     for msg in messages:
         if msg.caption:
-            cleanup_message(message=msg, source=source, is_media=True)
-
-        new_media = get_input_media(message=msg)
-        media.append(new_media)
-
-        if new_media.caption:
-            add_header(obj=new_media, header=Header(msg), is_media=True)
             media_has_caption = True
+            cleanup_message(message=msg, source=source, is_media=True)
+            add_header(message=msg)
+            cut_long_message(message=msg)
 
     if not media_has_caption:
-        add_header(obj=media[0], header=Header(messages[0]), is_media=True)
+        add_header(message=messages[0])
 
     return await SendMediaGroup.send_media_group(
         client,
         chat_id=source.category.id,
-        media=media,
+        media=[get_input_media(message=msg) for msg in messages],
         disable_notification=disable_notification,
     )
 
@@ -294,7 +290,7 @@ def is_media_message_with_caption(operation: Operation, message: Message):
 
     :raise MessageMediaWithoutCaptionError: Сообщение является медиа, но не может содержать подпись.
     """
-    if not message.media:
+    if message.text:
         return False
 
     if message.media in (

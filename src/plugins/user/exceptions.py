@@ -202,11 +202,9 @@ class MessageBadRequestError(MessageBaseError):
 
 
 class MessageCleanedFullyError(MessageBaseError):
-    """Сообщение было полностью очищено от текста."""
+    """Сообщение при очистке осталось без текста."""
 
-    end_tmpl = (
-        'оно было полностью очищено от текста и не будет опубликовано в категории'
-    )
+    end_tmpl = 'при очистке оно осталось без текста и не будет опубликовано в категории'
 
 
 if __name__ == "__main__":
