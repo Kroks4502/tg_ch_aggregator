@@ -8,6 +8,7 @@ from pyrogram.types import (
     Message,
 )
 
+from config import TELEGRAM_MAX_CAPTION_LENGTH, TELEGRAM_MAX_TEXT_LENGTH
 from plugins.user.exceptions import (
     MessageBlockedByIdError,
     MessageBlockedByMediaGroupError,
@@ -15,6 +16,13 @@ from plugins.user.exceptions import (
 )
 from plugins.user.utils.chats_locks import ChatsLocks, MessagesLocks
 from plugins.user.utils.inspector import FilterInspector
+from plugins.user.utils.rewriter.footer import LINK_TEXT, FooterController
+from plugins.user.utils.rewriter.header import (
+    FWD_TEXT_TMPL,
+    SRC_TEXT_TMPL,
+    HeaderController,
+)
+from plugins.user.utils.text_length import tg_len
 
 blocking_messages = ChatsLocks('all')
 
@@ -132,3 +140,46 @@ def get_input_media(
         )
 
     raise ValueError(f'Message with this type {message.media} can`t be copied.')
+
+
+def cut_long_message(message: Message):
+    if tg_len(message.text or message.caption) <= (
+        TELEGRAM_MAX_TEXT_LENGTH if message.text else TELEGRAM_MAX_CAPTION_LENGTH
+    ):
+        return
+
+    footer = FooterController()
+    footer.add_item(
+        text=LINK_TEXT,
+        url=message.link
+        if not message.forward_from_chat
+        else get_fwd_message_link(message),
+        bold=True,
+    )
+    footer.include_to_message(message=message)
+
+
+def add_header(message: Message):
+    header = HeaderController(item_separator="\n")
+    header.add_item(
+        text=SRC_TEXT_TMPL.format(message.chat.title or message.chat.id),
+        bold=True,
+        url=message.link,
+    )
+
+    if message.forward_from_chat:
+        header.add_item(
+            text=FWD_TEXT_TMPL.format(
+                message.forward_from_chat.title or message.forward_from_chat.id
+            ),
+            url=get_fwd_message_link(message),
+        )
+
+    header.include_to_message(message=message, end_text="\n\n")
+
+
+def get_fwd_message_link(message: Message):
+    return (
+        f'https://t.me/{message.forward_from_chat.username}'
+        f'/{message.forward_from_message_id}'
+    )

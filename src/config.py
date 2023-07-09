@@ -20,6 +20,9 @@ API_HASH = os.getenv('api_hash')
 BOT_TOKEN = os.getenv('bot_token')
 DEVELOP_MODE = os.getenv('develop_mode')
 
+TELEGRAM_MAX_CAPTION_LENGTH = 1024
+TELEGRAM_MAX_TEXT_LENGTH = 4096
+
 
 def patch_psycopg2():
     extensions.set_wait_callback(_psycopg2_gevent_callback)
