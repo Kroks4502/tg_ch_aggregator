@@ -68,7 +68,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
         filtered = False
         for msg in source_messages:
             repeat_history_id = get_repeated_history_id_or_none(
-                message=msg, category_id=source.category_id
+                message=msg,
             )
             repeated = True if repeat_history_id else repeated
 
@@ -167,7 +167,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             )
 
 
-def get_repeated_history_id_or_none(message: Message, category_id: int) -> int | None:
+def get_repeated_history_id_or_none(message: Message) -> int | None:
     """Получить id из истории сообщения."""
     if message.forward_from_chat:  # Сообщение переслано в источник из другого чата
         # Сообщение уже может быть в истории по этому чату, если он является источником
@@ -191,9 +191,7 @@ def get_repeated_history_id_or_none(message: Message, category_id: int) -> int |
         history_obj = (
             mh.select(mh.id)
             .where(
-                (mh.category_id == category_id)
-                # Все проверки выполняем в рамках одной категории
-                & (
+                (
                     (
                         (mh.source_id == source_chat_id)
                         & (mh.source_message_id == source_message_id)
