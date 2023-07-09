@@ -90,7 +90,7 @@ class EditMessageMedia:
         # parse_mode = media.parse_mode
 
         # message, entities = None, None
-        message, entities = media.caption, media.caption_entities  # kr added
+        message, entities = media.caption or "", media.caption_entities or None  # kr added
 
         # if caption is not None:
         #     message, entities = (await self.parser.parse(caption, parse_mode)).values()
