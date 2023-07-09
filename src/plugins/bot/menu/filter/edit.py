@@ -64,7 +64,7 @@ async def edit_body_filter_wait_input(
         # Удаляем предыдущее меню
         await callback_query.message.delete()
 
-    pattern_new = message.text
+    pattern_new = str(message.text)
     if not is_valid_pattern(pattern_new):
         await reply(INVALID_PATTERN_TEXT)
         return

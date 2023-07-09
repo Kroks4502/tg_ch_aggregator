@@ -88,7 +88,7 @@ async def ask_filter_pattern_waiting_input(
         # Удаляем предыдущее меню
         await callback_query.message.delete()
 
-    pattern = message.text
+    pattern = str(message.text)
     if not is_valid_pattern(pattern):
         await reply(INVALID_PATTERN_TEXT)
         return
