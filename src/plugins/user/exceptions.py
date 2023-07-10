@@ -177,7 +177,7 @@ class MessageIdInvalidError(MessageBaseError):
 class MessageForwardsRestrictedError(MessageBaseError):
     """Сообщение запрещено пересылать."""
 
-    logging_level = logging.ERROR
+    logging_level = logging.WARNING
     end_tmpl = 'но запрещает пересылку сообщений'
 
 
