@@ -5,6 +5,7 @@ from pyrogram import errors as pyrogram_errors
 from pyrogram.enums import ChatType
 from pyrogram.types import Chat, Message
 
+from config import APP_START_DATETIME
 from plugins.user.utils.chats_locks import MessagesLocks
 
 
@@ -98,10 +99,13 @@ class MessageNotFoundOnHistoryError(MessageBaseError):
         if (
             message.date
             and message.edit_date
-            and (message.edit_date - message.date).total_seconds() < 10
+            and (
+                (message.edit_date - message.date).total_seconds() < 10
+                or APP_START_DATETIME > message.date
+            )
         ):
             self.logging_level = logging.INFO
-        elif not message.date:
+        elif not message.date and operation != Operation.DELETE:
             self.include_message = True
 
         super().__init__(

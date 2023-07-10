@@ -1,3 +1,4 @@
+import datetime as dt
 import logging
 import os
 from logging.handlers import RotatingFileHandler
@@ -22,6 +23,8 @@ DEVELOP_MODE = os.getenv('develop_mode')
 
 TELEGRAM_MAX_CAPTION_LENGTH = 1024
 TELEGRAM_MAX_TEXT_LENGTH = 4096
+
+APP_START_DATETIME = dt.datetime.now()
 
 
 def patch_psycopg2():
