@@ -48,6 +48,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
 
     blocked = None
     source_messages = None
+    source = None
     history = dict()
     exc = None
     try:
@@ -139,10 +140,11 @@ async def new_message(client: Client, message: Message):  # noqa: C901
         exc = MessageIdInvalidError(operation=NEW, message=message, error=error)
     except pyrogram_errors.ChatForwardsRestricted:
         exc = MessageForwardsRestrictedError(operation=NEW, message=message)
-        await send_error_to_admins(
-            f'⚠ Источник {message.chat.title} запрещает пересылку сообщений. '
-            'Установите режим перепечатывания сообщений.'
-        )
+        if source and not source.is_rewrite:
+            await send_error_to_admins(
+                f'⚠ Источник {message.chat.title} запрещает пересылку сообщений. '
+                'Установите режим перепечатывания сообщений.'
+            )
     except (
         pyrogram_errors.MediaCaptionTooLong,
         pyrogram_errors.MessageTooLong,
