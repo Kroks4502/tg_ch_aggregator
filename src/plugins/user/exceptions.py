@@ -24,6 +24,7 @@ class MessageBaseError(UserBaseError):
     logging_level = logging.INFO
     start_tmpl = "Источник {source_id} {operation} сообщение {message_id}"
     end_tmpl = ""
+    include_message = False
 
     def __init__(self, operation: Operation, message: Message, **kwargs):
         self.message = message
@@ -43,12 +44,14 @@ class MessageBaseError(UserBaseError):
             operation=self.operation.value,
             message_id=self.message.id,
         )
-        end_text = self.end_tmpl.format(**kwargs)
 
-        if not end_text:
-            return f'{start_text}.'
+        text_items = [start_text]
+        if end_text := self.end_tmpl.format(**kwargs):
+            text_items.append(end_text)
+        if self.include_message:
+            text_items.append(f"message={self.message}")
 
-        return f'{start_text}, {end_text}.'
+        return f"{', '.join(text_items)}."
 
     def to_dict(self):
         return dict(
@@ -92,6 +95,15 @@ class MessageNotFoundOnHistoryError(MessageBaseError):
     end_tmpl = 'его нет в истории date={date}, edit_date={edit_date}'
 
     def __init__(self, operation: Operation, message: Message):
+        if (
+            message.date
+            and message.edit_date
+            and (message.edit_date - message.date).total_seconds() < 10
+        ):
+            self.logging_level = logging.INFO
+        elif not message.date:
+            self.include_message = True
+
         super().__init__(
             operation=operation,
             message=message,
