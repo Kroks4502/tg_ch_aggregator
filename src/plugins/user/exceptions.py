@@ -103,9 +103,11 @@ class MessageNotFoundOnHistoryError(MessageBaseError):
                 (message.edit_date - message.date).total_seconds() < 10
                 or APP_START_DATETIME > message.date
             )
+            or (not message.date and operation == Operation.DELETE)
         ):
             self.logging_level = logging.INFO
-        elif not message.date and operation != Operation.DELETE:
+
+        if not message.date and operation != Operation.DELETE:
             self.include_message = True
 
         super().__init__(
