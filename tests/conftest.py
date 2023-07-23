@@ -70,11 +70,3 @@ def message(chat):
         id=0,
         chat=chat,
     )
-
-
-@pytest.fixture()
-def mediagroup_message(message: Mock):
-    message.media_group_id = "0"
-    message.get_media_group = AsyncMock()
-    message.get_media_group.return_value = ...  # todo
-    return message
