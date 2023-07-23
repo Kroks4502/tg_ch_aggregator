@@ -40,19 +40,19 @@ def setup_source(mocker: MockerFixture, return_value=...):
     return mock
 
 
-def setup_history_save_and_get_history_objs(mocker: MockerFixture):
-    history_objs: list[MessageHistory] = []
+def setup_history_save_and_get_history_objs(mocker: MockerFixture) -> tuple[MagicMock, list[MessageHistory]]:
+    history_objs = []
 
     def se_history_save(self):
         history_objs.append(self)
         return MagicMock("HistoryMock")
 
-    mocker.patch(
+    mock = mocker.patch(
         "plugins.user.sources_monitoring.new_message.MessageHistory.save",
         side_effect=se_history_save,
         autospec=True,
     )
-    return history_objs
+    return mock, history_objs
 
 
 def history_new_message_asserts(

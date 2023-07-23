@@ -7,6 +7,7 @@ from pyrogram.types import Message
 from pytest_mock import MockerFixture
 
 from models import Source
+from plugins.user.sources_monitoring.common import blocking_messages
 from plugins.user.sources_monitoring.new_message import new_message
 from tests.new_message.utils import (
     default_new_message_log_asserts,
@@ -30,8 +31,8 @@ async def test_text_message(
     caplog.set_level(logging.DEBUG)
 
     default_setup(mocker)
-    input_source = setup_source(mocker)
-    input_source = input_source.get()
+    mock_source = setup_source(mocker)
+    mock_source = mock_source.get()
     setup_repeated(mocker, None)
     setup_filtered(mocker, None)
 
@@ -51,7 +52,7 @@ async def test_text_message(
         side_effect=se_new_one_message,
     )
 
-    history_objs = setup_history_save_and_get_history_objs(mocker)
+    mock_history_save, history_objs = setup_history_save_and_get_history_objs(mocker)
 
     ###
     await new_message(client=client, message=input_message)
@@ -60,20 +61,24 @@ async def test_text_message(
     output_message, output_source = input_attrs
 
     assert output_message is input_message
-    assert output_source is input_source
+    assert output_source is mock_source
 
     history = history_objs[0]
     history_new_message_asserts(
         history=history,
-        input_source=input_source,
+        input_source=mock_source,
         input_message=input_message,
     )
     history_with_category_asserts(
         history=history,
-        input_source=input_source,
+        input_source=mock_source,
         mock_category_msg=mock_category_msg,
     )
     assert len(history.data) == 1
+
+    assert mock_history_save.call_count == 1
+
+    assert len(blocking_messages.get(key=input_message.chat.id)) == 0
 
     assert 'Источник 0 отправил сообщение 0, оно отправлено в категорию' in caplog.text
     default_new_message_log_asserts(caplog=caplog)
