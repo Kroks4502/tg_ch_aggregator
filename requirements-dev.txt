@@ -4,3 +4,6 @@ flake8>=6.0.0
 flake8-print>=5.0.0
 flake8-broken-line>=1.0.0
 flake8-return>=1.2.0
+pytest==7.3.2
+pytest-asyncio==0.21.1
+pytest_mock==3.10.0
