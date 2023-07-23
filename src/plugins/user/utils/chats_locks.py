@@ -28,25 +28,36 @@ class MessagesLocks:
 
     def add(self, value):
         logging.info(
-            f'Добавлена блокировка {self.__name} для чата {self.__chat_id} {value}'
+            'Добавлена блокировка %s для чата %s %s',
+            self.__name,
+            self.__chat_id,
+            value,
         )
         self.__chat.add(value)
 
     def remove(self, value):
         try:
             logging.info(
-                f'Снята блокировка {self.__name} для чата {self.__chat_id} {value}'
+                'Снята блокировка %s для чата %s %s',
+                self.__name,
+                self.__chat_id,
+                value,
             )
             self.__chat.remove(value)
         except KeyError:
             logging.warning(
-                f'Не удалось снять блокировку {self.__name} для чата '
-                f'{self.__chat_id} со значением {value}. '
-                f'Текущие блокировки: {self.__chat}'
+                'Не удалось снять блокировку %s для чата %s со значением %s. Текущие блокировки: %s',
+                self.__name,
+                self.__chat_id,
+                value,
+                self.__chat,
             )
 
     def contains(self, key) -> bool:
         return key in self.__chat
+
+    def __len__(self):
+        return len(self.__chat)
 
     def __str__(self):
         return str(self.__chat)
