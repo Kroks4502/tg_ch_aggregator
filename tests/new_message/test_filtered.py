@@ -22,7 +22,7 @@ async def test_filtered_message(
     mocker: MockerFixture,
     caplog: LogCaptureFixture,
     client,
-    input_message,
+    one_message,
 ):
     caplog.set_level(logging.DEBUG)
 
@@ -37,21 +37,21 @@ async def test_filtered_message(
     mock_history_save, history_objs = setup_history_save_and_get_history_objs(mocker)
 
     ###
-    await new_message(client=client, message=input_message)
+    await new_message(client=client, message=one_message)
     ###
 
     history = history_objs[0]
     history_new_message_asserts(
         history=history,
         input_source=mock_source,
-        input_message=input_message,
+        input_message=one_message,
         filter_id=filter_id,
     )
     assert len(history.data) == 1
 
     assert mock_history_save.call_count == 1
 
-    assert len(blocking_messages.get(key=input_message.chat.id)) == 0
+    assert len(blocking_messages.get(key=one_message.chat.id)) == 0
 
     assert 'Источник 0 отправил сообщение 0, оно было отфильтровано.' in caplog.text
     default_new_message_log_asserts(caplog=caplog)
