@@ -6,6 +6,7 @@ from pytest_mock import MockerFixture
 
 from plugins.user.sources_monitoring.common import blocking_messages
 from plugins.user.sources_monitoring.new_message import new_message
+from plugins.user.types import Operation
 from tests.new_message.utils import (
     default_new_message_log_asserts,
     default_setup,
@@ -47,6 +48,11 @@ async def test_filtered_message(
         input_message=one_message,
         filter_id=filter_id,
     )
+    assert "exception" in history.data[-1]
+    exception = history.data[-1]["exception"]
+    assert exception["name"] == "MessageFilteredError"
+    assert exception["text"] == "Источник 0 отправил сообщение 0, оно было отфильтровано."
+    assert exception["operation"] == Operation.NEW.name
     assert len(history.data) == 1
 
     assert mock_history_save.call_count == 1
