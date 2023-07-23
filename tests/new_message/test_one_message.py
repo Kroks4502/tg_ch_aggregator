@@ -33,8 +33,8 @@ async def test_one_new_message(
     default_setup(mocker)
     mock_source = setup_source(mocker)
     mock_source = mock_source.get()
-    setup_repeated(mocker, None)
-    setup_filtered(mocker, None)
+    mock_repeated = setup_repeated(mocker, None)
+    mock_filtered = setup_filtered(mocker, None)
 
     ###
 
@@ -47,7 +47,7 @@ async def test_one_new_message(
         input_attrs.append(source)
         return mock_category_msg
 
-    mocker.patch(
+    mock_new_one_message = mocker.patch(
         "plugins.user.sources_monitoring.new_message.new_one_message",
         side_effect=se_new_one_message,
     )
@@ -57,6 +57,12 @@ async def test_one_new_message(
     ###
     await new_message(client=client, message=one_message)
     ###
+
+    assert mock_new_one_message.call_count == 1
+    assert mock_repeated.call_count == 1
+    assert mock_filtered.call_count == 1
+    assert mock_history_save.call_count == 1
+    assert client.read_chat_history.call_count == 1
 
     output_message, output_source = input_attrs
 
@@ -75,8 +81,6 @@ async def test_one_new_message(
         mock_category_msg=mock_category_msg,
     )
     assert len(history.data) == 1
-
-    assert mock_history_save.call_count == 1
 
     assert len(blocking_messages.get(key=one_message.chat.id)) == 0
 
