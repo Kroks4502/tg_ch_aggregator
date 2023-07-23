@@ -13,9 +13,10 @@ from plugins.user.exceptions import (
     MessageBaseError,
     MessageNotFoundOnHistoryError,
     MessageNotOnCategoryError,
-    Operation,
 )
+from plugins.user.types import Operation
 from plugins.user.utils import custom_filters
+from plugins.user.utils.dump import dump_message
 
 DELETE = Operation.DELETE
 
@@ -30,6 +31,7 @@ async def deleted_messages(client: Client, messages: list[Message]):
             message.chat.id,
             message.id,
         )
+        dump_message(message=message, operation=DELETE)
 
         history_obj: MessageHistory = MessageHistory.get_or_none(
             source_id=message.chat.id,

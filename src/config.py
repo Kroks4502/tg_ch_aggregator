@@ -9,8 +9,16 @@ from gevent.socket import wait_read, wait_write
 from playhouse.postgres_ext import PostgresqlExtDatabase
 from psycopg2 import extensions
 
+from plugins.user.types import Operation
+
 BASE_DIR = Path(__file__).parent
 SESSIONS_DIR = BASE_DIR.parent / 'sessions'
+DUMP_MESSAGES_DIR = BASE_DIR.parent / 'dump_messages'
+DUMP_MESSAGES_DIRS_BY_OPERATION = {
+    Operation.NEW: DUMP_MESSAGES_DIR / 'new_messages',
+    Operation.EDIT: DUMP_MESSAGES_DIR / 'edited_messages',
+    Operation.DELETE: DUMP_MESSAGES_DIR / 'deleted_messages',
+}
 
 LOGS_DIR = BASE_DIR.parent / 'logs'
 LOG_FORMAT = '%(asctime)s : %(levelname)s : %(message)s'
@@ -19,12 +27,18 @@ load_dotenv(BASE_DIR.parent / '.env')
 API_ID = os.getenv('api_id')
 API_HASH = os.getenv('api_hash')
 BOT_TOKEN = os.getenv('bot_token')
-DEVELOP_MODE = os.getenv('develop_mode')
+DEVELOP_MODE = bool(os.getenv('develop_mode', False))
+DUMP_MESSAGE_MODE = bool(os.getenv('dump_message_mode', False))
 
 TELEGRAM_MAX_CAPTION_LENGTH = 1024
 TELEGRAM_MAX_TEXT_LENGTH = 4096
 
 APP_START_DATETIME = dt.datetime.now()
+
+
+if DUMP_MESSAGE_MODE:
+    for directory in DUMP_MESSAGES_DIRS_BY_OPERATION.values():
+        directory.mkdir(parents=True, exist_ok=True)
 
 
 def patch_psycopg2():

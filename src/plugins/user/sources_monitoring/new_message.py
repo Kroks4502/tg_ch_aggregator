@@ -19,7 +19,6 @@ from plugins.user.exceptions import (
     MessageMediaWithoutCaptionError,
     MessageRepeatedError,
     MessageTooLongError,
-    Operation,
 )
 from plugins.user.sources_monitoring.common import (
     add_header,
@@ -28,8 +27,10 @@ from plugins.user.sources_monitoring.common import (
     get_input_media,
     set_blocking,
 )
+from plugins.user.types import Operation
 from plugins.user.utils import custom_filters
 from plugins.user.utils.cleanup import cleanup_message
+from plugins.user.utils.dump import dump_message
 from plugins.user.utils.senders import send_error_to_admins
 from pyrogram_fork.send_media_group import SendMediaGroup
 
@@ -45,6 +46,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
         message.chat.id,
         message.id,
     )
+    dump_message(message=message, operation=NEW)
 
     blocked = None
     source_messages = None
