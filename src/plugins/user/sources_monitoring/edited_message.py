@@ -37,7 +37,7 @@ EDIT = Operation.EDIT
 @Client.on_edited_message(
     custom_filters.monitored_channels & ~filters.service,
 )
-async def edit_regular_message(client: Client, message: Message):  # noqa: C901
+async def edited_message(client: Client, message: Message):  # noqa: C901
     logging.debug(
         'Источник %s изменил сообщение %s',
         message.chat.id,
@@ -55,9 +55,7 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
             block_value=message.id,
         )
 
-        history_obj = MessageHistory.get_or_none(
-            source_id=message.chat.id, source_message_id=message.id
-        )
+        history_obj = MessageHistory.get_or_none(source_id=message.chat.id, source_message_id=message.id)
 
         if not history_obj:
             raise MessageNotFoundOnHistoryError(operation=EDIT, message=message)
