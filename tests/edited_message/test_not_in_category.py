@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 from _pytest.logging import LogCaptureFixture
@@ -11,7 +11,12 @@ from tests.utils import setup_json_loads
 
 
 @pytest.mark.asyncio
-async def test_not_in_category_message(mocker: MockerFixture, caplog: LogCaptureFixture, client, message):
+async def test_not_in_category_message(
+    mocker: MockerFixture,
+    caplog: LogCaptureFixture,
+    client: Mock,
+    message: Mock,
+):
     caplog.set_level(logging.DEBUG)
 
     mocker.patch(

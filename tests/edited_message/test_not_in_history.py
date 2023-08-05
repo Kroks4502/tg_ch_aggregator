@@ -1,4 +1,5 @@
 import logging
+from unittest.mock import Mock
 
 import pytest
 from _pytest.logging import LogCaptureFixture
@@ -9,7 +10,12 @@ from tests.edited_message.utils import default_edited_message_log_asserts
 
 
 @pytest.mark.asyncio
-async def test_not_in_history_message(mocker: MockerFixture, caplog: LogCaptureFixture, client, message):
+async def test_not_in_history_message(
+    mocker: MockerFixture,
+    caplog: LogCaptureFixture,
+    client: Mock,
+    message: Mock,
+):
     caplog.set_level(logging.DEBUG)
 
     mocker.patch(

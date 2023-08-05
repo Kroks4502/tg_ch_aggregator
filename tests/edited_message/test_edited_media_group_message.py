@@ -1,4 +1,5 @@
 import logging
+from unittest.mock import Mock
 
 import pytest
 from _pytest.logging import LogCaptureFixture
@@ -17,8 +18,8 @@ from tests.utils import setup_json_loads
 async def test_edited_media_group_message(
     mocker: MockerFixture,
     caplog: LogCaptureFixture,
-    client,
-    media_group_message,
+    client: Mock,
+    media_group_message: Mock,
 ):
     caplog.set_level(logging.DEBUG)
 

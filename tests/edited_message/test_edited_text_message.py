@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from _pytest.logging import LogCaptureFixture
@@ -15,7 +15,12 @@ from tests.utils import setup_json_loads
 
 
 @pytest.mark.asyncio
-async def test_edited_text_message(mocker: MockerFixture, caplog: LogCaptureFixture, client, message):
+async def test_edited_text_message(
+    mocker: MockerFixture,
+    caplog: LogCaptureFixture,
+    client: Mock,
+    message: Mock,
+):
     caplog.set_level(logging.DEBUG)
 
     mocker.patch("plugins.user.sources_monitoring.edited_message.MessageHistory.get_or_none")
