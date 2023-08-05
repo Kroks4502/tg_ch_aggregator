@@ -9,6 +9,7 @@ from plugins.user.sources_monitoring import edited_message
 from tests.edited_message.utils import (
     default_edited_message_log_asserts,
     setup_filtered,
+    setup_get_history_obj,
     setup_source,
 )
 from tests.utils import setup_json_loads
@@ -23,7 +24,7 @@ async def test_edited_text_message(
 ):
     caplog.set_level(logging.DEBUG)
 
-    mocker.patch("plugins.user.sources_monitoring.edited_message.MessageHistory.get_or_none")
+    setup_get_history_obj(mocker)
     setup_source(mocker)
     setup_filtered(mocker, return_value=None)
 

@@ -6,7 +6,10 @@ from _pytest.logging import LogCaptureFixture
 from pytest_mock import MockerFixture
 
 from plugins.user.sources_monitoring import edited_message
-from tests.edited_message.utils import default_edited_message_log_asserts
+from tests.edited_message.utils import (
+    default_edited_message_log_asserts,
+    setup_get_history_obj,
+)
 from tests.utils import setup_json_loads
 
 
@@ -19,10 +22,7 @@ async def test_not_editable_message(
 ):
     caplog.set_level(logging.DEBUG)
 
-    mocker.patch(
-        "plugins.user.sources_monitoring.edited_message.MessageHistory.get_or_none",
-        return_value=MagicMock(category_message_rewritten=False),
-    )
+    setup_get_history_obj(mocker, return_value=MagicMock(category_message_rewritten=False))
 
     setup_json_loads(mocker)
 

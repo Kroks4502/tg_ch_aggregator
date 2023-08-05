@@ -18,3 +18,9 @@ def setup_source(mocker: MockerFixture, return_value=...):
     mock = mocker.patch("plugins.user.sources_monitoring.edited_message.Source")
     set_return_value(mock, return_value)
     return mock
+
+
+def setup_get_history_obj(mocker: MockerFixture, return_value=...):
+    mock = mocker.patch("plugins.user.sources_monitoring.edited_message.MessageHistory.get_or_none")
+    set_return_value(mock, return_value)
+    return mock
