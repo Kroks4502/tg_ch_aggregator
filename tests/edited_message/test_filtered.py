@@ -1,5 +1,4 @@
 import logging
-from unittest.mock import AsyncMock
 
 import pytest
 from _pytest.logging import LogCaptureFixture
@@ -22,15 +21,7 @@ async def test_filtered_message(mocker: MockerFixture, caplog: LogCaptureFixture
     setup_source(mocker)
     setup_filtered(mocker)
 
-    mocker.patch("plugins.user.sources_monitoring.edited_message.cleanup_message")
-    mocker.patch("plugins.user.sources_monitoring.edited_message.add_header")
-    mocker.patch("plugins.user.sources_monitoring.edited_message.cut_long_message")
-
-    mocker.patch("plugins.user.sources_monitoring.edited_message.EditMessageMedia.edit_message_media")
-
     setup_json_loads(mocker)
-
-    client.edit_message_text = AsyncMock()
 
     await edited_message.edited_message(client=client, message=message)
 

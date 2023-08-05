@@ -15,7 +15,7 @@ from tests.utils import setup_json_loads
 
 
 @pytest.mark.asyncio
-async def test_edited_message(mocker: MockerFixture, caplog: LogCaptureFixture, client, message):
+async def test_edited_text_message(mocker: MockerFixture, caplog: LogCaptureFixture, client, message):
     caplog.set_level(logging.DEBUG)
 
     mocker.patch("plugins.user.sources_monitoring.edited_message.MessageHistory.get_or_none")
@@ -25,8 +25,6 @@ async def test_edited_message(mocker: MockerFixture, caplog: LogCaptureFixture, 
     mocker.patch("plugins.user.sources_monitoring.edited_message.cleanup_message")
     mocker.patch("plugins.user.sources_monitoring.edited_message.add_header")
     mocker.patch("plugins.user.sources_monitoring.edited_message.cut_long_message")
-
-    mocker.patch("plugins.user.sources_monitoring.edited_message.EditMessageMedia.edit_message_media")
 
     setup_json_loads(mocker)
 

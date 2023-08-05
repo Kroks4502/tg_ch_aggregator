@@ -1,5 +1,4 @@
 import logging
-from unittest.mock import AsyncMock
 
 import pytest
 from _pytest.logging import LogCaptureFixture
@@ -15,7 +14,12 @@ from tests.utils import setup_json_loads
 
 
 @pytest.mark.asyncio
-async def test_edited_message(mocker: MockerFixture, caplog: LogCaptureFixture, client, message):
+async def test_edited_media_message(
+    mocker: MockerFixture,
+    caplog: LogCaptureFixture,
+    client,
+    media_message,
+):
     caplog.set_level(logging.DEBUG)
 
     mocker.patch("plugins.user.sources_monitoring.edited_message.MessageHistory.get_or_none")
@@ -27,12 +31,11 @@ async def test_edited_message(mocker: MockerFixture, caplog: LogCaptureFixture, 
     mocker.patch("plugins.user.sources_monitoring.edited_message.cut_long_message")
 
     mocker.patch("plugins.user.sources_monitoring.edited_message.EditMessageMedia.edit_message_media")
+    mocker.patch("plugins.user.sources_monitoring.edited_message.get_input_media")
 
     setup_json_loads(mocker)
 
-    client.edit_message_text = AsyncMock()
-
-    await edited_message.edited_message(client=client, message=message)
+    await edited_message.edited_message(client=client, message=media_message)
 
     assert 'Источник 0 изменил сообщение 0, оно изменено в категории' in caplog.text
     default_edited_message_log_asserts(caplog=caplog)

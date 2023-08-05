@@ -1,16 +1,12 @@
 import logging
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 from _pytest.logging import LogCaptureFixture
 from pytest_mock import MockerFixture
 
 from plugins.user.sources_monitoring import edited_message
-from tests.edited_message.utils import (
-    default_edited_message_log_asserts,
-    setup_filtered,
-    setup_source,
-)
+from tests.edited_message.utils import default_edited_message_log_asserts
 from tests.utils import setup_json_loads
 
 
@@ -22,18 +18,8 @@ async def test_not_editable_message(mocker: MockerFixture, caplog: LogCaptureFix
         "plugins.user.sources_monitoring.edited_message.MessageHistory.get_or_none",
         return_value=MagicMock(category_message_rewritten=False),
     )
-    setup_source(mocker)
-    setup_filtered(mocker)
-
-    mocker.patch("plugins.user.sources_monitoring.edited_message.cleanup_message")
-    mocker.patch("plugins.user.sources_monitoring.edited_message.add_header")
-    mocker.patch("plugins.user.sources_monitoring.edited_message.cut_long_message")
-
-    mocker.patch("plugins.user.sources_monitoring.edited_message.EditMessageMedia.edit_message_media")
 
     setup_json_loads(mocker)
-
-    client.edit_message_text = AsyncMock()
 
     await edited_message.edited_message(client=client, message=message)
 
