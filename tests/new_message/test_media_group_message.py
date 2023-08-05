@@ -11,7 +11,6 @@ from plugins.user.sources_monitoring.common import blocking_messages
 from plugins.user.sources_monitoring.new_message import new_message
 from tests.new_message.utils import (
     default_new_message_log_asserts,
-    default_setup,
     history_new_message_asserts,
     history_with_category_asserts,
     setup_filtered,
@@ -19,6 +18,7 @@ from tests.new_message.utils import (
     setup_repeated,
     setup_source,
 )
+from tests.utils import setup_json_loads
 
 
 @pytest.mark.asyncio
@@ -30,7 +30,7 @@ async def test_media_group_message(
 ):
     caplog.set_level(logging.DEBUG)
 
-    default_setup(mocker)
+    setup_json_loads(mocker)
     mock_source = setup_source(mocker)
     mock_source = mock_source.get()
     mock_repeated = setup_repeated(mocker, None)

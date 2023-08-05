@@ -64,9 +64,17 @@ def chat():
 
 
 @pytest.fixture()
-def message(chat):
+def message(chat: Mock):
     return Mock(
-        name="input_message",
+        name="one_message",
         id=0,
         chat=chat,
+        media_group_id=None,
     )
+
+
+@pytest.fixture()
+def media_group_message(chat: Mock):
+    message = Mock(name="media_group_message", id=0, chat=chat, media_group_id="0", get_media_group=AsyncMock())
+    message.get_media_group.return_value = [message]
+    return message

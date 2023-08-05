@@ -4,22 +4,11 @@ from pytest_mock import MockerFixture
 
 from models import MessageHistory
 from plugins.user.types import Operation
-from tests.utils import default_log_asserts
+from tests.utils import default_log_asserts, set_return_value
 
 
 def default_new_message_log_asserts(caplog):
     default_log_asserts(caplog=caplog, operation=Operation.NEW)
-
-
-def default_setup(mocker):
-    mocker.patch("plugins.user.sources_monitoring.new_message.json.loads")
-    # mocker.patch("plugins.user.sources_monitoring.new_message.new_media_group_messages")
-    # mocker.patch("plugins.user.sources_monitoring.new_message.send_error_to_admins")
-
-
-def set_return_value(mock: MagicMock, return_value):
-    if return_value is not ...:
-        mock.return_value = return_value
 
 
 def setup_repeated(mocker: MockerFixture, return_value=...):
