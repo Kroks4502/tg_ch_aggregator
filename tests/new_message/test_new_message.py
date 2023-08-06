@@ -42,14 +42,11 @@ async def test_new_message(
     await new_message(client=client, message=message)
     ###
 
-    mock_new_one_message.assert_called_once()
+    mock_new_one_message.assert_called_once_with(message=message, source=mock_source)
     mock_repeated.assert_called_once()
     mock_filtered.assert_called_once()
     mock_history_save.assert_called_once()
     client.read_chat_history.assert_called_once()
-
-    assert mock_new_one_message.call_args.kwargs["message"] is message
-    assert mock_new_one_message.call_args.kwargs["source"] is mock_source
 
     history = mock_history_save.call_args.args[0]
     history_new_message_asserts(

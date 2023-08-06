@@ -45,15 +45,16 @@ async def test_media_group_message(
     await new_message(client=client, message=media_group_message)
     ###
 
-    mock_new_media_group_messages.assert_called_once()
+    mock_new_media_group_messages.assert_called_once_with(
+        client=client,
+        messages=[media_group_message],
+        source=mock_source,
+    )
     media_group_message.get_media_group.assert_called_once()
     mock_repeated.assert_called_once()
     mock_filtered.assert_called_once()
     mock_history_save.assert_called_once()
     client.read_chat_history.assert_called_once()
-
-    assert media_group_message in mock_new_media_group_messages.call_args.kwargs["messages"]
-    assert mock_new_media_group_messages.call_args.kwargs["source"] is mock_source
 
     history = mock_history_save.call_args.args[0]
     history_new_message_asserts(
