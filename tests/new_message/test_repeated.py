@@ -12,7 +12,7 @@ from tests.new_message.utils import (
     default_new_message_log_asserts,
     history_new_message_asserts,
     setup_filtered,
-    setup_history_save_and_get_history_objs,
+    setup_history_save,
     setup_repeated,
     setup_source,
 )
@@ -36,13 +36,13 @@ async def test_repeated_message(
     setup_repeated(mocker, repeat_history_id)
     setup_filtered(mocker, None)
 
-    mock_history_save, history_objs = setup_history_save_and_get_history_objs(mocker)
+    mock_history_save = setup_history_save(mocker)
 
     ###
     await new_message(client=client, message=message)
     ###
 
-    history = history_objs[0]
+    history = mock_history_save.call_args.args[0]
     history_new_message_asserts(
         history=history,
         input_source=mock_source,

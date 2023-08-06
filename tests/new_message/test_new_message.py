@@ -1,12 +1,10 @@
 import logging
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import pytest
 from _pytest.logging import LogCaptureFixture
-from pyrogram.types import Message
 from pytest_mock import MockerFixture
 
-from models import Source
 from plugins.user.sources_monitoring.common import blocking_messages
 from plugins.user.sources_monitoring.new_message import new_message
 from tests.new_message.utils import (
@@ -14,7 +12,7 @@ from tests.new_message.utils import (
     history_new_message_asserts,
     history_with_category_asserts,
     setup_filtered,
-    setup_history_save_and_get_history_objs,
+    setup_history_save,
     setup_repeated,
     setup_source,
 )
@@ -22,7 +20,7 @@ from tests.utils import setup_json_loads
 
 
 @pytest.mark.asyncio
-async def test_one_new_message(
+async def test_new_message(
     mocker: MockerFixture,
     caplog: LogCaptureFixture,
     client: Mock,
@@ -36,23 +34,9 @@ async def test_one_new_message(
     mock_repeated = setup_repeated(mocker, None)
     mock_filtered = setup_filtered(mocker, None)
 
-    ###
+    mock_new_one_message = mocker.patch("plugins.user.sources_monitoring.new_message.new_one_message")
 
-    input_attrs = []
-
-    mock_category_msg = MagicMock()
-
-    def se_new_one_message(message: Message, source: Source):
-        input_attrs.append(message)
-        input_attrs.append(source)
-        return mock_category_msg
-
-    mock_new_one_message = mocker.patch(
-        "plugins.user.sources_monitoring.new_message.new_one_message",
-        side_effect=se_new_one_message,
-    )
-
-    mock_history_save, history_objs = setup_history_save_and_get_history_objs(mocker)
+    mock_history_save = setup_history_save(mocker)
 
     ###
     await new_message(client=client, message=message)
@@ -64,12 +48,10 @@ async def test_one_new_message(
     assert mock_history_save.call_count == 1
     assert client.read_chat_history.call_count == 1
 
-    output_message, output_source = input_attrs
+    assert mock_new_one_message.call_args.kwargs["message"] is message
+    assert mock_new_one_message.call_args.kwargs["source"] is mock_source
 
-    assert output_message is message
-    assert output_source is mock_source
-
-    history = history_objs[0]
+    history = mock_history_save.call_args.args[0]
     history_new_message_asserts(
         history=history,
         input_source=mock_source,
@@ -78,7 +60,7 @@ async def test_one_new_message(
     history_with_category_asserts(
         history=history,
         input_source=mock_source,
-        mock_category_msg=mock_category_msg,
+        mock_category_msg=mock_new_one_message.return_value,
     )
     assert len(history.data) == 1
 
