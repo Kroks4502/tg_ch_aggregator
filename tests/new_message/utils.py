@@ -7,41 +7,33 @@ from plugins.user.types import Operation
 from tests.utils import default_log_asserts, set_return_value
 
 
-def default_new_message_log_asserts(caplog):
+def default_new_message_log_asserts(caplog) -> None:
     default_log_asserts(caplog=caplog, operation=Operation.NEW)
 
 
-def setup_repeated(mocker: MockerFixture, return_value=...):
+def setup_repeated(mocker: MockerFixture, return_value=...) -> MagicMock:
     mock = mocker.patch("plugins.user.sources_monitoring.new_message.get_repeated_history_id_or_none")
     set_return_value(mock, return_value)
     return mock
 
 
-def setup_filtered(mocker: MockerFixture, return_value=...):
+def setup_filtered(mocker: MockerFixture, return_value=...) -> MagicMock:
     mock = mocker.patch("plugins.user.sources_monitoring.new_message.get_filter_id_or_none")
     set_return_value(mock, return_value)
     return mock
 
 
-def setup_source(mocker: MockerFixture, return_value=...):
+def setup_source(mocker: MockerFixture, return_value=...) -> MagicMock:
     mock = mocker.patch("plugins.user.sources_monitoring.new_message.Source")
     set_return_value(mock, return_value)
     return mock
 
 
-def setup_history_save_and_get_history_objs(mocker: MockerFixture) -> tuple[MagicMock, list[MessageHistory]]:
-    history_objs = []
-
-    def se_history_save(self):
-        history_objs.append(self)
-        return MagicMock("HistoryMock")
-
-    mock = mocker.patch(
+def setup_history_save(mocker: MockerFixture) -> MagicMock:
+    return mocker.patch(
         "plugins.user.sources_monitoring.new_message.MessageHistory.save",
-        side_effect=se_history_save,
         autospec=True,
     )
-    return mock, history_objs
 
 
 def history_new_message_asserts(
@@ -50,7 +42,7 @@ def history_new_message_asserts(
     input_message: Mock,
     repeat_history_id: int = None,
     filter_id: int = None,
-):
+) -> None:
     assert history.source_id is input_source.id
     assert history.source_message_id is input_message.id
     assert history.source_media_group_id is input_message.media_group_id
@@ -69,7 +61,7 @@ def history_with_category_asserts(
     history: MessageHistory,
     input_source: MagicMock,
     mock_category_msg: MagicMock,
-):
+) -> None:
     assert history.category_message_rewritten is input_source.is_rewrite
     assert history.category_message_id is mock_category_msg.id
     assert history.category_media_group_id is mock_category_msg.media_group_id

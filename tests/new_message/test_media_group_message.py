@@ -14,7 +14,7 @@ from tests.new_message.utils import (
     history_new_message_asserts,
     history_with_category_asserts,
     setup_filtered,
-    setup_history_save_and_get_history_objs,
+    setup_history_save,
     setup_repeated,
     setup_source,
 )
@@ -52,7 +52,7 @@ async def test_media_group_message(
         side_effect=se_new_media_group_messages,
     )
 
-    mock_history_save, history_objs = setup_history_save_and_get_history_objs(mocker)
+    mock_history_save = setup_history_save(mocker)
 
     ###
     await new_message(client=client, message=media_group_message)
@@ -70,7 +70,7 @@ async def test_media_group_message(
     assert media_group_message in output_messages
     assert output_source is mock_source
 
-    history = history_objs[0]
+    history = mock_history_save.call_args.args[0]
     history_new_message_asserts(
         history=history,
         input_source=mock_source,
