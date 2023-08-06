@@ -56,7 +56,7 @@ async def test_repeated_message(
     assert exception["operation"] == Operation.NEW.name
     assert len(history.data) == 1
 
-    assert mock_history_save.call_count == 1
+    mock_history_save.assert_called_once()
 
     assert len(blocking_messages.get(key=message.chat.id)) == 0
 

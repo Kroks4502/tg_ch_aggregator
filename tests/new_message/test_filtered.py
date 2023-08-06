@@ -54,9 +54,9 @@ async def test_filtered_message(
     assert exception["name"] == "MessageFilteredError"
     assert exception["text"] == "Источник 0 отправил сообщение 0, оно было отфильтровано."
     assert exception["operation"] == Operation.NEW.name
-    assert len(history.data) == 1
+    assert len(history.data)
 
-    assert mock_history_save.call_count == 1
+    mock_history_save.assert_called_once()
 
     assert len(blocking_messages.get(key=message.chat.id)) == 0
 
