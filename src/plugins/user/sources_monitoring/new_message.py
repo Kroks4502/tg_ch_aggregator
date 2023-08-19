@@ -261,7 +261,7 @@ async def new_media_group_messages(
     """
     if not source.is_rewrite:
         return await client.forward_messages(
-            chat_id=source.category.tg_id,
+            chat_id=source.category.id,
             from_chat_id=messages[0].chat.id,
             message_ids=[item.id for item in messages],
             disable_notification=disable_notification,

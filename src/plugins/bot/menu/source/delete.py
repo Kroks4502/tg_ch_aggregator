@@ -34,7 +34,7 @@ async def confirmation_delete_source(_, callback_query: CallbackQuery):
 
 
 @Client.on_callback_query(
-    filters.regex(r'/s/\d+/:delete/:y/$') & custom_filters.admin_only,
+    filters.regex(r'/s/-\d+/:delete/:y/$') & custom_filters.admin_only,
 )
 async def delete_source(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
