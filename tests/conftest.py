@@ -49,7 +49,7 @@ def configure():
 
 @pytest.fixture()
 def client():
-    mock_client = Mock()
+    mock_client = Mock(name="client")
     mock_client.read_chat_history = AsyncMock()
     mock_client.read_chat_history.return_value = True
     return mock_client
