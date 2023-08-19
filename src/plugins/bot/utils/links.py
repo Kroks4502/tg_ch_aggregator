@@ -7,10 +7,10 @@ from clients import user
 
 
 @alru_cache(maxsize=16)
-async def get_user_formatted_link(tg_id: int) -> str:
-    """Получить отформатированную в markdown ссылку на пользователя по tg_id."""
+async def get_user_formatted_link(chat_id: int) -> str:
+    """Получить отформатированную в markdown ссылку на пользователя по chat_id."""
     try:
-        chat = await user.get_chat(tg_id)
+        chat = await user.get_chat(chat_id)
         if chat.username:
             return f'[{chat.username}](https://{chat.username}.t.me)'
         full_name = (
@@ -18,17 +18,17 @@ async def get_user_formatted_link(tg_id: int) -> str:
             f'{chat.last_name + " " if chat.last_name else ""}'
         )
         if full_name:
-            return f'{full_name + " " if full_name else "" }…{str(tg_id)[-5:]}'
+            return f'{full_name + " " if full_name else "" }…{str(chat_id)[-5:]}'
     except RPCError as e:
         logging.warning(e, exc_info=True)
-    return str(tg_id)
+    return str(chat_id)
 
 
 @alru_cache(maxsize=256)
-async def get_channel_formatted_link(tg_id: int) -> str:
-    """Получить отформатированную в markdown ссылку на канал по tg_id."""
+async def get_channel_formatted_link(chat_id: int) -> str:
+    """Получить отформатированную в markdown ссылку на канал по chat_id."""
     try:
-        chat = await user.get_chat(tg_id)
+        chat = await user.get_chat(chat_id)
         if chat.username:
             return f'[{chat.title}](https://{chat.username}.t.me)'
         if chat.invite_link:
@@ -36,4 +36,4 @@ async def get_channel_formatted_link(tg_id: int) -> str:
         return chat.title
     except RPCError as e:
         logging.warning(e, exc_info=True)
-    return str(tg_id)
+    return str(chat_id)
