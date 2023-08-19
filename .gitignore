@@ -133,4 +133,4 @@ dmypy.json
 *.db
 /sessions/
 /logs/
-/dump_messages/
+/tests/dump_messages/

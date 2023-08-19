@@ -13,7 +13,7 @@ from plugins.user.types import Operation
 
 BASE_DIR = Path(__file__).parent
 SESSIONS_DIR = BASE_DIR.parent / 'sessions'
-DUMP_MESSAGES_DIR = BASE_DIR.parent / 'dump_messages'
+DUMP_MESSAGES_DIR = BASE_DIR.parent / 'tests' / 'dump_messages'
 DUMP_MESSAGES_DIRS_BY_OPERATION = {
     Operation.NEW: DUMP_MESSAGES_DIR / 'new_messages',
     Operation.EDIT: DUMP_MESSAGES_DIR / 'edited_messages',
