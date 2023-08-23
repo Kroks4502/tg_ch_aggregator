@@ -9,6 +9,7 @@ from pyrogram.types import (
 )
 
 from config import TELEGRAM_MAX_CAPTION_LENGTH, TELEGRAM_MAX_TEXT_LENGTH
+from models import Source
 from plugins.user.exceptions import (
     MessageBlockedByIdError,
     MessageBlockedByMediaGroupError,
@@ -159,10 +160,12 @@ def cut_long_message(message: Message):
     footer.include_to_message(message=message)
 
 
-def add_header(message: Message):
+def add_header(source: Source, message: Message):
     header = HeaderController(item_separator="\n")
     header.add_item(
-        text=SRC_TEXT_TMPL.format(message.chat.title or message.chat.id),
+        text=SRC_TEXT_TMPL.format(
+            source.title_alias or message.chat.title or message.chat.id
+        ),
         bold=True,
         url=message.link,
     )

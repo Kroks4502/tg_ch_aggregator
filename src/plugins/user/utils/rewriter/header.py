@@ -2,7 +2,7 @@ from pyrogram.types import Message
 
 from plugins.user.utils.rewriter.item import AbstractItemController
 
-SRC_TEXT_TMPL = '💬 Источник: {}'
+SRC_TEXT_TMPL = '💬 {}'
 FWD_TEXT_TMPL = 'fwd: {}'
 
 

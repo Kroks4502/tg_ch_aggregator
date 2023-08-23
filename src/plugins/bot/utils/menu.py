@@ -57,7 +57,11 @@ class Menu:
 
         if source_obj:
             link = await get_channel_formatted_link(source_obj.id)
-            breadcrumbs.append(f'Источник: **{link}**')
+            breadcrumbs.append(
+                f'Источник: **{source_obj.title_alias}** ({link})'
+                if source_obj.title_alias
+                else f'Источник: **{link}**'
+            )
 
         if filter_type_id:
             if not source_obj:

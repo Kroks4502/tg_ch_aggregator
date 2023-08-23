@@ -238,7 +238,7 @@ async def new_one_message(
     if not (message.text or is_media):
         raise MessageCleanedFullyError(operation=NEW, message=message)
 
-    add_header(message=message)
+    add_header(source=source, message=message)
     cut_long_message(message=message)
 
     message.web_page = None  # disable_web_page_preview = True
@@ -270,11 +270,11 @@ async def new_media_group_messages(
         if msg.caption:
             media_has_caption = True
             cleanup_message(message=msg, source=source, is_media=True)
-            add_header(message=msg)
+            add_header(source=source, message=msg)
             cut_long_message(message=msg)
 
     if not media_has_caption:
-        add_header(message=messages[0])
+        add_header(source=source, message=messages[0])
 
     return await SendMediaGroup.send_media_group(
         client,
