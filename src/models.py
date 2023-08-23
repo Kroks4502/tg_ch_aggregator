@@ -72,6 +72,7 @@ class Category(BaseModel):
 class Source(BaseModel):
     id = BigIntegerField(primary_key=True)
     title = CharField()
+    title_alias = CharField()
     category = ForeignKeyField(Category, backref='sources', on_delete='CASCADE')
 
     # Список регулярных выражений для очистки сообщений и их перепечатывания

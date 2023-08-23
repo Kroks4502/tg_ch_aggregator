@@ -35,6 +35,7 @@ async def detail_source(_, callback_query: CallbackQuery):
         menu.add_row_button('Пересылать', ':off_rewrite')
     else:
         menu.add_row_button('🧹 Перепечатывать', ':on_rewrite')
+    menu.add_row_button('📝 Название', ':edit_alias')
 
     text = await menu.get_text(source_obj=source_obj, last_text=last_text)
     await callback_query.message.edit_text(

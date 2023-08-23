@@ -81,7 +81,7 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
 
         if message.text or message.caption:
             cleanup_message(message=message, source=source, is_media=is_media)
-            add_header(message=message)
+            add_header(source=source, message=message)
             cut_long_message(message=message)
 
         if is_media:
