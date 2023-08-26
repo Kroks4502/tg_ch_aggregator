@@ -8,7 +8,7 @@ from plugins.bot.utils.menu import ButtonData, Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/s/$'),
+    filters.regex(r'/s/(p/\d+/|)$'),
 )
 async def list_source(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -37,10 +37,12 @@ async def list_source(_, callback_query: CallbackQuery):
         .group_by(Source.id)
         .order_by(Source.title)
     )  # Запрашиваем список источников
+
+    pagination = menu.set_pagination(total_items=query.count())
     menu.add_rows_from_data(
         data=[
             ButtonData(i.title_alias or i.title, i.id, i.count + len(i.cleanup_list))
-            for i in query
+            for i in query.paginate(pagination.page, pagination.size)
         ]
     )
 

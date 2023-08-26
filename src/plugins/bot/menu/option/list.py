@@ -13,8 +13,8 @@ async def options(_, callback_query: CallbackQuery):
 
     menu = Menu(callback_query.data)
     menu.add_row_button('Администраторы', 'a')
-    menu.add_row_button('История фильтра', 'fh/1')
-    menu.add_row_button('История пересылки', 'mh/1')
+    menu.add_row_button('История фильтра', 'fh')
+    menu.add_row_button('История пересылки', 'mh')
     menu.add_row_button('Статистика', 'stat')
     menu.add_row_button('💾 Логи', ':get_logs')
 

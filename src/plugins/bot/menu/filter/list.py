@@ -8,7 +8,7 @@ from plugins.bot.utils.menu import ButtonData, Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/ft/\d+/f/$'),
+    filters.regex(r'/ft/\d+/f/(p/\d+/|)$'),
 )
 async def list_filters(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -31,7 +31,13 @@ async def list_filters(_, callback_query: CallbackQuery):
             Filter.source.is_null(True) & (Filter.type == filter_type_id)
         )
 
-    menu.add_rows_from_data(data=[ButtonData(i.pattern, i.id, 0) for i in query])
+    pagination = menu.set_pagination(total_items=query.count())
+    menu.add_rows_from_data(
+        data=[
+            ButtonData(i.pattern, i.id, 0)
+            for i in query.paginate(pagination.page, pagination.size)
+        ],
+    )
 
     text = await menu.get_text(source_obj=source_obj, filter_type_id=filter_type_id)
     await callback_query.message.edit_text(

@@ -9,12 +9,13 @@ from plugins.bot.utils.menu import ButtonData, Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/c/$'),
+    filters.regex(r'/c/(p/\d+/|)$'),
 )
 async def list_category(_, callback_query: CallbackQuery):
     await callback_query.answer()
 
     menu = Menu(callback_query.data)
+
     if is_admin(callback_query.from_user.id):
         menu.add_row_button(ADD_BNT_TEXT + ' категорию', ':add')
 
@@ -28,8 +29,13 @@ async def list_category(_, callback_query: CallbackQuery):
         .group_by(Category.id)
         .order_by(Category.title)
     )  # Запрашиваем список категорий
+
+    pagination = menu.set_pagination(total_items=query.count())
     menu.add_rows_from_data(
-        data=[ButtonData(i.title, i.id, i.amount) for i in query],
+        data=[
+            ButtonData(i.title, i.id, i.amount)
+            for i in query.paginate(pagination.page, pagination.size)
+        ],
         postfix='s/',
     )
 

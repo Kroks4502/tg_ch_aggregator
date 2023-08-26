@@ -8,7 +8,7 @@ from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/cl/$'),
+    filters.regex(r'/cl/(p/\d+/|)$'),
 )
 async def list_cleanup(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -23,7 +23,12 @@ async def list_cleanup(_, callback_query: CallbackQuery):
         cleanup_list = GlobalSettings.get(key='cleanup_list').value
     menu.add_row_button(ADD_BNT_TEXT, ':add')
 
-    for idx, reg in enumerate(cleanup_list):
+    pagination = menu.set_pagination(total_items=len(cleanup_list))
+
+    for idx, reg in enumerate(
+        cleanup_list[pagination.offset : pagination.offset_with_size],
+        pagination.offset,
+    ):
         menu.add_row_button(reg, str(idx))
 
     text = await menu.get_text(

@@ -11,9 +11,9 @@ def get_main_menu(data: Message | CallbackQuery) -> Menu:
 
     if is_admin(data.from_user.id):
         menu.add_row_button('🗂 Категории', 'c')
-        # menu.add_row_button('📚 Все источники', 's')
-        menu.add_row_button('🪤 Общие фильтры', 'ft')
-        menu.add_row_button('🧹 Общая очистка', 'cl')
+        menu.add_row_button('📚 Источники', 's')
+        menu.add_row_button('🪤 Фильтры', 'ft')
+        menu.add_row_button('🧹 Очистка', 'cl')
         menu.add_row_button('🚧 Проверить пост', ':check_post')
         menu.add_row_button('🛠 Настройки', 'o')
 
@@ -32,3 +32,11 @@ async def set_main_menu(_, callback_query: CallbackQuery):
         text=MAIN_MENU_TEXT,
         reply_markup=menu.reply_markup,
     )
+
+
+@Client.on_callback_query(
+    filters.regex(r'·/$'),
+)
+async def empty_button(_, callback_query: CallbackQuery):
+    """Пустая кнопка для пагинации"""
+    await callback_query.answer()

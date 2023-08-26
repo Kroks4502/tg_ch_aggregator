@@ -8,7 +8,7 @@ from plugins.bot.utils.menu import ButtonData, Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/a/$') & custom_filters.admin_only,
+    filters.regex(r'/a/(p/\d+/|)$') & custom_filters.admin_only,
 )
 async def list_admins(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -21,7 +21,14 @@ async def list_admins(_, callback_query: CallbackQuery):
         Admin.id,
         Admin.username,
     )
-    menu.add_rows_from_data(data=[ButtonData(i.username, i.id, 0) for i in query])
+
+    pagination = menu.set_pagination(total_items=query.count())
+    menu.add_rows_from_data(
+        data=[
+            ButtonData(i.username, i.id, 0)
+            for i in query.paginate(pagination.page, pagination.size)
+        ],
+    )
 
     await callback_query.message.edit_text(
         text='**Список администраторов:**',
