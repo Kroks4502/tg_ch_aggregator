@@ -3,7 +3,7 @@ from pyrogram.types import CallbackQuery, Message
 
 from filter_types import FILTER_TYPES_BY_ID
 from models import Filter
-from plugins.bot.constants import INVALID_PATTERN_TEXT
+from plugins.bot.constants import CANCEL, INVALID_PATTERN_TEXT
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.checks import is_valid_pattern
 from plugins.bot.utils.links import get_channel_formatted_link
@@ -13,7 +13,8 @@ from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
 ASK_TEXT_TPL = (
-    'ОК. Ты изменяешь {} типа **{}** с паттерном `{}`\n\n**Введи новый паттерн:**'
+    'ОК. Ты изменяешь {} типа **{}** с паттерном `{}`\n\n'
+    f'**Введи новый паттерн** или {CANCEL}'
 )
 SUC_TEXT_TPL = '✅ {} типа **{}** с паттерном `{}` изменен на `{}`'
 

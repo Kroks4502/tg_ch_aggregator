@@ -5,6 +5,7 @@ from pyrogram.errors import RPCError
 from pyrogram.types import CallbackQuery, Message
 
 from models import Admin
+from plugins.bot.constants import CANCEL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_user_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
@@ -19,7 +20,7 @@ async def add_admin(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.reply(
         'ОК. Ты добавляешь нового администратора.\n\n'
-        '**Введи ID или имя пользователя:**'
+        f'**Введи ID или имя пользователя** или {CANCEL}'
     )
     input_wait_manager.add(
         callback_query.message.chat.id,

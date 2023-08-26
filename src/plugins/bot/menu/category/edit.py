@@ -8,6 +8,7 @@ from pyrogram.types import CallbackQuery, Message
 
 from clients import user
 from models import Category
+from plugins.bot.constants import CANCEL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
@@ -26,7 +27,7 @@ async def edit_category(client: Client, callback_query: CallbackQuery):
         'Этот бот должен быть администратором канала '
         'с возможностью публиковать записи.\n\n'
         '**Введи публичное имя канала, частную ссылку, '
-        'ID или перешли сообщение из него:**'
+        f'ID, перешли сообщение из него** или {CANCEL}'
     )
 
     input_wait_manager.add(

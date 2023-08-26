@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, Message
 
 from models import GlobalSettings, Source
-from plugins.bot.constants import INVALID_PATTERN_TEXT
+from plugins.bot.constants import CANCEL, INVALID_PATTERN_TEXT
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.checks import is_valid_pattern
 from plugins.bot.utils.links import get_channel_formatted_link
@@ -11,7 +11,10 @@ from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
-ASK_TEXT_TPL = 'ОК. Ты изменяешь {} очистки текста `{}`{}.\n\n**Введи новый паттерн:**'
+ASK_TEXT_TPL = (
+    'ОК. Ты изменяешь {} очистки текста `{}`{}.\n\n'
+    f'**Введи новый паттерн** или {CANCEL}'
+)
 SUC_TEXT_TPL = '✅ {} очистки текста изменен с `{}` на `{}` {}'
 
 

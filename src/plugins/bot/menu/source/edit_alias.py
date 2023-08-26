@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, Message
 
 from models import Source
+from plugins.bot.constants import CANCEL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
@@ -31,7 +32,8 @@ async def edit_alias(client: Client, callback_query: CallbackQuery):
     )
 
     await callback_query.message.reply(
-        f'ОК. Ты меняешь название для источника `{source_obj.title}`.\n\n**Введи новое**'
+        f'ОК. Ты меняешь название для источника `{source_obj.title}`.\n\n'
+        f'**Введи новое** или {CANCEL}'
     )
 
 
@@ -59,15 +61,19 @@ async def edit_alias_waiting_input(  # noqa: C901
         await edit_text('❌ Название источника не может превышать 100 символов.')
         return
 
-    source_obj.title_alias = new_title_alias
-    source_obj.save()
-    Source.clear_actual_cache()
-
     src_link = await get_channel_formatted_link(source_obj.id)
 
-    success_text = (
-        f'✅ Источник **{src_link}** получил новое название **{source_obj.title_alias}**'
-    )
+    if new_title_alias == source_obj.title:
+        source_obj.title_alias = None
+        success_text = f'✅ Источник **{src_link}** получил оригинальное название'
+    else:
+        source_obj.title_alias = new_title_alias
+        success_text = (
+            f'✅ Источник **{src_link}** получил название **{source_obj.title_alias}**'
+        )
+
+    source_obj.save()
+    Source.clear_actual_cache()
     await edit_text(success_text)
 
     await send_message_to_admins(client, callback_query, success_text)

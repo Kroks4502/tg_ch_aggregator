@@ -3,6 +3,7 @@ from pyrogram.types import CallbackQuery, Message
 
 from common import get_message_link
 from models import MessageHistory
+from plugins.bot.constants import CANCEL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.managers import input_wait_manager
 from plugins.bot.utils.menu import Menu
@@ -15,7 +16,7 @@ async def check_post(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.reply(
         'ОК. Ты хочешь проверить есть ли пост в истории.\n\n'
-        '**Перешли пост в этот чат и я проверю.**'
+        f'**Перешли пост в этот чат** или {CANCEL}'
     )
     input_wait_manager.add(
         callback_query.message.chat.id,

@@ -3,6 +3,7 @@ from pyrogram.types import CallbackQuery, Chat, ChatPrivileges, Message
 
 from clients import user
 from models import Category
+from plugins.bot.constants import CANCEL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
@@ -16,9 +17,9 @@ async def add_category(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.reply(
         'ОК. Ты добавляешь новую категорию, '
-        'в которую будут пересылаться сообщения из источников. '
+        'которая будет получать сообщения из источников. '
         'Будет создан новый канал-агрегатор.\n\n'
-        '**Введи название новой категории:**'
+        f'**Введи название категории** или {CANCEL}'
     )
 
     input_wait_manager.add(

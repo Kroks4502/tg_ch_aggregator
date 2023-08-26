@@ -8,7 +8,7 @@ from filter_types import (
     FilterType,
 )
 from models import Filter, Source
-from plugins.bot.constants import INVALID_PATTERN_TEXT
+from plugins.bot.constants import CANCEL, INVALID_PATTERN_TEXT
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.checks import is_valid_pattern
 from plugins.bot.utils.links import get_channel_formatted_link
@@ -19,7 +19,7 @@ from plugins.bot.utils.senders import send_message_to_admins
 
 ASK_TEXT_TPL = (
     'ОК. Ты добавляешь {} типа **{}**. Паттерн является регулярным выражением '
-    'с игнорированием регистра.\n\n**Введи паттерн:**'
+    f'с игнорированием регистра.\n\n**Введи паттерн** или {CANCEL}'
 )
 SUC_TEXT_TPL = '✅ {} типа **{}** c паттерном `{}` добавлен'
 

@@ -8,6 +8,7 @@ from pyrogram.types import CallbackQuery, Message
 
 from clients import user
 from models import Category, Source
+from plugins.bot.constants import CANCEL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.chat_info import get_chat_info
 from plugins.bot.utils.links import get_channel_formatted_link
@@ -24,7 +25,7 @@ async def add_source(client: Client, callback_query: CallbackQuery):
     await callback_query.message.reply(
         'ОК. Ты добавляешь новый источник.\n\n'
         '**Введи публичное имя канала, частную ссылку, '
-        'ID или перешли сообщение из него:**'
+        f'ID, перешли сообщение из него** или {CANCEL}'
     )
 
     input_wait_manager.add(
