@@ -1,8 +1,11 @@
+from async_lru import alru_cache
+
 from clients import user
 from models import Source
 
 
-async def get_chat_warnings(source_obj: Source) -> str:
+@alru_cache(maxsize=256)
+async def get_chat_info(source_obj: Source) -> str:
     chat = await user.get_chat(source_obj.id)
     text = []
     if chat.is_verified:
