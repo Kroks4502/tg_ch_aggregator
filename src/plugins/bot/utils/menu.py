@@ -102,7 +102,7 @@ class Menu:
             breadcrumbs.append(f'**{link}**')
 
         pagination_text = ''
-        if self.pagination:
+        if self.pagination and self.pagination.is_exists():
             pagination_text = (
                 f'Страница {self.pagination.page} из {self.pagination.last_page}'
             )
