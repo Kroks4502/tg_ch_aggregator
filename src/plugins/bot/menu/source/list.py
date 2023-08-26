@@ -2,9 +2,10 @@ import peewee
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from models import Category, Filter, Source
+from models import Category, Filter, MessageHistory, Source
 from plugins.bot.utils.checks import is_admin
 from plugins.bot.utils.menu import ButtonData, Menu
+from plugins.bot.utils.statistic import get_statistic_text
 
 
 @Client.on_callback_query(
@@ -50,9 +51,18 @@ async def list_source(_, callback_query: CallbackQuery):
         ]
     )
 
+    if category_obj:
+        statistic_text = get_statistic_text(
+            where=MessageHistory.category == category_obj
+        )
+        last_text = f'{statistic_text}'
+    else:
+        statistic_text = get_statistic_text()
+        last_text = f'**Источники**\n\n{statistic_text}'
+
     text = await menu.get_text(
         category_obj=category_obj,
-        last_text='' if category_obj else '**Источники**',
+        last_text=last_text,
     )
     await callback_query.message.edit_text(
         text=text,

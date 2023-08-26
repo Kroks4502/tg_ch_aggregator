@@ -1,10 +1,11 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from models import Filter, Source
+from models import Filter, MessageHistory, Source
 from plugins.bot.utils.chat_info import get_chat_info
 from plugins.bot.utils.checks import is_admin
 from plugins.bot.utils.menu import Menu
+from plugins.bot.utils.statistic import get_statistic_text
 
 
 @Client.on_callback_query(
@@ -54,6 +55,9 @@ async def detail_source(_, callback_query: CallbackQuery):
     last_text.append(
         'Режим перепечатывания: ' + ('✅' if source_obj.is_rewrite else '📴')
     )
+
+    statistic_text = get_statistic_text(where=MessageHistory.source == source_obj)
+    last_text.append(f'\n{statistic_text}')
 
     text = await menu.get_text(source_obj=source_obj, last_text='\n'.join(last_text))
     await callback_query.message.edit_text(
