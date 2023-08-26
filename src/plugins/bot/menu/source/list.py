@@ -23,6 +23,10 @@ async def list_source(_, callback_query: CallbackQuery):
             ('📝', '../:edit'),  # Редактировать категорию (изменить канал)
             ('✖️', '../:delete'),  # Удалить категорию
         )
+    menu.add_row_button('📖 История сообщений', 'mh')
+
+    if category_obj:
+        menu.add_row_button('📙 История фильтрации', 'fh')
 
     query = (
         Source.select(

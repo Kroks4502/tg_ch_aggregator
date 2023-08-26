@@ -33,6 +33,8 @@ async def detail_source(_, callback_query: CallbackQuery):
             ('Удалить', ':delete'),
         )
 
+        menu.add_row_button('📖 История сообщений', 'mh')
+
         ft_count = Filter.select().where(Filter.source == source_obj).count()
         menu.add_row_button('🪤 Фильтры' + (f' ({ft_count})' if ft_count else ''), 'ft')
 

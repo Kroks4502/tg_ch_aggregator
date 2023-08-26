@@ -18,6 +18,8 @@ async def list_types_filters(_, callback_query: CallbackQuery):
     source_id = menu.path.get_value('s')
     source_obj: Source = Source.get(source_id) if source_id else None
 
+    menu.add_row_button('📙 История фильтрации', 'fh')
+
     if source_obj:
         query = (
             Filter.select(Filter.type, peewee.fn.Count(Filter.id).alias('count'))
