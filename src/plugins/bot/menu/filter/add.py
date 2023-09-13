@@ -98,7 +98,6 @@ async def ask_filter_pattern_waiting_input(
         type=filter_type,
         source=source_obj,
     )
-    Filter.clear_actual_cache()
 
     if source_obj:
         src_link = await get_channel_formatted_link(source_obj.id)
@@ -171,7 +170,6 @@ async def select_filter_value(client: Client, callback_query: CallbackQuery):
         type=filter_type_id,
         source=source_obj,
     )
-    Filter.clear_actual_cache()
 
     if source_obj:
         src_link = await get_channel_formatted_link(source_obj.id)

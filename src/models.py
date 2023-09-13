@@ -17,42 +17,8 @@ from filter_types import FilterType
 
 
 class BaseModel(Model):
-    _is_actual_cache = False
-    _cache = None
-
     class Meta:
         database = DATABASE
-
-    @classmethod
-    def get_cache(cls, **where):
-        cls._update_cache()
-
-        conditions = {}
-        if where:
-            for i, field_name in enumerate(cls._meta.sorted_field_names):
-                if field_name in where:
-                    conditions[i] = where[field_name]
-            if len(where) != len(conditions):
-                raise Exception(f'Одного из имен полей нет в модели {cls.__name__}')
-
-        for row in cls._cache:
-            if all(
-                True if row[i] == value else False for i, value in conditions.items()
-            ):
-                yield {
-                    field_name: row[i]
-                    for i, field_name in enumerate(cls._meta.sorted_field_names)
-                }
-
-    @classmethod
-    def _update_cache(cls):
-        if not cls._is_actual_cache:
-            cls._cache = tuple(cls.select().tuples())
-            cls._is_actual_cache = True
-
-    @classmethod
-    def clear_actual_cache(cls):
-        cls._is_actual_cache = False
 
 
 class GlobalSettings(BaseModel):
@@ -62,6 +28,15 @@ class GlobalSettings(BaseModel):
     class Meta:
         primary_key = False
         table_name = 'global_settings'
+
+
+class User(BaseModel):
+    id = BigIntegerField(primary_key=True)
+    username = CharField()
+    is_admin = BooleanField(default=False)
+
+    def __str__(self):
+        return str(self.username)
 
 
 class Category(BaseModel):
@@ -81,25 +56,6 @@ class Source(BaseModel):
     # Формировать новое сообщение (True) или пересылать сообщение (False)
     is_rewrite = BooleanField(default=False)
 
-    _cache_monitored_channels = set()
-
-    @classmethod
-    def get_cache_monitored_channels(cls) -> set:
-        cls._update_cache()
-        return cls._cache_monitored_channels
-
-    @classmethod
-    def _update_cache(cls):
-        if not cls._is_actual_cache:
-            cls._cache = tuple(cls.select().tuples())
-            index = 0
-            for field_name in cls._meta.sorted_field_names:
-                if field_name == 'id':
-                    break
-                index += 1
-            cls._cache_monitored_channels = {row[index] for row in cls._cache}
-            cls._is_actual_cache = True
-
 
 class Filter(BaseModel):
     pattern = CharField()
@@ -107,34 +63,6 @@ class Filter(BaseModel):
         choices=[(filter_type.name, filter_type.value) for filter_type in FilterType]
     )
     source = ForeignKeyField(Source, null=True, backref='filters', on_delete='CASCADE')
-
-
-class User(BaseModel):
-    id = BigIntegerField(primary_key=True)
-    username = CharField()
-    is_admin = BooleanField(default=False)
-
-    _cache_admins_tg_ids = set()
-
-    @classmethod
-    def get_cache_admins_tg_ids(cls) -> set:
-        cls._update_cache()
-        return cls._cache_admins_tg_ids
-
-    @classmethod
-    def _update_cache(cls):
-        if not cls._is_actual_cache:
-            cls._cache = tuple(cls.select().tuples())
-            index = 0
-            for field_name in cls._meta.sorted_field_names:
-                if field_name == 'id':
-                    break
-                index += 1
-            cls._cache_admins_tg_ids = {row[index] for row in cls._cache}
-            cls._is_actual_cache = True
-
-    def __str__(self):
-        return str(self.username)
 
 
 class MessageHistory(BaseModel):

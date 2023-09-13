@@ -48,7 +48,6 @@ async def delete_filter(client: Client, callback_query: CallbackQuery):
     filter_obj: Filter = Filter.get(filter_id)
 
     filter_obj.delete_instance()
-    Filter.clear_actual_cache()
 
     if filter_obj.source:
         src_link = await get_channel_formatted_link(filter_obj.source.id)

@@ -8,7 +8,12 @@ from plugins.user.utils.text_length import tg_len
 
 
 def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
-    global_cleanup_list = next(GlobalSettings.get_cache(key='cleanup_list'))['value']
+    global_cleanup_list = (
+        GlobalSettings.select(GlobalSettings.value)
+        .where(GlobalSettings.key == "cleanup_list")
+        .get()
+        .value
+    )
 
     for pattern in itertools.chain(
         global_cleanup_list,

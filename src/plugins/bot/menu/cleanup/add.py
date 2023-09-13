@@ -77,7 +77,6 @@ async def add_cleanup_regex_waiting_input(
         global_settings_obj = GlobalSettings.get(key='cleanup_list')
         global_settings_obj.value.append(pattern)
         global_settings_obj.save()
-        GlobalSettings.clear_actual_cache()
 
         text = SUC_TEXT_TPL.format('Общий паттерн', pattern, '')
 

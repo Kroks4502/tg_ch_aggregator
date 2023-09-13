@@ -3,6 +3,7 @@ import logging
 from pyrogram import Client
 from pyrogram.errors import RPCError
 from pyrogram.types import CallbackQuery
+from pyrogram.types import User as PyUser
 
 from models import User
 
@@ -11,23 +12,30 @@ async def send_message_to_admins(
     client: Client,
     callback_query: CallbackQuery,
     text: str,
-):
+) -> None:
     """Отправка сообщений всем администраторам бота."""
-    f_user = callback_query.from_user
-    for admin_tg_id in User.get_cache_admins_tg_ids() - {f_user.id}:
-        if f_user.username:
-            b_text = f'@{f_user.username}'
-        else:
-            full_name = (
-                f'{f_user.first_name + " " if f_user.first_name else ""}'
-                f'{f_user.last_name if f_user.last_name else ""}'
-            )
-            b_text = f'{full_name} ({f_user.id})' if full_name else f'{f_user.id}'
+    from_user = callback_query.from_user
+    admins = User.select(User.id).where(
+        (User.id != from_user.id) & User.is_admin == True
+    )
+    for admin in admins:
         try:
             await client.send_message(
-                admin_tg_id,
-                f'{b_text}\n{text}',
+                admin.id,
+                f'{get_username(from_user)}\n{text}',
                 disable_web_page_preview=True,
             )
         except RPCError as e:
             logging.error(e, exc_info=True)
+
+
+def get_username(user: PyUser) -> str:
+    """Получить имя пользователя для сообщения администраторам."""
+    if user.username:
+        return f'@{user.username}'
+
+    full_name = (
+        f'{user.first_name + " " if user.first_name else ""}'
+        f'{user.last_name if user.last_name else ""}'
+    )
+    return f'{full_name} ({user.id})' if full_name else f'{user.id}'

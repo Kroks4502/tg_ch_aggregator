@@ -87,8 +87,6 @@ async def add_source_waiting_input(  # noqa: C901
         await edit_text('❗️Этот канал уже используется')
         return
 
-    Source.clear_actual_cache()
-
     category_obj: Category = Category.get(category_id)
     src_link = await get_channel_formatted_link(source_obj.id)
     cat_link = await get_channel_formatted_link(category_obj.id)

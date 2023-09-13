@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from models import Category, Filter, Source
+from models import Category
 from plugins.bot.constants import CONF_DEL_BTN_TEXT, CONF_DEL_TEXT_TPL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
@@ -45,9 +45,6 @@ async def delete_category(client: Client, callback_query: CallbackQuery):
     category_obj: Category = Category.get(category_id)
 
     category_obj.delete_instance()
-    Category.clear_actual_cache()
-    Source.clear_actual_cache()
-    Filter.clear_actual_cache()
 
     cat_link = await get_channel_formatted_link(category_obj.id)
     text = f'✅ Категория **{cat_link}** удалена'

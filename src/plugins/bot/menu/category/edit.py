@@ -107,8 +107,6 @@ async def edit_category_waiting_input(  # noqa: C901
         await edit_text('❗️Этот канал уже используется')
         return
 
-    Category.clear_actual_cache()
-
     cat_link_new = await get_channel_formatted_link(category_obj.id)
     success_text = f'✅ Категория **{cat_link_old}** изменена на **{cat_link_new}**'
     await edit_text(success_text)

@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from models import Filter, Source
+from models import Source
 from plugins.bot.constants import CONF_DEL_BTN_TEXT, CONF_DEL_TEXT_TPL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
@@ -45,8 +45,6 @@ async def delete_source(client: Client, callback_query: CallbackQuery):
     source_obj: Source = Source.get(source_id)
 
     source_obj.delete_instance()
-    Source.clear_actual_cache()
-    Filter.clear_actual_cache()
 
     src_link = await get_channel_formatted_link(source_obj.id)
     text = f'✅ Источник **{src_link}** удален'

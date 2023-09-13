@@ -74,7 +74,6 @@ async def edit_body_filter_wait_input(
 
     filter_obj.pattern = pattern_new
     filter_obj.save()
-    Filter.clear_actual_cache()
 
     if filter_obj.source:
         src_link = await get_channel_formatted_link(filter_obj.source.id)

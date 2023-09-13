@@ -66,7 +66,6 @@ async def add_admin_waiting_input(
     except peewee.IntegrityError:
         await reply('❗️Этот пользователь уже администратор')
         return
-    User.clear_actual_cache()
 
     adm_link = await get_user_formatted_link(admin_obj.id)
     text = f'✅ Администратор **{adm_link}** добавлен'

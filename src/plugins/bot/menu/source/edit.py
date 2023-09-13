@@ -59,7 +59,6 @@ async def new_source_category(client: Client, callback_query: CallbackQuery):
 
     source_obj.category = new_category_obj
     source_obj.save()
-    Source.clear_actual_cache()
 
     src_link = await get_channel_formatted_link(source_obj.id)
     cat_link_old = await get_channel_formatted_link(old_category_obj.id)

@@ -92,7 +92,6 @@ async def edit_cleanup_regex_wait_input(
         pattern_old = cleanup_list[cleanup_id]
         cleanup_list[cleanup_id] = pattern_new
         global_settings_obj.save()
-        GlobalSettings.clear_actual_cache()
 
         text = SUC_TEXT_TPL.format(
             'Общий паттерн',

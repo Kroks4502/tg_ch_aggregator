@@ -73,7 +73,6 @@ async def edit_alias_waiting_input(  # noqa: C901
         )
 
     source_obj.save()
-    Source.clear_actual_cache()
     await edit_text(success_text)
 
     await send_message_to_admins(client, callback_query, success_text)

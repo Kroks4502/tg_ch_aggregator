@@ -65,7 +65,6 @@ async def delete_cleanup_regex(client: Client, callback_query: CallbackQuery):
         global_settings_obj = GlobalSettings.get(key='cleanup_list')
         pattern = global_settings_obj.value.pop(cleanup_id)
         global_settings_obj.save()
-        GlobalSettings.clear_actual_cache()
         text = SUC_TEXT_TPL.format('Общий паттерн', pattern, '')
 
     await callback_query.message.edit_text(

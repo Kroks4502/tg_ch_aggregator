@@ -2,6 +2,7 @@ import logging
 from asyncio import sleep
 from operator import attrgetter
 
+from peewee import DoesNotExist
 from pyrogram.errors import RPCError
 from pyrogram.types import Dialog
 
@@ -24,8 +25,14 @@ async def startup():
     me = await user.get_me()
     await bot.send_message(me.id, msg)
 
-    if not User.select().where(User.id == me.id).exists():
-        User.create(id=me.id, username='UserBot')
+    try:
+        user_obj = User.get(id=me.id)
+        if not user_obj.is_admin:
+            user_obj.is_admin = True
+            user_obj.save()
+    except DoesNotExist:
+        User.create(id=me.id, username='UserBot', is_admin=True)
+
     await update_admin_usernames(me.id)
 
     new_messages = await get_unread_messages()
@@ -75,13 +82,11 @@ async def get_unread_messages() -> list:
         {item.id: [Source, item.title, False] for item in Source.select()}
     )
 
+    sources_ids = [source.id for source in Source.select(Source.id)]
     new_messages = []
     async for dialog in user.get_dialogs():
         update_source_title(dialog, db_channels)
-        if (
-            dialog.unread_messages_count != 0
-            and dialog.chat.id in Source.get_cache_monitored_channels()
-        ):
+        if dialog.unread_messages_count != 0 and dialog.chat.id in sources_ids:
             media_group_ids = set()  # {media_group_id ...}
             async for message in user.get_chat_history(
                 dialog.chat.id, dialog.unread_messages_count
