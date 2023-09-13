@@ -65,12 +65,33 @@ class Filter(BaseModel):
     source = ForeignKeyField(Source, null=True, backref='filters', on_delete='CASCADE')
 
 
+class AlertRule(BaseModel):
+    user = ForeignKeyField(User, backref='alerts', on_delete='CASCADE', index=True)
+    category = ForeignKeyField(
+        Category, backref='alerts', on_delete='CASCADE', index=True
+    )
+    type = CharField(max_length=32)  # counter | regex
+    config = BinaryJSONField()
+
+    class Meta:
+        table_name = 'alert_rule'
+
+
+class AlertHistory(BaseModel):
+    category = ForeignKeyField(
+        Category, backref='alerts_history', on_delete='CASCADE', index=True
+    )
+    fired_at = DateTimeField(default=datetime.now)
+    data = BinaryJSONField()
+
+    class Meta:
+        table_name = 'alert_history'
+
+
 class MessageHistory(BaseModel):
     id = BigAutoField(primary_key=True)
 
-    source = ForeignKeyField(
-        Source, backref='history', on_delete='CASCADE'
-    )  # source_id
+    source = ForeignKeyField(Source, backref='history', on_delete='CASCADE')
     source_message_id = BigIntegerField()
     source_media_group_id = CharField(default=None, null=True)
     source_forward_from_chat_id = BigIntegerField(default=None, null=True)
@@ -80,7 +101,7 @@ class MessageHistory(BaseModel):
         Category,
         backref='history',
         on_delete='CASCADE',
-    )  # category_id
+    )
     category_message_id = BigIntegerField(default=None, null=True)
     category_media_group_id = CharField(default=None, null=True)
     category_message_rewritten = BooleanField(default=None, null=True)
