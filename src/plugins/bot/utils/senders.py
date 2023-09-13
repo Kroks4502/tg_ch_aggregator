@@ -4,7 +4,7 @@ from pyrogram import Client
 from pyrogram.errors import RPCError
 from pyrogram.types import CallbackQuery
 
-from models import Admin
+from models import User
 
 
 async def send_message_to_admins(
@@ -14,7 +14,7 @@ async def send_message_to_admins(
 ):
     """Отправка сообщений всем администраторам бота."""
     f_user = callback_query.from_user
-    for admin_tg_id in Admin.get_cache_admins_tg_ids() - {f_user.id}:
+    for admin_tg_id in User.get_cache_admins_tg_ids() - {f_user.id}:
         if f_user.username:
             b_text = f'@{f_user.username}'
         else:

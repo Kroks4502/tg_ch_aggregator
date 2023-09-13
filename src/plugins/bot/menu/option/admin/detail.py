@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from clients import user
-from models import Admin
+from models import User
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.menu import Menu
 
@@ -16,7 +16,7 @@ async def detail_admin(_, callback_query: CallbackQuery):
     menu = Menu(callback_query.data)
 
     admin_id = menu.path.get_value('a')
-    admin_obj: Admin = Admin.get(admin_id)
+    admin_obj: User = User.get(admin_id)
 
     if admin_obj.id != user.me.id:
         menu.add_row_button('✖️ Удалить', ':delete')

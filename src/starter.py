@@ -6,7 +6,7 @@ from pyrogram.errors import RPCError
 from pyrogram.types import Dialog
 
 from clients import bot, user
-from models import Admin, Category, Source
+from models import Category, Source, User
 from plugins.user.sources_monitoring.new_message import new_message
 
 
@@ -24,8 +24,8 @@ async def startup():
     me = await user.get_me()
     await bot.send_message(me.id, msg)
 
-    if not Admin.select().where(Admin.id == me.id).exists():
-        Admin.create(id=me.id, username='UserBot')
+    if not User.select().where(User.id == me.id).exists():
+        User.create(id=me.id, username='UserBot')
     await update_admin_usernames(me.id)
 
     new_messages = await get_unread_messages()
@@ -45,7 +45,7 @@ async def startup():
 
 
 async def update_admin_usernames(user_bot_tg_id: int):
-    db_data = {admin.id: admin.username for admin in Admin.select()}
+    db_data = {admin.id: admin.username for admin in User.select()}
 
     actual = {}
     for admin_id in db_data:
@@ -63,9 +63,9 @@ async def update_admin_usernames(user_bot_tg_id: int):
             or not username
             and f'…{str(tg_id)[-5:]}' != db_data[tg_id]
         ):
-            q = Admin.update(
-                {Admin.username: username if username else f'…{str(tg_id)[-5:]}'}
-            ).where(Admin.id == tg_id)
+            q = User.update(
+                {User.username: username if username else f'…{str(tg_id)[-5:]}'}
+            ).where(User.id == tg_id)
             q.execute()
 
 
@@ -112,7 +112,7 @@ async def check_sources_in_dialogs(db_channels: dict):
         if data[2] is False:
             mgs = f'Источника {tg_id} {data[1]} нет в диалогах UserBot'
             logging.warning(mgs)
-            for admin in Admin.select():
+            for admin in User.select():
                 try:
                     await bot.send_message(admin.id, mgs)
                 except RPCError as e:

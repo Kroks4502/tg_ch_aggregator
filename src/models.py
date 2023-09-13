@@ -109,9 +109,10 @@ class Filter(BaseModel):
     source = ForeignKeyField(Source, null=True, backref='filters', on_delete='CASCADE')
 
 
-class Admin(BaseModel):
+class User(BaseModel):
     id = BigIntegerField(primary_key=True)
     username = CharField()
+    is_admin = BooleanField(default=False)
 
     _cache_admins_tg_ids = set()
 
@@ -148,17 +149,26 @@ class MessageHistory(BaseModel):
     source_forward_from_message_id = BigIntegerField(default=None, null=True)
 
     category = ForeignKeyField(
-        Category, backref='history', on_delete='CASCADE'
+        Category,
+        backref='history',
+        on_delete='CASCADE',
     )  # category_id
     category_message_id = BigIntegerField(default=None, null=True)
     category_media_group_id = CharField(default=None, null=True)
     category_message_rewritten = BooleanField(default=None, null=True)
 
     repeat_history = ForeignKeyField(
-        'self', on_delete='SET NULL', null=True, default=None
+        'self',
+        on_delete='SET NULL',
+        null=True,
+        default=None,
     )
     filter = ForeignKeyField(
-        Filter, backref='history', on_delete='SET NULL', null=True, default=None
+        Filter,
+        backref='history',
+        on_delete='SET NULL',
+        null=True,
+        default=None,
     )
 
     created_at = DateTimeField(default=datetime.now)

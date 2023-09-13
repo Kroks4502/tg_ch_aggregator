@@ -3,14 +3,14 @@ import logging
 from pyrogram.errors import RPCError
 
 from clients import bot
-from models import Admin
+from models import User
 
 
 async def send_error_to_admins(
     text: str,
 ):
     """Отправка сообщений от бота всем администраторам."""
-    for admin_tg_id in Admin.get_cache_admins_tg_ids():
+    for admin_tg_id in User.get_cache_admins_tg_ids():
         try:
             await bot.send_message(
                 admin_tg_id,

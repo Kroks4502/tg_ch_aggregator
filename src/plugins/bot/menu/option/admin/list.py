@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from models import Admin
+from models import User
 from plugins.bot.constants import ADD_BNT_TEXT
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.menu import ButtonData, Menu
@@ -17,9 +17,9 @@ async def list_admins(_, callback_query: CallbackQuery):
 
     menu.add_row_button(ADD_BNT_TEXT, ':add')
 
-    query = Admin.select(
-        Admin.id,
-        Admin.username,
+    query = User.select(
+        User.id,
+        User.username,
     )
 
     pagination = menu.set_pagination(total_items=query.count())

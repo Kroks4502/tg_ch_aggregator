@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from filter_types import FILTER_TYPES_BY_ID
-from models import Admin, Category, Filter, Source
+from models import Category, Filter, Source, User
 from plugins.bot.constants import DEFAULT_NUM_ITEMS_ON_MENU, MAX_LENGTH_BUTTON_TEXT
 from plugins.bot.utils.links import get_channel_formatted_link, get_user_formatted_link
 from plugins.bot.utils.pagination import Pagination
@@ -62,7 +62,7 @@ class Menu:
         filter_obj: Filter = None,
         filter_type_id: str = None,
         cleanup_pattern: str = None,
-        admin_obj: Admin = None,
+        admin_obj: User = None,
         start_text: str = None,
         last_text: str = None,
     ) -> str:

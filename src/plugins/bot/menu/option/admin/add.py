@@ -4,7 +4,7 @@ from pyrogram.enums import ChatType
 from pyrogram.errors import RPCError
 from pyrogram.types import CallbackQuery, Message
 
-from models import Admin
+from models import User
 from plugins.bot.constants import CANCEL
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_user_formatted_link
@@ -62,11 +62,11 @@ async def add_admin_waiting_input(
             f'{chat.last_name + " " if chat.last_name else ""}'
         )
     try:
-        admin_obj = Admin.create(id=chat.id, username=username)
+        admin_obj = User.create(id=chat.id, username=username, is_admin=True)
     except peewee.IntegrityError:
         await reply('❗️Этот пользователь уже администратор')
         return
-    Admin.clear_actual_cache()
+    User.clear_actual_cache()
 
     adm_link = await get_user_formatted_link(admin_obj.id)
     text = f'✅ Администратор **{adm_link}** добавлен'
