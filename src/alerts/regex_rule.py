@@ -26,7 +26,7 @@ async def check_message_by_regex_alert_rule(
     ):
         match = None
         pattern = alert_rule.config["regex"]
-        for match in re.finditer(pattern, text):
+        for match in re.finditer(pattern, text, flags=re.IGNORECASE):
             break
 
         if not match:
