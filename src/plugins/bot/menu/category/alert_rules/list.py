@@ -16,10 +16,15 @@ async def list_alerts_rules(_, callback_query: CallbackQuery):
 
     menu = Menu(callback_query.data)
 
+    category_id = menu.path.get_value("c")
+
     if is_admin(callback_query.from_user.id):
         menu.add_row_button(ADD_BNT_TEXT + " правило", ":add")
 
-    query = AlertRule.select().where(AlertRule.user_id == callback_query.from_user.id)
+    query = AlertRule.select().where(
+        (AlertRule.user_id == callback_query.from_user.id)
+        & (AlertRule.category_id == category_id)
+    )
 
     pagination = menu.set_pagination(total_items=query.count())
     menu.add_rows_from_data(
@@ -32,7 +37,6 @@ async def list_alerts_rules(_, callback_query: CallbackQuery):
         ],
     )
 
-    category_id = menu.path.get_value("c")
     text = await menu.get_text(
         category_obj=Category.get(category_id),
         last_text="**Правила уведомлений**",
