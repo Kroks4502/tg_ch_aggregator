@@ -10,21 +10,21 @@ from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'/a/\d+/:delete/$') & custom_filters.admin_only,
+    filters.regex(r"/a/\d+/:delete/$") & custom_filters.admin_only,
 )
 async def confirmation_delete_admin(_, callback_query: CallbackQuery):
     await callback_query.answer()
 
     menu = Menu(callback_query.data)
 
-    admin_id = menu.path.get_value('a')
+    admin_id = menu.path.get_value("a")
     admin_obj: User = User.get(admin_id)
 
-    menu.add_row_button(CONF_DEL_BTN_TEXT, ':y')
+    menu.add_row_button(CONF_DEL_BTN_TEXT, ":y")
 
     text = await menu.get_text(
-        admin_obj=admin_obj,
-        last_text=CONF_DEL_TEXT_TPL.format('администратора'),
+        user_obj=admin_obj,
+        last_text=CONF_DEL_TEXT_TPL.format("администратора"),
     )
     await callback_query.message.edit_text(
         text=text,
@@ -34,20 +34,20 @@ async def confirmation_delete_admin(_, callback_query: CallbackQuery):
 
 
 @Client.on_callback_query(
-    filters.regex(r'/a/\d+/:delete/:y/$') & custom_filters.admin_only,
+    filters.regex(r"/a/\d+/:delete/:y/$") & custom_filters.admin_only,
 )
 async def delete_admin(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
 
     menu = Menu(callback_query.data, back_step=3)
 
-    admin_id = menu.path.get_value('a')
+    admin_id = menu.path.get_value("a")
     admin_obj: User = User.get(admin_id)
 
     admin_obj.delete_instance()
 
     adm_link = await get_user_formatted_link(admin_obj.id)
-    text = f'✅ Администратор **{adm_link}** удален'
+    text = f"✅ Администратор **{adm_link}** удален"
     await callback_query.message.edit_text(
         text=text,
         reply_markup=menu.reply_markup,

@@ -3,8 +3,12 @@ from dataclasses import dataclass
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from filter_types import FILTER_TYPES_BY_ID
-from models import Category, Filter, Source, User
-from plugins.bot.constants import DEFAULT_NUM_ITEMS_ON_MENU, MAX_LENGTH_BUTTON_TEXT
+from models import AlertRule, Category, Filter, Source, User
+from plugins.bot.constants import (
+    DEFAULT_NUM_ITEMS_ON_MENU,
+    MAIN_MENU_BTN_TEXT,
+    MAX_LENGTH_BUTTON_TEXT,
+)
 from plugins.bot.utils.links import get_channel_formatted_link, get_user_formatted_link
 from plugins.bot.utils.pagination import Pagination
 from plugins.bot.utils.path import Path
@@ -17,7 +21,7 @@ class Menu:
         self,
         path: str,
         *,
-        back_title: str = 'Назад',
+        back_title: str = "Назад",
         back_step: int = 1,
     ):
         """
@@ -28,18 +32,20 @@ class Menu:
         self.inline_keyboard = []
 
         self.raw_path = path
-        self.path = Path(self.get_path_without_pagination())
+        self.path = Path(self.get_path_without_params())
 
         self.back_title = back_title
         self.back_step = back_step
         self.pagination = None
+        self.need_send_new_message = False if self.raw_path.find("?new") == -1 else True
 
-    def get_path_without_pagination(self) -> str:
-        """Получить путь без номера страницы."""
-        pag_idx = self.raw_path.find('p/')
-        if pag_idx == -1:
-            return self.raw_path
-        return self.raw_path[:pag_idx]
+    def get_path_without_params(self) -> str:
+        """Получить путь без номера страницы и других параметров."""
+        pag_idx = self.raw_path.find("p/") or self.raw_path.find("?new")
+        if pag_idx != -1:
+            return self.raw_path[:pag_idx]
+
+        return self.raw_path
 
     def set_pagination(
         self,
@@ -48,7 +54,7 @@ class Menu:
     ) -> Pagination:
         """Установить параметры пагинации меню."""
         self.pagination = Pagination(
-            page=Path(self.raw_path).get_value('p') or 1,
+            page=Path(self.raw_path).get_value("p") or 1,
             size=size,
             total_items=total_items,
         )
@@ -62,10 +68,12 @@ class Menu:
         filter_obj: Filter = None,
         filter_type_id: str = None,
         cleanup_pattern: str = None,
-        admin_obj: User = None,
+        user_obj: User = None,
+        alert_rule_obj: AlertRule = None,
         start_text: str = None,
         last_text: str = None,
     ) -> str:
+        """Формирует описание пути до объекта в тестовом сообщении ответа."""
         if filter_obj:
             source_obj = filter_obj.source
             filter_type_id = filter_obj.type
@@ -73,52 +81,59 @@ class Menu:
         if source_obj:
             category_obj = source_obj.category
 
+        if alert_rule_obj:
+            category_obj = alert_rule_obj.category
+
         breadcrumbs = []
 
         if category_obj:
             link = await get_channel_formatted_link(category_obj.id)
-            breadcrumbs.append(f'Категория: **{link}**')
+            breadcrumbs.append(f"Категория: **{link}**")
 
         if source_obj:
             link = await get_channel_formatted_link(source_obj.id)
-            breadcrumbs.append(f'Источник: **{link}**')
+            breadcrumbs.append(f"Источник: **{link}**")
 
         if filter_type_id:
             if not source_obj:
-                breadcrumbs.append('**Общие фильтры**')
+                breadcrumbs.append("**Общие фильтры**")
             filter_type_text = FILTER_TYPES_BY_ID.get(filter_type_id)
-            breadcrumbs.append(f'Тип фильтра: **{filter_type_text}**')
+            breadcrumbs.append(f"Тип фильтра: **{filter_type_text}**")
 
         if filter_obj:
-            breadcrumbs.append(f'Паттерн: `{filter_obj.pattern}`')
+            breadcrumbs.append(f"Паттерн: `{filter_obj.pattern}`")
 
         if cleanup_pattern:
             if not source_obj:
-                breadcrumbs.append('**Общая очистка текста**')
-            breadcrumbs.append(f'Паттерн очистки текста: `{cleanup_pattern}`')
+                breadcrumbs.append("**Общая очистка текста**")
+            breadcrumbs.append(f"Паттерн очистки текста: `{cleanup_pattern}`")
 
-        if admin_obj:
-            link = await get_user_formatted_link(admin_obj.id)
-            breadcrumbs.append(f'**{link}**')
+        if user_obj:
+            link = await get_user_formatted_link(user_obj.id)
+            breadcrumbs.append(f"Пользователь: **{link}**")
 
-        pagination_text = ''
+        if alert_rule_obj:
+            link = await get_user_formatted_link(alert_rule_obj.user_id)
+            breadcrumbs.append(f"Правило уведомления пользователя **{link}**")
+
+        pagination_text = ""
         if self.pagination and self.pagination.is_exists():
             pagination_text = (
-                f'Страница {self.pagination.page} из {self.pagination.last_page}'
+                f"Страница {self.pagination.page} из {self.pagination.last_page}"
             )
 
         result_text_items = [
             item
             for item in (
                 start_text,
-                '\n'.join(breadcrumbs),
+                "\n".join(breadcrumbs),
                 last_text,
                 pagination_text,
             )
             if item
         ]
 
-        return '\n\n'.join(result_text_items) or '<пусто>'
+        return "\n\n".join(result_text_items) or "<пусто>"
 
     def add_row_button(self, text: str, path: str) -> None:
         """
@@ -145,8 +160,8 @@ class Menu:
 
     def add_rows_from_data(
         self,
-        data: list['ButtonData'],
-        postfix: str = '',
+        data: list["ButtonData"],
+        postfix: str = "",
     ) -> None:
         """
         Добавить строки кнопок для списка элементов из данных.
@@ -195,13 +210,13 @@ class Menu:
             return []
 
         footer_buttons_row = [
-            InlineKeyboardButton('🏠 На главную', callback_data='/'),
+            InlineKeyboardButton(MAIN_MENU_BTN_TEXT, callback_data="/"),
         ]
 
         prev_path = self.path.get_prev(self.back_step)
-        if prev_path != '/':
+        if prev_path != "/":
             footer_buttons_row.append(
-                InlineKeyboardButton(f'🔙 {self.back_title}', callback_data=prev_path),
+                InlineKeyboardButton(f"🔙 {self.back_title}", callback_data=prev_path),
             )
 
         return footer_buttons_row
@@ -228,9 +243,9 @@ class ButtonData:
     @property
     def text(self):
         if len(self.title) > MAX_LENGTH_BUTTON_TEXT:
-            self.title = self.title[:MAX_LENGTH_BUTTON_TEXT].rstrip(' ') + '…'
+            self.title = self.title[:MAX_LENGTH_BUTTON_TEXT].rstrip(" ") + "…"
 
         if self.amount:
-            self.title = f'{self.title} ({self.amount})'
+            self.title = f"{self.title} ({self.amount})"
 
         return self.title

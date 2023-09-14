@@ -9,25 +9,27 @@ from plugins.bot.utils.statistic import get_statistic_text
 
 
 @Client.on_callback_query(
-    filters.regex(r'/s/(p/\d+/|)$'),
+    filters.regex(r"/s/(p/\d+/|)$"),
 )
 async def list_source(_, callback_query: CallbackQuery):
     await callback_query.answer()
 
     menu = Menu(path=callback_query.data, back_step=2)
 
-    category_id = menu.path.get_value('c')
+    category_id = menu.path.get_value("c")
     category_obj = Category.get(category_id) if category_id else None
     if category_obj and is_admin(callback_query.from_user.id):
         menu.add_row_many_buttons(
-            ('➕', ':add'),  # Добавить источник в категорию
-            ('📝', '../:edit'),  # Редактировать категорию (изменить канал)
-            ('✖️', '../:delete'),  # Удалить категорию
+            ("➕", ":add"),  # Добавить источник в категорию
+            ("📝", "../:edit"),  # Редактировать категорию (изменить канал)
+            ("✖️", "../:delete"),  # Удалить категорию
         )
-    menu.add_row_button('📖 История сообщений', 'mh')
 
+    menu.add_row_button("Правила уведомлений", "../r")
+
+    menu.add_row_button("📖 История сообщений", "mh")
     if category_obj:
-        menu.add_row_button('📙 История фильтрации', 'fh')
+        menu.add_row_button("📙 История фильтрации", "fh")
 
     query = (
         Source.select(
@@ -35,7 +37,7 @@ async def list_source(_, callback_query: CallbackQuery):
             Source.title,
             Source.title_alias,
             Source.cleanup_list,
-            peewee.fn.Count(Filter.id).alias('count'),
+            peewee.fn.Count(Filter.id).alias("count"),
         )
         .where(Source.category == category_obj.id if category_obj else True)
         .join(Filter, peewee.JOIN.LEFT_OUTER)
@@ -55,10 +57,10 @@ async def list_source(_, callback_query: CallbackQuery):
         statistic_text = get_statistic_text(
             where=MessageHistory.category == category_obj
         )
-        last_text = f'{statistic_text}'
+        last_text = f"{statistic_text}"
     else:
         statistic_text = get_statistic_text()
-        last_text = f'**Источники**\n\n{statistic_text}'
+        last_text = f"**Источники**\n\n{statistic_text}"
 
     text = await menu.get_text(
         category_obj=category_obj,
