@@ -8,6 +8,7 @@ from pyrogram import filters
 from pyrogram.enums import MessageMediaType
 from pyrogram.types import Message
 
+from alerts.regex_rule import check_message_by_regex_alert_rule
 from models import MessageHistory, Source
 from plugins.user.exceptions import (
     MessageBadRequestError,
@@ -41,7 +42,7 @@ NEW = Operation.NEW
 )
 async def new_message(client: Client, message: Message):  # noqa: C901
     logging.debug(
-        'Источник %s отправил сообщение %s',
+        "Источник %s отправил сообщение %s",
         message.chat.id,
         message.id,
     )
@@ -80,9 +81,9 @@ async def new_message(client: Client, message: Message):  # noqa: C901
                 source_id=source.id,
                 source_message_id=msg.id,
                 source_media_group_id=msg.media_group_id,
-                source_forward_from_chat_id=msg.forward_from_chat.id
-                if msg.forward_from_message_id
-                else None,
+                source_forward_from_chat_id=(
+                    msg.forward_from_chat.id if msg.forward_from_message_id else None
+                ),
                 source_forward_from_message_id=msg.forward_from_message_id,
                 category_id=source.category_id,
                 repeat_history_id=repeat_history_id,
@@ -106,7 +107,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             ]
 
             logging.info(
-                'Источник %s отправил сообщение %s, оно отправлено в категорию %s',
+                "Источник %s отправил сообщение %s, оно отправлено в категорию %s",
                 message.chat.id,
                 message.id,
                 source.category_id,
@@ -119,8 +120,10 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             )
 
             logging.info(
-                'Источник %s отправил сообщение %s в составе медиа группы %s, '
-                'сообщения отправлены в категорию %s',
+                (
+                    "Источник %s отправил сообщение %s в составе медиа группы %s, "
+                    "сообщения отправлены в категорию %s"
+                ),
                 message.chat.id,
                 message.id,
                 message.media_group_id,
@@ -132,7 +135,11 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             history_obj.category_message_rewritten = source.is_rewrite
             history_obj.category_message_id = cat_msg.id
             history_obj.category_media_group_id = cat_msg.media_group_id
-            history_obj.data[-1]['category'] = json.loads(cat_msg.__str__())
+            history_obj.data[-1]["category"] = json.loads(cat_msg.__str__())
+
+            await check_message_by_regex_alert_rule(
+                category_id=history_obj.category_id, message=cat_msg
+            )
 
     except MessageBaseError as e:
         exc = e
@@ -142,8 +149,8 @@ async def new_message(client: Client, message: Message):  # noqa: C901
         exc = MessageForwardsRestrictedError(operation=NEW, message=message)
         if source and not source.is_rewrite:
             await send_error_to_admins(
-                f'⚠ Источник {message.chat.title} запрещает пересылку сообщений. '
-                'Установите режим перепечатывания сообщений.'
+                f"⚠ Источник {message.chat.title} запрещает пересылку сообщений. "
+                "Установите режим перепечатывания сообщений."
             )
     except (
         pyrogram_errors.MediaCaptionTooLong,
@@ -157,7 +164,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             blocked.remove(value=message.media_group_id or message.id)
 
         if exc and (history_obj := history.get(message.id)):
-            history_obj.data[-1]['exception'] = exc.to_dict()
+            history_obj.data[-1]["exception"] = exc.to_dict()
 
         for history_obj in history.values():
             history_obj.save()

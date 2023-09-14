@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-src_path = str(Path(__file__).parent / 'src')
+src_path = str(Path(__file__).parent / "src")
 try:
     sys.path.index(src_path)
 except ValueError:
@@ -9,7 +9,7 @@ except ValueError:
 
 from clients import bot, user  # noqa: E402
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     async def create_sessions():
         """
@@ -25,8 +25,8 @@ if __name__ == '__main__':
             await bot.send_message(
                 chat_id=user_info.id,
                 text=(
-                    f'Сессии пользователя `{user_info.id}` (`{user_info.username}`) '
-                    f'и бота `{bot_info.id}` (`{bot_info.username}`) актуальны'
+                    f"Сессии пользователя `{user_info.id}` (`{user_info.username}`) "
+                    f"и бота `{bot_info.id}` (`{bot_info.username}`) актуальны"
                 ),
             )
 

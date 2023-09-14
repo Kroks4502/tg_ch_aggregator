@@ -12,32 +12,32 @@ from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
 ASK_TEXT_TPL = (
-    'ОК. Ты изменяешь {} очистки текста `{}`{}.\n\n'
-    f'**Введи новый паттерн** или {CANCEL}'
+    "ОК. Ты изменяешь {} очистки текста `{}`{}.\n\n"
+    f"**Введи новый паттерн** или {CANCEL}"
 )
-SUC_TEXT_TPL = '✅ {} очистки текста изменен с `{}` на `{}` {}'
+SUC_TEXT_TPL = "✅ {} очистки текста изменен с `{}` на `{}` {}"
 
 
 @Client.on_callback_query(
-    filters.regex(r'/cl/\d+/:edit/$') & custom_filters.admin_only,
+    filters.regex(r"/cl/\d+/:edit/$") & custom_filters.admin_only,
 )
 async def edit_cleanup_regex(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
 
     path = Path(callback_query.data)
 
-    cleanup_id = path.get_value('cl')
-    source_id = path.get_value('s')
+    cleanup_id = path.get_value("cl")
+    source_id = path.get_value("s")
     source_obj: Source = Source.get(source_id) if source_id else None
 
     if source_obj:
         pattern = source_obj.cleanup_list[cleanup_id]
         src_link = await get_channel_formatted_link(source_obj.id)
-        text = ASK_TEXT_TPL.format('паттерн', pattern, f' для источника {src_link}')
+        text = ASK_TEXT_TPL.format("паттерн", pattern, f" для источника {src_link}")
     else:
-        global_settings_obj = GlobalSettings.get(key='cleanup_list')
+        global_settings_obj = GlobalSettings.get(key="cleanup_list")
         pattern = global_settings_obj.value[cleanup_id]
-        text = ASK_TEXT_TPL.format('общий паттерн', pattern, '')
+        text = ASK_TEXT_TPL.format("общий паттерн", pattern, "")
 
     await callback_query.message.reply(text, disable_web_page_preview=True)
     input_wait_manager.add(
@@ -81,24 +81,23 @@ async def edit_cleanup_regex_wait_input(
         src_link = await get_channel_formatted_link(source_obj.id)
 
         text = SUC_TEXT_TPL.format(
-            'Паттерн',
+            "Паттерн",
             pattern_old,
             pattern_new,
-            f'для источника **{src_link}**',
+            f"для источника **{src_link}**",
         )
     else:
-        global_settings_obj = GlobalSettings.get(key='cleanup_list')
+        global_settings_obj = GlobalSettings.get(key="cleanup_list")
         cleanup_list = global_settings_obj.value
         pattern_old = cleanup_list[cleanup_id]
         cleanup_list[cleanup_id] = pattern_new
         global_settings_obj.save()
-        GlobalSettings.clear_actual_cache()
 
         text = SUC_TEXT_TPL.format(
-            'Общий паттерн',
+            "Общий паттерн",
             pattern_old,
             pattern_new,
-            '',
+            "",
         )
 
     await reply(text)

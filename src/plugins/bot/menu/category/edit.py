@@ -17,17 +17,17 @@ from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'/c/-\d+/:edit/$') & custom_filters.admin_only,
+    filters.regex(r"/c/-\d+/:edit/$") & custom_filters.admin_only,
 )
 async def edit_category(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.reply(
-        'ОК. Ты меняешь канал для категории, '
-        'в который будут пересылаться сообщения из источников. '
-        'Этот бот должен быть администратором канала '
-        'с возможностью публиковать записи.\n\n'
-        '**Введи публичное имя канала, частную ссылку, '
-        f'ID, перешли сообщение из него** или {CANCEL}'
+        "ОК. Ты меняешь канал для категории, "
+        "в который будут пересылаться сообщения из источников. "
+        "Этот бот должен быть администратором канала "
+        "с возможностью публиковать записи.\n\n"
+        "**Введи публичное имя канала, частную ссылку, "
+        f"ID, перешли сообщение из него** или {CANCEL}"
     )
 
     input_wait_manager.add(
@@ -47,7 +47,7 @@ async def edit_category_waiting_input(  # noqa: C901
 
     #
 
-    new_message = await message.reply_text('⏳ Проверка…')
+    new_message = await message.reply_text("⏳ Проверка…")
 
     async def edit_text(text):
         await new_message.edit_text(
@@ -67,14 +67,14 @@ async def edit_category_waiting_input(  # noqa: C901
                 chat = await user.get_chat(message.text)
             except RPCError:
                 # Публичная ссылка (https://t.me/mychannel)
-                input_text = re.sub('https://t.me/', '', message.text)
+                input_text = re.sub("https://t.me/", "", message.text)
                 chat = await user.get_chat(input_text)
     except RPCError as e:
-        await edit_text(f'❌ Что-то пошло не так\n\n{e}')
+        await edit_text(f"❌ Что-то пошло не так\n\n{e}")
         return
 
     if chat.type != ChatType.CHANNEL:
-        await edit_text('❌ Это не канал')
+        await edit_text("❌ Это не канал")
         return
 
     #
@@ -82,19 +82,19 @@ async def edit_category_waiting_input(  # noqa: C901
     try:
         member = await chat.get_member(client.me.id)
         if not member.privileges.can_post_messages:
-            await edit_text('❌ Бот не имеет прав на публикацию в этом канале')
+            await edit_text("❌ Бот не имеет прав на публикацию в этом канале")
             return
     except exceptions.bad_request_400.UserNotParticipant:
-        await edit_text('❌ Бот не администратор этого канала')
+        await edit_text("❌ Бот не администратор этого канала")
         return
 
     try:
         await user.join_chat(chat.username if chat.username else chat.id)
     except RPCError as e:
-        await edit_text(f'❌ Основной клиент не может подписаться на канал\n\n{e}')
+        await edit_text(f"❌ Основной клиент не может подписаться на канал\n\n{e}")
         return
 
-    category_id = menu.path.get_value('c')
+    category_id = menu.path.get_value("c")
     category_obj: Category = Category.get(category_id)
 
     cat_link_old = await get_channel_formatted_link(category_obj.id)
@@ -104,13 +104,11 @@ async def edit_category_waiting_input(  # noqa: C901
     try:
         category_obj.save()
     except peewee.IntegrityError:
-        await edit_text('❗️Этот канал уже используется')
+        await edit_text("❗️Этот канал уже используется")
         return
 
-    Category.clear_actual_cache()
-
     cat_link_new = await get_channel_formatted_link(category_obj.id)
-    success_text = f'✅ Категория **{cat_link_old}** изменена на **{cat_link_new}**'
+    success_text = f"✅ Категория **{cat_link_old}** изменена на **{cat_link_new}**"
     await edit_text(success_text)
 
     await send_message_to_admins(client, callback_query, success_text)

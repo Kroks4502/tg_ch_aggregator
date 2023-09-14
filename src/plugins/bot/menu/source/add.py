@@ -18,14 +18,14 @@ from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'^/c/-\d+/s/:add/$') & custom_filters.admin_only,
+    filters.regex(r"^/c/-\d+/s/:add/$") & custom_filters.admin_only,
 )
 async def add_source(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.reply(
-        'ОК. Ты добавляешь новый источник.\n\n'
-        '**Введи публичное имя канала, частную ссылку, '
-        f'ID, перешли сообщение из него** или {CANCEL}'
+        "ОК. Ты добавляешь новый источник.\n\n"
+        "**Введи публичное имя канала, частную ссылку, "
+        f"ID, перешли сообщение из него** или {CANCEL}"
     )
 
     input_wait_manager.add(
@@ -42,7 +42,7 @@ async def add_source_waiting_input(  # noqa: C901
 
     #
 
-    new_message = await message.reply_text('⏳ Проверка…')
+    new_message = await message.reply_text("⏳ Проверка…")
 
     async def edit_text(text):
         await new_message.edit_text(
@@ -62,14 +62,14 @@ async def add_source_waiting_input(  # noqa: C901
                 chat = await user.get_chat(message.text)
             except RPCError:
                 # Публичная ссылка (https://t.me/mychannel)
-                input_text = re.sub('https://t.me/', '', message.text)
+                input_text = re.sub("https://t.me/", "", message.text)
                 chat = await user.get_chat(input_text)
     except RPCError as e:
-        await edit_text(f'❌ Что-то пошло не так\n\n{e}')
+        await edit_text(f"❌ Что-то пошло не так\n\n{e}")
         return
 
     if chat.type != ChatType.CHANNEL:
-        await edit_text('❌ Это не канал')
+        await edit_text("❌ Это не канал")
         return
 
     #
@@ -77,17 +77,15 @@ async def add_source_waiting_input(  # noqa: C901
     try:
         await user.join_chat(chat.username if chat.username else chat.id)
     except RPCError as e:
-        await edit_text(f'❌ Основной клиент не может подписаться на канал\n\n{e}')
+        await edit_text(f"❌ Основной клиент не может подписаться на канал\n\n{e}")
         return
 
-    category_id = menu.path.get_value('c')
+    category_id = menu.path.get_value("c")
     try:
         source_obj = Source.create(id=chat.id, title=chat.title, category=category_id)
     except peewee.IntegrityError:
-        await edit_text('❗️Этот канал уже используется')
+        await edit_text("❗️Этот канал уже используется")
         return
-
-    Source.clear_actual_cache()
 
     category_obj: Category = Category.get(category_id)
     src_link = await get_channel_formatted_link(source_obj.id)
@@ -95,7 +93,7 @@ async def add_source_waiting_input(  # noqa: C901
 
     warnings = await get_chat_info(source_obj)
     success_text = (
-        f'✅ Источник **{src_link}** добавлен в категорию **{cat_link}**\n\n{warnings}'
+        f"✅ Источник **{src_link}** добавлен в категорию **{cat_link}**\n\n{warnings}"
     )
     await edit_text(success_text)
 

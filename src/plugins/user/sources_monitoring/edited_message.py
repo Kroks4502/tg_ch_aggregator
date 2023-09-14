@@ -38,7 +38,7 @@ EDIT = Operation.EDIT
 )
 async def edit_regular_message(client: Client, message: Message):  # noqa: C901
     logging.debug(
-        'Источник %s изменил сообщение %s',
+        "Источник %s изменил сообщение %s",
         message.chat.id,
         message.id,
     )
@@ -102,13 +102,13 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
             )
 
         logging.info(
-            'Источник %s изменил сообщение %s, оно изменено в категории %s',
+            "Источник %s изменил сообщение %s, оно изменено в категории %s",
             message.chat.id,
             message.id,
             source.category_id,
         )
 
-        history_obj.data[-1]['category'] = json.loads(category_message.__str__())
+        history_obj.data[-1]["category"] = json.loads(category_message.__str__())
 
     except MessageBaseError as e:
         exc = e
@@ -129,5 +129,5 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
 
         if history_obj:
             if exc:
-                history_obj.data[-1]['exception'] = exc.to_dict()
+                history_obj.data[-1]["exception"] = exc.to_dict()
             history_obj.save()

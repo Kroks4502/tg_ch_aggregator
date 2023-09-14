@@ -15,7 +15,7 @@ def is_command(_, __, message: Message) -> bool:
     if not message.text:
         return False
 
-    return str(message.text)[0] == '/'
+    return str(message.text)[0] == "/"
 
 
 command_message = filters.create(is_command)

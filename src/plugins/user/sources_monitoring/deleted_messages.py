@@ -26,7 +26,7 @@ DELETE = Operation.DELETE
 async def deleted_messages(client: Client, messages: list[Message]):
     for message in messages:
         logging.debug(
-            'Источник %s удалил сообщение %s',
+            "Источник %s удалил сообщение %s",
             message.chat.id,
             message.id,
         )
@@ -55,7 +55,7 @@ async def deleted_messages(client: Client, messages: list[Message]):
             history_obj.category_message_id = None
 
             logging.info(
-                'Источник %s удалил сообщение %s, оно удалено из категории',
+                "Источник %s удалил сообщение %s, оно удалено из категории",
                 message.chat.id,
                 message.id,
             )
@@ -65,7 +65,7 @@ async def deleted_messages(client: Client, messages: list[Message]):
             exc = MessageBadRequestError(operation=DELETE, message=message, error=error)
         finally:
             if exc and history_obj:
-                history_obj.data[-1]['exception'] = exc.to_dict()
+                history_obj.data[-1]["exception"] = exc.to_dict()
 
             if history_obj:
                 history_obj.save()

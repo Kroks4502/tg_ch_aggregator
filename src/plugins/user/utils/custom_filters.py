@@ -12,8 +12,8 @@ forward_from_chat = filters.create(is_forward_from_chat)
 
 async def is_monitored_channels(_, __, message):
     if message.chat:
-        return message.chat.id in Source.get_cache_monitored_channels()
-    # Может прилететь message без чата
+        return Source.select().where(Source.id == message.chat.id).exists()
+    # Может быть получен message без чата ¯\_(ツ)_/¯
     return False
 
 

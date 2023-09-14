@@ -29,7 +29,7 @@ def get_statistic_text(where: Expression | bool = True):
             & (MessageHistory.repeat_history_id.is_null(True))
             & where
         )
-        .cte('Counts')
+        .cte("Counts")
     )
     created_at = counts_cte.c.created_at
     edited_at = counts_cte.c.edited_at
@@ -38,26 +38,25 @@ def get_statistic_text(where: Expression | bool = True):
 
     query = (
         MessageHistory.select(
-            fn.COUNT(created_at).alias('fdw_30d'),
-            get_sub_query(counts_cte, created_at, interval_7d, 'fdw_7d'),
-            get_sub_query(counts_cte, created_at, interval_1d, 'fdw_1d'),
-            fn.COUNT(edited_at).alias('edited_30d'),
-            get_sub_query(counts_cte, edited_at, interval_7d, 'edited_7d'),
-            get_sub_query(counts_cte, edited_at, interval_1d, 'edited_1d'),
-            fn.COUNT(filter_id).alias('filtered_30d'),
-            get_sub_query(counts_cte, filter_id, interval_7d, 'filtered_7d'),
-            get_sub_query(counts_cte, filter_id, interval_1d, 'filtered_1d'),
-            fn.COUNT(counts_cte.c.deleted_at).alias('deleted_30d'),
-            get_sub_query(counts_cte, deleted_at, interval_7d, 'deleted_7d'),
-            get_sub_query(counts_cte, deleted_at, interval_1d, 'deleted_1d'),
+            fn.COUNT(created_at).alias("fdw_30d"),
+            get_sub_query(counts_cte, created_at, interval_7d, "fdw_7d"),
+            get_sub_query(counts_cte, created_at, interval_1d, "fdw_1d"),
+            fn.COUNT(edited_at).alias("edited_30d"),
+            get_sub_query(counts_cte, edited_at, interval_7d, "edited_7d"),
+            get_sub_query(counts_cte, edited_at, interval_1d, "edited_1d"),
+            fn.COUNT(filter_id).alias("filtered_30d"),
+            get_sub_query(counts_cte, filter_id, interval_7d, "filtered_7d"),
+            get_sub_query(counts_cte, filter_id, interval_1d, "filtered_1d"),
+            fn.COUNT(counts_cte.c.deleted_at).alias("deleted_30d"),
+            get_sub_query(counts_cte, deleted_at, interval_7d, "deleted_7d"),
+            get_sub_query(counts_cte, deleted_at, interval_1d, "deleted_1d"),
         )
         .from_(counts_cte)
         .with_cte(counts_cte)
     )
 
     return (
-        'Статистика сообщений\n'
-        f"`{STATISTIC_TMPL.format(**next(iter(query.dicts())))}`"
+        f"Статистика сообщений\n`{STATISTIC_TMPL.format(**next(iter(query.dicts())))}`"
     )
 
 

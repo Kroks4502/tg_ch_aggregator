@@ -12,7 +12,7 @@ async def get_user_formatted_link(chat_id: int) -> str:
     try:
         chat = await user.get_chat(chat_id)
         if chat.username:
-            return f'[{chat.username}](https://{chat.username}.t.me)'
+            return f"[{chat.username}](https://{chat.username}.t.me)"
         full_name = (
             f'{chat.first_name + " " if chat.first_name else ""}'
             f'{chat.last_name + " " if chat.last_name else ""}'
@@ -30,9 +30,9 @@ async def get_channel_formatted_link(chat_id: int) -> str:
     try:
         chat = await user.get_chat(chat_id)
         if chat.username:
-            return f'[{chat.title}](https://{chat.username}.t.me)'
+            return f"[{chat.title}](https://{chat.username}.t.me)"
         if chat.invite_link:
-            return f'[{chat.title}]({chat.invite_link})'
+            return f"[{chat.title}]({chat.invite_link})"
         return chat.title
     except RPCError as e:
         logging.warning(e, exc_info=True)

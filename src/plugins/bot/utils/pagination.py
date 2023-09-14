@@ -3,7 +3,7 @@ import math
 # Параметры для пустой кнопки
 # Используется, чтобы не менялась сетка кнопок
 # при переключении страниц
-EMPTY_BUTTON_PARAMS = ('·', '·')
+EMPTY_BUTTON_PARAMS = ("·", "·")
 
 
 class Pagination:
@@ -34,21 +34,21 @@ class Pagination:
         next_params = EMPTY_BUTTON_PARAMS
         last_params = EMPTY_BUTTON_PARAMS
 
-        path_tmpl = 'p/{}'
+        path_tmpl = "p/{}"
 
         if self.page > 1:
             prev_page = self.page - 1
-            prev_params = '⬅️', path_tmpl.format(prev_page)
+            prev_params = "⬅️", path_tmpl.format(prev_page)
 
             if self.page > 2:
-                first_params = '⏪', path_tmpl.format(1)
+                first_params = "⏪", path_tmpl.format(1)
 
         if self.page < self.last_page:
             next_page = self.page + 1
-            next_params = '➡️', path_tmpl.format(next_page)
+            next_params = "➡️", path_tmpl.format(next_page)
 
             if self.page < self.last_page - 1:
-                last_params = '⏩', path_tmpl.format(self.last_page)
+                last_params = "⏩", path_tmpl.format(self.last_page)
 
         return [first_params, prev_params, next_params, last_params]
 

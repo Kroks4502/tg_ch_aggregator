@@ -6,19 +6,19 @@ from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/o/$') & custom_filters.admin_only,
+    filters.regex(r"/o/$") & custom_filters.admin_only,
 )
 async def options(_, callback_query: CallbackQuery):
     await callback_query.answer()
 
     menu = Menu(callback_query.data)
-    menu.add_row_button('Администраторы', 'a')
-    menu.add_row_button('Статистика', 'stat')
-    menu.add_row_button('📖 История сообщений', 'mh')
-    menu.add_row_button('📙 История фильтрации', 'fh')
-    menu.add_row_button('💾 Логи', ':get_logs')
+    menu.add_row_button("Администраторы", "a")
+    menu.add_row_button("Статистика", "stat")
+    menu.add_row_button("📖 История сообщений", "mh")
+    menu.add_row_button("📙 История фильтрации", "fh")
+    menu.add_row_button("💾 Логи", ":get_logs")
 
     await callback_query.message.edit_text(
-        text='**Параметры**',
+        text="**Параметры**",
         reply_markup=menu.reply_markup,
     )

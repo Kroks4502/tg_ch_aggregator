@@ -9,7 +9,7 @@ from plugins.bot.utils.menu import ButtonData, Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/c/(p/\d+/|)$'),
+    filters.regex(r"/c/(p/\d+/|)$"),
 )
 async def list_category(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -17,13 +17,13 @@ async def list_category(_, callback_query: CallbackQuery):
     menu = Menu(callback_query.data)
 
     if is_admin(callback_query.from_user.id):
-        menu.add_row_button(ADD_BNT_TEXT + ' категорию', ':add')
+        menu.add_row_button(ADD_BNT_TEXT + " категорию", ":add")
 
     query = (
         Category.select(
             Category.id,
             Category.title,
-            peewee.fn.Count(Source.id).alias('amount'),
+            peewee.fn.Count(Source.id).alias("amount"),
         )
         .join(Source, peewee.JOIN.LEFT_OUTER)
         .group_by(Category.id)
@@ -36,11 +36,11 @@ async def list_category(_, callback_query: CallbackQuery):
             ButtonData(i.title, i.id, i.amount)
             for i in query.paginate(pagination.page, pagination.size)
         ],
-        postfix='s/',
+        postfix="s/",
     )
 
     await callback_query.message.edit_text(
-        text='**Категории**',
+        text="**Категории**",
         reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
     )
