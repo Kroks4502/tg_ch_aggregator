@@ -22,7 +22,7 @@ class InputWaitManager:
         **kwargs,
     ) -> None:
         self._waiting_chats[chat_id] = {
-            'handler': client.add_handler(
+            "handler": client.add_handler(
                 MessageHandler(
                     self.__input_text,
                     filters=(
@@ -30,9 +30,9 @@ class InputWaitManager:
                     ),
                 ),
             ),
-            'func': func,
-            'args': args,
-            'kwargs': kwargs,
+            "func": func,
+            "args": args,
+            "kwargs": kwargs,
         }
 
     def remove(
@@ -41,7 +41,7 @@ class InputWaitManager:
         chat_id,
     ) -> dict[str]:
         input_chat = self._waiting_chats.pop(chat_id)
-        client.remove_handler(*input_chat['handler'])
+        client.remove_handler(*input_chat["handler"])
         return input_chat
 
     async def __input_text(
@@ -51,17 +51,17 @@ class InputWaitManager:
     ) -> None:
         input_chat = self.remove(client, message.chat.id)
         try:
-            await input_chat['func'](
-                client, message, *input_chat['args'], **input_chat['kwargs']
+            await input_chat["func"](
+                client, message, *input_chat["args"], **input_chat["kwargs"]
             )
         except Exception as e:
             msg = (
-                'Во время выполнения функции '
-                f'{input_chat["func"].__name__} '
-                'было перехвачено исключение'
+                "Во время выполнения функции "
+                f"{input_chat['func'].__name__} "
+                "было перехвачено исключение"
             )
-            logging.error(f'{msg}: {e}', exc_info=True)
-            await message.reply(f'❌ {msg}:\n{e}')
+            logging.error(f"{msg}: {e}", exc_info=True)
+            await message.reply(f"❌ {msg}:\n{e}")
 
 
 input_wait_manager = InputWaitManager()

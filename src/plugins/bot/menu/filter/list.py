@@ -8,19 +8,19 @@ from plugins.bot.utils.menu import ButtonData, Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/ft/\d+/f/(p/\d+/|)$'),
+    filters.regex(r"/ft/\d+/f/(p/\d+/|)$"),
 )
 async def list_filters(_, callback_query: CallbackQuery):
     await callback_query.answer()
 
     menu = Menu(callback_query.data, back_step=2)
 
-    filter_type_id = menu.path.get_value('ft')
-    source_id = menu.path.get_value('s')
+    filter_type_id = menu.path.get_value("ft")
+    source_id = menu.path.get_value("s")
     source_obj: Source = Source.get(source_id) if source_id else None
 
     if is_admin(callback_query.from_user.id):
-        menu.add_row_button(ADD_BNT_TEXT + ' фильтр', ':add')
+        menu.add_row_button(ADD_BNT_TEXT + " фильтр", ":add")
 
     if source_obj:
         query = Filter.select().where(

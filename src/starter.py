@@ -20,7 +20,7 @@ async def startup():
     ):
         await sleep(0.1)
 
-    msg = 'Запущен начальный скрипт'
+    msg = "Запущен начальный скрипт"
     logging.info(msg)
     me = await user.get_me()
     await bot.send_message(me.id, msg)
@@ -31,22 +31,22 @@ async def startup():
             user_obj.is_admin = True
             user_obj.save()
     except DoesNotExist:
-        User.create(id=me.id, username='UserBot', is_admin=True)
+        User.create(id=me.id, username="UserBot", is_admin=True)
 
     await update_admin_usernames(me.id)
 
     new_messages = await get_unread_messages()
-    for message in sorted(new_messages, key=attrgetter('date')):
+    for message in sorted(new_messages, key=attrgetter("date")):
         await new_message(user, message)
 
     logging.info(
-        f'Начальный скрипт завершил работу. Обработано сообщений: {len(new_messages)}.'
+        f"Начальный скрипт завершил работу. Обработано сообщений: {len(new_messages)}."
     )
     await bot.send_message(
         me.id,
         (
-            'Начальный скрипт завершил работу.\n'
-            f'Обработано сообщений: **{len(new_messages)}**.'
+            "Начальный скрипт завершил работу.\n"
+            f"Обработано сообщений: **{len(new_messages)}**."
         ),
     )
 
@@ -68,10 +68,10 @@ async def update_admin_usernames(user_bot_tg_id: int):
             username
             and username != db_data[tg_id]
             or not username
-            and f'…{str(tg_id)[-5:]}' != db_data[tg_id]
+            and f"…{str(tg_id)[-5:]}" != db_data[tg_id]
         ):
             q = User.update(
-                {User.username: username if username else f'…{str(tg_id)[-5:]}'}
+                {User.username: username if username else f"…{str(tg_id)[-5:]}"}
             ).where(User.id == tg_id)
             q.execute()
 
@@ -115,7 +115,7 @@ def update_source_title(dialog: Dialog, db_channels: dict):
 async def check_sources_in_dialogs(db_channels: dict):
     for tg_id, data in db_channels.items():
         if data[2] is False:
-            mgs = f'Источника {tg_id} {data[1]} нет в диалогах UserBot'
+            mgs = f"Источника {tg_id} {data[1]} нет в диалогах UserBot"
             logging.warning(mgs)
             for admin in User.select():
                 try:

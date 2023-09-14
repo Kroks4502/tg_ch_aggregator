@@ -18,20 +18,20 @@ from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
 ASK_TEXT_TPL = (
-    'ОК. Ты добавляешь {} типа **{}**. Паттерн является регулярным выражением '
-    f'с игнорированием регистра.\n\n**Введи паттерн** или {CANCEL}'
+    "ОК. Ты добавляешь {} типа **{}**. Паттерн является регулярным выражением "
+    f"с игнорированием регистра.\n\n**Введи паттерн** или {CANCEL}"
 )
-SUC_TEXT_TPL = '✅ {} типа **{}** c паттерном `{}` добавлен'
+SUC_TEXT_TPL = "✅ {} типа **{}** c паттерном `{}` добавлен"
 
 
 @Client.on_callback_query(
-    filters.regex(r'/ft/\d+/f/:add/$') & custom_filters.admin_only,
+    filters.regex(r"/ft/\d+/f/:add/$") & custom_filters.admin_only,
 )
 async def add_filter(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
 
     path = Path(callback_query.data)
-    filter_type_id = path.get_value('ft')
+    filter_type_id = path.get_value("ft")
     if filter_type_id in (
         FilterType.HASHTAG.value,
         FilterType.URL.value,
@@ -47,15 +47,15 @@ async def add_filter(client: Client, callback_query: CallbackQuery):
 async def ask_filter_pattern(client: Client, callback_query: CallbackQuery):
     path = Path(callback_query.data)
 
-    filter_type_id = path.get_value('ft')
-    source_id = path.get_value('s')  # Может быть 0
+    filter_type_id = path.get_value("ft")
+    source_id = path.get_value("s")  # Может быть 0
     source_obj: Source = Source.get(id=source_id) if source_id else None
 
     if source_obj:
         src_link = await get_channel_formatted_link(source_obj.id)
-        title = f'фильтр для источника {src_link}'
+        title = f"фильтр для источника {src_link}"
     else:
-        title = 'общий фильтр'
+        title = "общий фильтр"
     filter_type_text = FILTER_TYPES_BY_ID.get(filter_type_id)
     text = ASK_TEXT_TPL.format(title, filter_type_text)
 
@@ -101,9 +101,9 @@ async def ask_filter_pattern_waiting_input(
 
     if source_obj:
         src_link = await get_channel_formatted_link(source_obj.id)
-        title = f'Фильтр для источника {src_link}'
+        title = f"Фильтр для источника {src_link}"
     else:
-        title = 'Общий фильтр'
+        title = "Общий фильтр"
     filter_type_text = FILTER_TYPES_BY_ID.get(filter_obj.type)
     text = SUC_TEXT_TPL.format(title, filter_type_text, filter_obj.pattern)
 
@@ -115,9 +115,9 @@ async def ask_filter_pattern_waiting_input(
 async def add_filter_with_choice(callback_query: CallbackQuery):
     menu = Menu(callback_query.data)
 
-    filter_type_id = menu.path.get_value('ft')
+    filter_type_id = menu.path.get_value("ft")
 
-    source_id = menu.path.get_value('s')  # Может быть 0
+    source_id = menu.path.get_value("s")  # Может быть 0
     source_obj: Source = Source.get(id=source_id) if source_id else None
 
     query = Filter.select().where(
@@ -147,18 +147,18 @@ async def add_filter_with_choice(callback_query: CallbackQuery):
 
 
 @Client.on_callback_query(
-    filters.regex(r'/ft/\d+/f/:add/\d+/$') & custom_filters.admin_only,
+    filters.regex(r"/ft/\d+/f/:add/\d+/$") & custom_filters.admin_only,
 )
 async def select_filter_value(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
 
     menu = Menu(callback_query.data, back_step=2)
 
-    source_id = menu.path.get_value('s')
+    source_id = menu.path.get_value("s")
     source_obj: Source = Source.get(id=source_id) if source_id else None
 
-    filter_type_id = menu.path.get_value('ft')
-    filter_value = menu.path.get_value(':add')
+    filter_type_id = menu.path.get_value("ft")
+    filter_value = menu.path.get_value(":add")
 
     if filter_type_id == FilterType.ENTITY_TYPE.value:
         pattern = FILTER_ENTITY_TYPES_BY_ID.get(filter_value)
@@ -173,9 +173,9 @@ async def select_filter_value(client: Client, callback_query: CallbackQuery):
 
     if source_obj:
         src_link = await get_channel_formatted_link(source_obj.id)
-        title = f'Фильтр для источника {src_link}'
+        title = f"Фильтр для источника {src_link}"
     else:
-        title = 'Общий фильтр'
+        title = "Общий фильтр"
     filter_type_text = FILTER_TYPES_BY_ID.get(filter_type_id)
     text = SUC_TEXT_TPL.format(title, filter_type_text, pattern)
 

@@ -10,16 +10,16 @@ from playhouse.postgres_ext import PostgresqlExtDatabase
 from psycopg2 import extensions
 
 BASE_DIR = Path(__file__).parent
-SESSIONS_DIR = BASE_DIR.parent / 'sessions'
+SESSIONS_DIR = BASE_DIR.parent / "sessions"
 
-LOGS_DIR = BASE_DIR.parent / 'logs'
-LOG_FORMAT = '%(asctime)s : %(levelname)s : %(message)s'
+LOGS_DIR = BASE_DIR.parent / "logs"
+LOG_FORMAT = "%(asctime)s : %(levelname)s : %(message)s"
 
-load_dotenv(BASE_DIR.parent / '.env')
-API_ID = os.getenv('api_id')
-API_HASH = os.getenv('api_hash')
-BOT_TOKEN = os.getenv('bot_token')
-DEVELOP_MODE = os.getenv('develop_mode')
+load_dotenv(BASE_DIR.parent / ".env")
+API_ID = os.getenv("api_id")
+API_HASH = os.getenv("api_hash")
+BOT_TOKEN = os.getenv("bot_token")
+DEVELOP_MODE = os.getenv("develop_mode")
 
 TELEGRAM_MAX_CAPTION_LENGTH = 1024
 TELEGRAM_MAX_TEXT_LENGTH = 4096
@@ -41,15 +41,15 @@ def _psycopg2_gevent_callback(conn, timeout=None):
         elif state == extensions.POLL_WRITE:
             wait_write(conn.fileno(), timeout=timeout)
         else:
-            raise ValueError('poll() returned unexpected result')
+            raise ValueError("poll() returned unexpected result")
 
 
 DATABASE = PostgresqlExtDatabase(
-    os.getenv('postgresql_database'),
-    user=os.getenv('postgresql_user'),
-    password=os.getenv('postgresql_password'),
-    host=os.getenv('postgresql_host'),
-    port=os.getenv('postgresql_port'),
+    os.getenv("postgresql_database"),
+    user=os.getenv("postgresql_user"),
+    password=os.getenv("postgresql_password"),
+    host=os.getenv("postgresql_host"),
+    port=os.getenv("postgresql_port"),
 )
 
 
@@ -57,10 +57,10 @@ def configure_logging():
     """Конфигурирование логирования."""
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
     rotating_handler = RotatingFileHandler(
-        LOGS_DIR / 'app.log',
+        LOGS_DIR / "app.log",
         maxBytes=10**6,
         backupCount=5,
-        encoding='UTF-8',
+        encoding="UTF-8",
     )
     logging.basicConfig(
         format=LOG_FORMAT,
@@ -70,5 +70,5 @@ def configure_logging():
 
     if DEVELOP_MODE:
         logging.getLogger().setLevel(logging.DEBUG)
-        logging.getLogger('peewee').setLevel(logging.DEBUG)
-        logging.getLogger('pyrogram').setLevel(logging.INFO)
+        logging.getLogger("peewee").setLevel(logging.DEBUG)
+        logging.getLogger("pyrogram").setLevel(logging.INFO)

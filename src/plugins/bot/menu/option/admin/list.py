@@ -8,14 +8,14 @@ from plugins.bot.utils.menu import ButtonData, Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/a/(p/\d+/|)$') & custom_filters.admin_only,
+    filters.regex(r"/a/(p/\d+/|)$") & custom_filters.admin_only,
 )
 async def list_admins(_, callback_query: CallbackQuery):
     await callback_query.answer()
 
     menu = Menu(callback_query.data)
 
-    menu.add_row_button(ADD_BNT_TEXT, ':add')
+    menu.add_row_button(ADD_BNT_TEXT, ":add")
 
     query = User.select(
         User.id,
@@ -31,6 +31,6 @@ async def list_admins(_, callback_query: CallbackQuery):
     )
 
     await callback_query.message.edit_text(
-        text='**Список администраторов:**',
+        text="**Список администраторов:**",
         reply_markup=menu.reply_markup,
     )

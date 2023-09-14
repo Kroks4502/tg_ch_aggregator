@@ -11,15 +11,15 @@ from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/c/:add/$') & custom_filters.admin_only,
+    filters.regex(r"/c/:add/$") & custom_filters.admin_only,
 )
 async def add_category(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.reply(
-        'ОК. Ты добавляешь новую категорию, '
-        'которая будет получать сообщения из источников. '
-        'Будет создан новый канал-агрегатор.\n\n'
-        f'**Введи название категории** или {CANCEL}'
+        "ОК. Ты добавляешь новую категорию, "
+        "которая будет получать сообщения из источников. "
+        "Будет создан новый канал-агрегатор.\n\n"
+        f"**Введи название категории** или {CANCEL}"
     )
 
     input_wait_manager.add(
@@ -37,8 +37,8 @@ async def add_category_waiting_input(
 ):
     menu = Menu(callback_query.data)
 
-    new_channel_name = f'{message.text} | Aggregator'
-    new_message = await message.reply_text(f'⏳ Создаю канал «{new_channel_name}»…')
+    new_channel_name = f"{message.text} | Aggregator"
+    new_message = await message.reply_text(f"⏳ Создаю канал «{new_channel_name}»…")
 
     async def reply(text):
         await new_message.edit_text(
@@ -50,12 +50,12 @@ async def add_category_waiting_input(
         await callback_query.message.delete()
 
     if len(message.text) > 80:
-        await reply('❌ Название категории не должно превышать 80 символов')
+        await reply("❌ Название категории не должно превышать 80 символов")
         return
 
     new_channel: Chat = await user.create_channel(
         new_channel_name,
-        f'Создан ботом {client.me.username}',
+        f"Создан ботом {client.me.username}",
     )
 
     await new_channel.promote_member(
@@ -77,4 +77,4 @@ async def add_category_waiting_input(
         title=new_channel.title,
     )
     cat_link = await get_channel_formatted_link(category_obj.id)
-    await reply(f'✅ Категория **{cat_link}** создана')
+    await reply(f"✅ Категория **{cat_link}** создана")

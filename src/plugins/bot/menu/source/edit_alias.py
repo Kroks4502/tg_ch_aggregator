@@ -10,17 +10,17 @@ from plugins.bot.utils.menu import Menu
 from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
-REWRITE_TEXT_TPL = '✅ Установлен режим {} сообщений для источника {}'
+REWRITE_TEXT_TPL = "✅ Установлен режим {} сообщений для источника {}"
 
 
 @Client.on_callback_query(
-    filters.regex(r'/s/-\d+/:edit_alias/$') & custom_filters.admin_only,
+    filters.regex(r"/s/-\d+/:edit_alias/$") & custom_filters.admin_only,
 )
 async def edit_alias(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
 
     path = Path(callback_query.data)
-    source_id = path.get_value('s')
+    source_id = path.get_value("s")
     source_obj = Source.get(source_id)
 
     input_wait_manager.add(
@@ -32,8 +32,8 @@ async def edit_alias(client: Client, callback_query: CallbackQuery):
     )
 
     await callback_query.message.reply(
-        f'ОК. Ты меняешь название для источника `{source_obj.title}`.\n\n'
-        f'**Введи новое** или {CANCEL}'
+        f"ОК. Ты меняешь название для источника `{source_obj.title}`.\n\n"
+        f"**Введи новое** или {CANCEL}"
     )
 
 
@@ -45,7 +45,7 @@ async def edit_alias_waiting_input(  # noqa: C901
 ):
     menu = Menu(callback_query.data)
 
-    new_message = await message.reply_text('⏳ Проверка…')
+    new_message = await message.reply_text("⏳ Проверка…")
 
     async def edit_text(text):
         await new_message.edit_text(
@@ -58,18 +58,18 @@ async def edit_alias_waiting_input(  # noqa: C901
 
     new_title_alias = message.text
     if len(new_title_alias) > 100:
-        await edit_text('❌ Название источника не может превышать 100 символов.')
+        await edit_text("❌ Название источника не может превышать 100 символов.")
         return
 
     src_link = await get_channel_formatted_link(source_obj.id)
 
     if new_title_alias == source_obj.title:
         source_obj.title_alias = None
-        success_text = f'✅ Источник **{src_link}** получил оригинальное название'
+        success_text = f"✅ Источник **{src_link}** получил оригинальное название"
     else:
         source_obj.title_alias = new_title_alias
         success_text = (
-            f'✅ Источник **{src_link}** получил название **{source_obj.title_alias}**'
+            f"✅ Источник **{src_link}** получил название **{source_obj.title_alias}**"
         )
 
     source_obj.save()

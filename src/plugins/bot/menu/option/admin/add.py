@@ -14,13 +14,13 @@ from plugins.bot.utils.senders import send_message_to_admins
 
 
 @Client.on_callback_query(
-    filters.regex(r'/a/:add/$') & custom_filters.admin_only,
+    filters.regex(r"/a/:add/$") & custom_filters.admin_only,
 )
 async def add_admin(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.reply(
-        'ОК. Ты добавляешь нового администратора.\n\n'
-        f'**Введи ID или имя пользователя** или {CANCEL}'
+        "ОК. Ты добавляешь нового администратора.\n\n"
+        f"**Введи ID или имя пользователя** или {CANCEL}"
     )
     input_wait_manager.add(
         callback_query.message.chat.id,
@@ -47,11 +47,11 @@ async def add_admin_waiting_input(
     try:
         chat = await client.get_chat(message.text)
     except RPCError as e:
-        await reply(f'❌ Что-то пошло не так\n\n{e}')
+        await reply(f"❌ Что-то пошло не так\n\n{e}")
         return
 
     if chat.type != ChatType.PRIVATE:
-        await reply('❌ Это не пользователь')
+        await reply("❌ Это не пользователь")
         return
 
     if chat.username:
@@ -64,11 +64,11 @@ async def add_admin_waiting_input(
     try:
         admin_obj = User.create(id=chat.id, username=username, is_admin=True)
     except peewee.IntegrityError:
-        await reply('❗️Этот пользователь уже администратор')
+        await reply("❗️Этот пользователь уже администратор")
         return
 
     adm_link = await get_user_formatted_link(admin_obj.id)
-    text = f'✅ Администратор **{adm_link}** добавлен'
+    text = f"✅ Администратор **{adm_link}** добавлен"
     await reply(text)
 
     await send_message_to_admins(client, callback_query, text)

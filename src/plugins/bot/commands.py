@@ -7,7 +7,7 @@ from plugins.bot.menu.option.check_post import check_post_waiting_forwarding
 from plugins.bot.utils.managers import input_wait_manager
 
 
-@Client.on_message(filters.command(['start', 'go', 'cancel']))
+@Client.on_message(filters.command(["start", "go", "cancel"]))
 async def main_menu(client: Client, message: Message):
     try:
         input_wait_manager.remove(client=client, chat_id=message.chat.id)
@@ -22,10 +22,10 @@ async def main_menu(client: Client, message: Message):
     )
 
 
-@Client.on_message(filters.command('check'))
+@Client.on_message(filters.command("check"))
 async def check_post(client: Client, message: Message):
     await message.reply(
-        'ОК. Ты хочешь проверить есть ли пост в истории.\n\n'
-        f'**Перешли пост в этот чат** или {CANCEL}'
+        "ОК. Ты хочешь проверить есть ли пост в истории.\n\n"
+        f"**Перешли пост в этот чат** или {CANCEL}"
     )
     input_wait_manager.add(message.chat.id, check_post_waiting_forwarding, client)

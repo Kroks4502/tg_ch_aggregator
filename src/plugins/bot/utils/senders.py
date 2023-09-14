@@ -22,7 +22,7 @@ async def send_message_to_admins(
         try:
             await client.send_message(
                 admin.id,
-                f'{get_username(from_user)}\n{text}',
+                f"{get_username(from_user)}\n{text}",
                 disable_web_page_preview=True,
             )
         except RPCError as e:
@@ -32,10 +32,10 @@ async def send_message_to_admins(
 def get_username(user: PyUser) -> str:
     """Получить имя пользователя для сообщения администраторам."""
     if user.username:
-        return f'@{user.username}'
+        return f"@{user.username}"
 
     full_name = (
         f'{user.first_name + " " if user.first_name else ""}'
         f'{user.last_name if user.last_name else ""}'
     )
-    return f'{full_name} ({user.id})' if full_name else f'{user.id}'
+    return f"{full_name} ({user.id})" if full_name else f"{user.id}"

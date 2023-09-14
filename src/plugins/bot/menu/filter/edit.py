@@ -13,28 +13,28 @@ from plugins.bot.utils.path import Path
 from plugins.bot.utils.senders import send_message_to_admins
 
 ASK_TEXT_TPL = (
-    'ОК. Ты изменяешь {} типа **{}** с паттерном `{}`\n\n'
-    f'**Введи новый паттерн** или {CANCEL}'
+    "ОК. Ты изменяешь {} типа **{}** с паттерном `{}`\n\n"
+    f"**Введи новый паттерн** или {CANCEL}"
 )
-SUC_TEXT_TPL = '✅ {} типа **{}** с паттерном `{}` изменен на `{}`'
+SUC_TEXT_TPL = "✅ {} типа **{}** с паттерном `{}` изменен на `{}`"
 
 
 @Client.on_callback_query(
-    filters.regex(r'/f/\d+/:edit/$') & custom_filters.admin_only,
+    filters.regex(r"/f/\d+/:edit/$") & custom_filters.admin_only,
 )
 async def edit_body_filter(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()
 
     path = Path(callback_query.data)
 
-    filter_id = path.get_value('f')
+    filter_id = path.get_value("f")
     filter_obj: Filter = Filter.get(id=filter_id) if filter_id else None
 
     if filter_obj.source:
         src_link = {await get_channel_formatted_link(filter_obj.source.id)}
-        title = f'фильтр для источника {src_link}'
+        title = f"фильтр для источника {src_link}"
     else:
-        title = 'общий фильтр'
+        title = "общий фильтр"
     filter_type_text = FILTER_TYPES_BY_ID.get(filter_obj.type)
     text = ASK_TEXT_TPL.format(title, filter_type_text, filter_obj.pattern)
 
@@ -77,9 +77,9 @@ async def edit_body_filter_wait_input(
 
     if filter_obj.source:
         src_link = await get_channel_formatted_link(filter_obj.source.id)
-        title = f'Фильтр для источника {src_link}'
+        title = f"Фильтр для источника {src_link}"
     else:
-        title = 'Общий фильтр'
+        title = "Общий фильтр"
 
     filter_type_text = FILTER_TYPES_BY_ID.get(filter_obj.type)
     text = SUC_TEXT_TPL.format(title, filter_type_text, pattern_old, pattern_new)

@@ -27,7 +27,7 @@ class GlobalSettings(BaseModel):
 
     class Meta:
         primary_key = False
-        table_name = 'global_settings'
+        table_name = "global_settings"
 
 
 class User(BaseModel):
@@ -48,7 +48,7 @@ class Source(BaseModel):
     id = BigIntegerField(primary_key=True)
     title = CharField()
     title_alias = CharField()
-    category = ForeignKeyField(Category, backref='sources', on_delete='CASCADE')
+    category = ForeignKeyField(Category, backref="sources", on_delete="CASCADE")
 
     # Список регулярных выражений для очистки сообщений и их перепечатывания
     cleanup_list = JSONField(default=[])
@@ -62,36 +62,36 @@ class Filter(BaseModel):
     type = SmallIntegerField(
         choices=[(filter_type.name, filter_type.value) for filter_type in FilterType]
     )
-    source = ForeignKeyField(Source, null=True, backref='filters', on_delete='CASCADE')
+    source = ForeignKeyField(Source, null=True, backref="filters", on_delete="CASCADE")
 
 
 class AlertRule(BaseModel):
-    user = ForeignKeyField(User, backref='alerts', on_delete='CASCADE', index=True)
+    user = ForeignKeyField(User, backref="alerts", on_delete="CASCADE", index=True)
     category = ForeignKeyField(
-        Category, backref='alerts', on_delete='CASCADE', index=True
+        Category, backref="alerts", on_delete="CASCADE", index=True
     )
     type = CharField(max_length=32)  # counter | regex
     config = BinaryJSONField()
 
     class Meta:
-        table_name = 'alert_rule'
+        table_name = "alert_rule"
 
 
 class AlertHistory(BaseModel):
     category = ForeignKeyField(
-        Category, backref='alerts_history', on_delete='CASCADE', index=True
+        Category, backref="alerts_history", on_delete="CASCADE", index=True
     )
     fired_at = DateTimeField(default=datetime.now)
     data = BinaryJSONField()
 
     class Meta:
-        table_name = 'alert_history'
+        table_name = "alert_history"
 
 
 class MessageHistory(BaseModel):
     id = BigAutoField(primary_key=True)
 
-    source = ForeignKeyField(Source, backref='history', on_delete='CASCADE')
+    source = ForeignKeyField(Source, backref="history", on_delete="CASCADE")
     source_message_id = BigIntegerField()
     source_media_group_id = CharField(default=None, null=True)
     source_forward_from_chat_id = BigIntegerField(default=None, null=True)
@@ -99,23 +99,23 @@ class MessageHistory(BaseModel):
 
     category = ForeignKeyField(
         Category,
-        backref='history',
-        on_delete='CASCADE',
+        backref="history",
+        on_delete="CASCADE",
     )
     category_message_id = BigIntegerField(default=None, null=True)
     category_media_group_id = CharField(default=None, null=True)
     category_message_rewritten = BooleanField(default=None, null=True)
 
     repeat_history = ForeignKeyField(
-        'self',
-        on_delete='SET NULL',
+        "self",
+        on_delete="SET NULL",
         null=True,
         default=None,
     )
     filter = ForeignKeyField(
         Filter,
-        backref='history',
-        on_delete='SET NULL',
+        backref="history",
+        on_delete="SET NULL",
         null=True,
         default=None,
     )
@@ -127,4 +127,4 @@ class MessageHistory(BaseModel):
     data = BinaryJSONField()
 
     class Meta:
-        table_name = 'message_history'
+        table_name = "message_history"

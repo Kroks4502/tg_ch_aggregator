@@ -8,20 +8,20 @@ from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r'/cl/(p/\d+/|)$'),
+    filters.regex(r"/cl/(p/\d+/|)$"),
 )
 async def list_cleanup(_, callback_query: CallbackQuery):
     await callback_query.answer()
 
     menu = Menu(path=callback_query.data)
 
-    source_id = menu.path.get_value('s')
+    source_id = menu.path.get_value("s")
     source_obj: Source = Source.get(source_id) if source_id else None
     if source_obj and is_admin(callback_query.from_user.id):
         cleanup_list = source_obj.cleanup_list
     else:
-        cleanup_list = GlobalSettings.get(key='cleanup_list').value
-    menu.add_row_button(ADD_BNT_TEXT, ':add')
+        cleanup_list = GlobalSettings.get(key="cleanup_list").value
+    menu.add_row_button(ADD_BNT_TEXT, ":add")
 
     pagination = menu.set_pagination(total_items=len(cleanup_list))
 
@@ -33,7 +33,7 @@ async def list_cleanup(_, callback_query: CallbackQuery):
 
     text = await menu.get_text(
         source_obj=source_obj,
-        last_text='**Очистка текста**' if source_obj else '**Общая очистка текста**',
+        last_text="**Очистка текста**" if source_obj else "**Общая очистка текста**",
     )
     await callback_query.message.edit_text(
         text=text,
