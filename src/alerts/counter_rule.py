@@ -1,15 +1,18 @@
+import time
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from peewee import SQL, fn
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from alerts.common import get_alert_rule_title
 from alerts.configs import AlertCounterConfig
 from clients import bot
+from common import get_message_link, get_words
 from models import AlertHistory, AlertRule, MessageHistory
-from plugins.bot.utils.links import get_channel_formatted_link
 
 JOB_NAME_TMPL = "counter_alert_rule_{}"
-MSG_TEXT_TMPL = "Сработало правило {title}\n\nКатегория: **{link}**"
+MSG_TEXT_TMPL = "Сработало правило {title}\n\n{messages}"
+MAX_WORDS = 10
 
 
 def add_evaluation_counter_rule_job(
@@ -49,13 +52,18 @@ async def _evaluation_counter_rule_job(alert_rule: AlertRule):
         count_interval=config.count_interval,
     )
     if amount_messages > config.threshold:
-        # end_unix_time = int(time.time())
-        # start_unix_time = end_unix_time - config.count_interval * 60
+        end_unix_time = int(time.time())
+        start_unix_time = end_unix_time - config.count_interval * 60
         await bot.send_message(
             chat_id=alert_rule.user_id,
             text=MSG_TEXT_TMPL.format(
                 title=get_alert_rule_title(alert_rule),
-                link=await get_channel_formatted_link(alert_rule.category_id),
+                messages=_get_messages(
+                    category_id=alert_rule.category_id,
+                    start=start_unix_time,
+                    end=end_unix_time,
+                    last=10,
+                ),
             ),
             reply_markup=InlineKeyboardMarkup(
                 [
@@ -121,3 +129,98 @@ def _get_amount_messages(category_id: int, count_interval: int) -> int:
 
     amount = query.execute()[0].amount
     return int(amount) if amount else 0
+
+
+def _get_messages(category_id: int, start: int, end: int, last: int):
+    mh = MessageHistory.alias()
+    mh2 = MessageHistory.alias()
+    cte = (
+        mh.select()
+        .where(
+            (mh.category_id == category_id)
+            & (mh.created_at > fn.TO_TIMESTAMP(start))
+            & (mh.created_at < fn.TO_TIMESTAMP(end))
+            & (
+                (mh.category_media_group_id.is_null())
+                | (mh.category_media_group_id.is_null(False))
+                & (
+                    mh.id
+                    == mh2.select(fn.MIN(mh2.id)).where(
+                        mh2.category_media_group_id == mh.category_media_group_id
+                    )
+                )
+            )
+            & (mh.category_message_id.is_null(False))
+            & (mh.repeat_history_id.is_null())
+            & (mh.deleted_at.is_null())
+        )
+        .order_by(mh.created_at.desc())
+        # .order_by(mh.created_at)
+        .limit(last)
+        .cte("mh")
+    )
+
+    query = (
+        mh.select(
+            cte.c.id,
+            cte.c.category_id,
+            cte.c.category_message_id,
+            cte.c.category_media_group_id,
+            cte.c.created_at,
+            cte.c.data,
+            cte.c.source_id,
+            cte.c.category_message_rewritten,
+        )
+        .from_(cte)
+        .union(
+            mh.select(
+                mh.id,
+                mh.category_id,
+                mh.category_message_id,
+                mh.category_media_group_id,
+                mh.created_at,
+                mh.data,
+                mh.source_id,
+                mh.category_message_rewritten,
+            )
+            .from_(mh)
+            .join(
+                cte,
+                on=(cte.c.category_media_group_id == mh.category_media_group_id),
+            )
+        )
+    ).with_cte(cte)
+
+    lines = []
+    for row in query:
+        line_num = 2 if row.category_message_rewritten else 0
+        if short_text := get_short_text(row.data, line=line_num):
+            url = get_message_link(
+                chat_id=row.category_id,
+                message_id=row.category_message_id,
+            )
+            link = f"**[>>>]({url})**"
+            lines.append(f"{short_text} {link}")
+
+    return "\n\n".join(lines)
+
+
+def get_short_text(data: dict, line: int) -> str:
+    if not data or not (message_data := data[0].get("category")):
+        return ""
+
+    try:
+        message_data.pop("_")
+    except KeyError:
+        return ""
+
+    message = Message(**message_data)
+    text = message.text or message.caption
+    if text:
+        words = get_words(text=text, line=line)
+
+        return " ".join(words[:MAX_WORDS]).rstrip(".,:;?!\"'`)(") + (
+            "…" if len(words) > MAX_WORDS else ""
+        )
+
+    return ""

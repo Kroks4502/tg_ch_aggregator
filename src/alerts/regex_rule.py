@@ -4,11 +4,10 @@ import re
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from clients import bot
+from common import get_words
 from models import AlertHistory, AlertRule
 
-MSG_TEXT_TMPL = (
-    "Новое сообщение подходящее под паттерн `{pattern}`:\n\n{text}\n\n{link}"
-)
+MSG_TEXT_TMPL = "Новое сообщение подходящее под паттерн `{pattern}`:\n\n{message}"
 NUMBER_OF_WORDS = 20
 
 
@@ -38,11 +37,11 @@ async def check_message_by_regex_alert_rule(
             chat_id=alert_rule.user_id,
             text=MSG_TEXT_TMPL.format(
                 pattern=pattern,
-                text=(
+                message=(
                     f"…{' '.join(get_words(text[: match.start()], -1)[-NUMBER_OF_WORDS:])} -->{match_text}<--"
-                    f" {' '.join(get_words(text[match.end():], 0)[:NUMBER_OF_WORDS])}…"
+                    f" {' '.join(get_words(text[match.end():], 0)[:NUMBER_OF_WORDS]).rstrip('.,:;?!')}…"
+                    f" **[>>>]({message.link})**"
                 ),
-                link=message.link,
             ),
             reply_markup=InlineKeyboardMarkup(
                 [
@@ -66,9 +65,3 @@ async def check_message_by_regex_alert_rule(
                 match_text=match_text,
             ),
         )
-
-
-def get_words(text: str, line: int) -> list:
-    if (lines := text.splitlines()) and (line := lines[line]):
-        return [word for word in line.split(" ") if word != ""]
-    return []

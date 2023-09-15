@@ -33,3 +33,13 @@ def get_shortened_text(text: str, max_len: int, *, last_trim_char: str = "…") 
     if new_text:
         return f"{new_text[:-1]}{last_trim_char}"
     return f"{text[:max_len]}{last_trim_char}"
+
+
+def get_words(text: str, line: int = None) -> list:
+    if line is None:
+        return [word for word in text.split(" ") if word != ""]
+
+    if (lines := text.splitlines()) and len(lines) > line and (line := lines[line]):
+        return [word for word in line.split(" ") if word != ""]
+
+    return []
