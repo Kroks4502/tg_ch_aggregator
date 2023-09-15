@@ -68,7 +68,11 @@ class Filter(BaseModel):
 class AlertRule(BaseModel):
     user = ForeignKeyField(User, backref="alerts", on_delete="CASCADE", index=True)
     category = ForeignKeyField(
-        Category, backref="alerts", on_delete="CASCADE", index=True
+        Category,
+        backref="alerts",
+        on_delete="CASCADE",
+        index=True,
+        null=True,
     )
     type = CharField(max_length=32)  # counter | regex
     config = BinaryJSONField()
@@ -79,7 +83,11 @@ class AlertRule(BaseModel):
 
 class AlertHistory(BaseModel):
     category = ForeignKeyField(
-        Category, backref="alerts_history", on_delete="CASCADE", index=True
+        Category,
+        backref="alerts_history",
+        on_delete="CASCADE",
+        index=True,
+        null=True,
     )
     fired_at = DateTimeField(default=datetime.now)
     data = BinaryJSONField()

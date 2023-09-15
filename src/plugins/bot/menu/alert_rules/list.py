@@ -9,7 +9,7 @@ from plugins.bot.utils.menu import ButtonData, Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r"/c/-\d+/r/(p/\d+/|)$"),
+    filters.regex(r"/r/(p/\d+/|)$"),
 )
 async def list_alerts_rules(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -38,7 +38,7 @@ async def list_alerts_rules(_, callback_query: CallbackQuery):
     )
 
     text = await menu.get_text(
-        category_obj=Category.get(category_id),
+        category_obj=Category.get(category_id) if category_id else None,
         last_text="**Правила уведомлений**",
     )
 

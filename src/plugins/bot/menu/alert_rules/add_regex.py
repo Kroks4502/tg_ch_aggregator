@@ -10,7 +10,7 @@ from plugins.bot.utils.menu import Menu
 
 
 @Client.on_callback_query(
-    filters.regex(r"/c/-\d+/r/:add/regex/$") & custom_filters.admin_only,
+    filters.regex(r"/r/:add/regex/$") & custom_filters.admin_only,
 )
 async def add_regex_alert_rule(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()

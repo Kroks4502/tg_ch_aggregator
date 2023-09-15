@@ -3,6 +3,7 @@ DEFAULT_NUM_ITEMS_ON_MENU = 20  # Количество элементов в о�
 MAX_LENGTH_BUTTON_TEXT = 12
 
 MAIN_MENU_BTN_TEXT = "🏠 На главную"
+ALERT_BTN_TEXT = "🔔 Уведомления"
 MAIN_MENU_TEXT = "**Агрегатор каналов**"
 ADD_BNT_TEXT = "➕ Добавить"
 CONF_DEL_TEXT_TPL = "Ты **удаляешь** {}!"

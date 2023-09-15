@@ -3,6 +3,7 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
 from models import Category, Filter, MessageHistory, Source
+from plugins.bot.constants import ALERT_BTN_TEXT
 from plugins.bot.utils.checks import is_admin
 from plugins.bot.utils.menu import ButtonData, Menu
 from plugins.bot.utils.statistic import get_statistic_text
@@ -25,7 +26,7 @@ async def list_source(_, callback_query: CallbackQuery):
             ("✖️", "../:delete"),  # Удалить категорию
         )
 
-    menu.add_row_button("Правила уведомлений", "../r")
+    menu.add_row_button(ALERT_BTN_TEXT, "../r")
 
     menu.add_row_button("📖 История сообщений", "mh")
     if category_obj:

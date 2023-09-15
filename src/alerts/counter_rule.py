@@ -80,6 +80,8 @@ async def _evaluation_counter_rule_job(alert_rule: AlertRule):
                             text="Правило уведомления",
                             callback_data=(
                                 f"/c/{alert_rule.category_id}/r/{alert_rule.id}/?new"
+                                if alert_rule.category_id
+                                else f"/r/{alert_rule.id}/?new"
                             ),
                         )
                     ],
@@ -98,22 +100,26 @@ async def _evaluation_counter_rule_job(alert_rule: AlertRule):
         )
 
 
-def _get_amount_messages(category_id: int, count_interval: int) -> int:
+def _get_amount_messages(category_id: int | None, count_interval: int) -> int:
     """Получить количество сообщений в категории за последний "count_interval"."""
+
+    where = (
+        (MessageHistory.repeat_history.is_null(True))
+        & (MessageHistory.deleted_at.is_null(True))
+        & (
+            MessageHistory.created_at
+            > (SQL("CURRENT_TIMESTAMP - INTERVAL '%smin'", (count_interval,)))
+        )
+    )
+    if category_id:
+        where = (MessageHistory.category == category_id) & where
+
     subquery = (
         MessageHistory.select(
             MessageHistory.source_media_group_id,
             fn.COUNT("*").alias("amount"),
         )
-        .where(
-            (MessageHistory.category == category_id)
-            & (MessageHistory.repeat_history.is_null(True))
-            & (MessageHistory.deleted_at.is_null(True))
-            & (
-                MessageHistory.created_at
-                > (SQL("CURRENT_TIMESTAMP - INTERVAL '%smin'", (count_interval,)))
-            )
-        )
+        .where(where)
         .group_by(MessageHistory.source_media_group_id)
         .alias("t")
     )
@@ -134,26 +140,29 @@ def _get_amount_messages(category_id: int, count_interval: int) -> int:
 def _get_messages(category_id: int, start: int, end: int, last: int):
     mh = MessageHistory.alias()
     mh2 = MessageHistory.alias()
-    cte = (
-        mh.select()
-        .where(
-            (mh.category_id == category_id)
-            & (mh.created_at > fn.TO_TIMESTAMP(start))
-            & (mh.created_at < fn.TO_TIMESTAMP(end))
+    where = (
+        (mh.created_at > fn.TO_TIMESTAMP(start))
+        & (mh.created_at < fn.TO_TIMESTAMP(end))
+        & (
+            (mh.category_media_group_id.is_null())
+            | (mh.category_media_group_id.is_null(False))
             & (
-                (mh.category_media_group_id.is_null())
-                | (mh.category_media_group_id.is_null(False))
-                & (
-                    mh.id
-                    == mh2.select(fn.MIN(mh2.id)).where(
-                        mh2.category_media_group_id == mh.category_media_group_id
-                    )
+                mh.id
+                == mh2.select(fn.MIN(mh2.id)).where(
+                    mh2.category_media_group_id == mh.category_media_group_id
                 )
             )
-            & (mh.category_message_id.is_null(False))
-            & (mh.repeat_history_id.is_null())
-            & (mh.deleted_at.is_null())
         )
+        & (mh.category_message_id.is_null(False))
+        & (mh.repeat_history_id.is_null())
+        & (mh.deleted_at.is_null())
+    )
+    if category_id:
+        where = (mh.category_id == category_id) & where
+
+    cte = (
+        mh.select()
+        .where(where)
         .order_by(mh.created_at.desc())
         # .order_by(mh.created_at)
         .limit(last)

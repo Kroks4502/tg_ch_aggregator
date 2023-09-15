@@ -11,7 +11,7 @@ from plugins.bot.utils.path import Path
 
 
 @Client.on_callback_query(
-    filters.regex(r"/c/-\d+/r/\d+/:edit/$") & custom_filters.admin_only,
+    filters.regex(r"/r/\d+/:edit/$") & custom_filters.admin_only,
 )
 async def edit_regex_alert_rule(client: Client, callback_query: CallbackQuery):
     await callback_query.answer()

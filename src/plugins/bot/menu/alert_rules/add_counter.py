@@ -18,7 +18,7 @@ RULE_TYPE_TEXT = f"{RULE_TYPE_TMPL.format('Счётчик сообщений')}"
 
 
 @Client.on_callback_query(
-    filters.regex(r"/c/-\d+/r/:add/counter/$") & custom_filters.admin_only,
+    filters.regex(r"/r/:add/counter/$") & custom_filters.admin_only,
 )
 async def add_counter_alert_rule_step_1(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -37,7 +37,7 @@ async def add_counter_alert_rule_step_1(_, callback_query: CallbackQuery):
 
     category_id = menu.path.get_value("c")
     text = await menu.get_text(
-        category_obj=Category.get(category_id),
+        category_obj=Category.get(category_id) if category_id else None,
         last_text=(
             f"{RULE_NEW_TEXT}\n"
             f"{RULE_TYPE_TEXT}\n\n"
@@ -53,7 +53,7 @@ async def add_counter_alert_rule_step_1(_, callback_query: CallbackQuery):
 
 
 @Client.on_callback_query(
-    filters.regex(r"/c/-\d+/r/:add/counter/job_int/\d+/$") & custom_filters.admin_only,
+    filters.regex(r"/r/:add/counter/job_int/\d+/$") & custom_filters.admin_only,
 )
 async def add_counter_alert_rule_step_2(_, callback_query: CallbackQuery):
     await callback_query.answer()
@@ -72,7 +72,7 @@ async def add_counter_alert_rule_step_2(_, callback_query: CallbackQuery):
     category_id = menu.path.get_value("c")
     job_interval = menu.path.get_value("job_int")
     text = await menu.get_text(
-        category_obj=Category.get(category_id),
+        category_obj=Category.get(category_id) if category_id else None,
         last_text=(
             f"{RULE_NEW_TEXT}\n{RULE_TYPE_TEXT}\n{RULE_COUNTER_JOB_INTERVAL_TMPL.format(job_interval)}\n\nВыбери"
             " за сколько последних минут будет выполняться проверка количества"
@@ -88,7 +88,7 @@ async def add_counter_alert_rule_step_2(_, callback_query: CallbackQuery):
 
 
 @Client.on_callback_query(
-    filters.regex(r"/c/-\d+/r/:add/counter/job_int/\d+/count_int/\d+/$")
+    filters.regex(r"/r/:add/counter/job_int/\d+/count_int/\d+/$")
     & custom_filters.admin_only,
 )
 async def add_counter_alert_rule_step_3(client: Client, callback_query: CallbackQuery):

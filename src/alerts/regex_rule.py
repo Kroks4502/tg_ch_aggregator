@@ -21,7 +21,8 @@ async def check_message_by_regex_alert_rule(
     text = str(message.text or message.caption)
 
     for alert_rule in AlertRule.select().where(
-        (AlertRule.category_id == category_id) & (AlertRule.type == "regex")
+        ((AlertRule.category_id == category_id) | (AlertRule.category_id.is_null()))
+        & (AlertRule.type == "regex")
     ):
         match = None
         pattern = alert_rule.config["regex"]
