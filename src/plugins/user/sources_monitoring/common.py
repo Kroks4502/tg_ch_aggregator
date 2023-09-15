@@ -58,20 +58,20 @@ def get_filter_id_or_none(message: Message, source_id: int) -> int | None:
     """Получить ID фильтра, который не прошёл текст сообщения."""
     inspector = FilterInspector(message=message, source_id=source_id)
 
-    if result := inspector.check_message_type():
-        return result["id"]
+    if filter_obj := inspector.check_message_type():
+        return filter_obj.id
 
     if message.text or message.caption:
-        if result := inspector.check_white_text():
-            return result["id"]
-        if result := inspector.check_text():
-            return result["id"]
+        if filter_obj := inspector.check_white_text():
+            return filter_obj.id
+        if filter_obj := inspector.check_text():
+            return filter_obj.id
 
     entities = message.entities or message.caption_entities
     if entities:
         for entity in entities:
-            if result := inspector.check_entities(entity):
-                return result["id"]
+            if filter_obj := inspector.check_entities(entity):
+                return filter_obj.id
 
     return  # noqa: R502
 
