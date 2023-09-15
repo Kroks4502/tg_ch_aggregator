@@ -40,6 +40,7 @@ async def detail_alert_rule(client: Client, callback_query: CallbackQuery):
             f"{RULE_TYPE_TMPL.format('Регулярное выражение')}\n"
             f"{RULE_REGEX_TMPL.format(config.regex)}\n"
         )
+        menu.add_row_button("Изменить", ":edit")
 
     menu.add_row_button("Удалить", ":delete")
 
