@@ -4,7 +4,7 @@ from pyrogram.types import CallbackQuery, Message
 from alerts.counter_rule import add_evaluation_counter_rule_job
 from models import AlertRule, Category
 from plugins.bot.constants import CANCEL
-from plugins.bot.menu.category.alert_rules.detail import (
+from plugins.bot.menu.alert_rules.detail import (
     RULE_COUNTER_JOB_INTERVAL_TMPL,
     RULE_TYPE_TMPL,
 )
