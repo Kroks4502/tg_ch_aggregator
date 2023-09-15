@@ -14,8 +14,6 @@ async def options(_, callback_query: CallbackQuery):
     menu = Menu(callback_query.data)
     menu.add_row_button("Администраторы", "a")
     menu.add_row_button("Статистика", "stat")
-    menu.add_row_button("📖 История сообщений", "mh")
-    menu.add_row_button("📙 История фильтрации", "fh")
     menu.add_row_button("💾 Логи", ":get_logs")
 
     await callback_query.message.edit_text(

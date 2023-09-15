@@ -15,7 +15,7 @@ def get_main_menu(data: Message | CallbackQuery, path: str = "/") -> Menu:
         menu.add_row_button("🪤 Фильтры", "ft")
         menu.add_row_button("🧹 Очистка", "cl")
         menu.add_row_button(ALERT_BTN_TEXT, "r")
-        menu.add_row_button("🚧 Проверить пост", ":check_post")
+        # menu.add_row_button("🚧 Проверить пост", ":check_post")
         menu.add_row_button("🛠 Настройки", "o")
 
     return menu
