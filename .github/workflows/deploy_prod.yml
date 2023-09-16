@@ -4,7 +4,7 @@ on:
   push:
     branches:
      - master
-     - bugfix/terminating_postrgresql
+     - bugfix/*
   workflow_dispatch:
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
             git reset --hard HEAD
             git pull
 
-            git checkout bugfix/terminating_postrgresql
+            git checkout ${{ github.ref.name }}
 
             yoyo apply --database postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@localhost/${{ secrets.DB_NAME }}
             systemctl start tgbot
