@@ -89,7 +89,11 @@ async def new_message(client: Client, message: Message):  # noqa: C901
                 repeat_history_id=repeat_history_id,
                 filter_id=filter_id,
                 created_at=msg.date,
-                data=[dict(source=json.loads(msg.__str__()))],
+                data=dict(
+                    first_message=dict(
+                        source=json.loads(msg.__str__()),
+                    ),
+                ),
             )
 
         if repeated:
@@ -135,10 +139,13 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             history_obj.category_message_rewritten = source.is_rewrite
             history_obj.category_message_id = cat_msg.id
             history_obj.category_media_group_id = cat_msg.media_group_id
-            history_obj.data[-1]["category"] = json.loads(cat_msg.__str__())
+            history_obj.data["first_message"]["category"] = json.loads(
+                cat_msg.__str__()
+            )
 
             await check_message_by_regex_alert_rule(
-                category_id=history_obj.category_id, message=cat_msg
+                category_id=history_obj.category_id,
+                message=cat_msg,
             )
 
     except MessageBaseError as e:
@@ -164,7 +171,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             blocked.remove(value=message.media_group_id or message.id)
 
         if exc and (history_obj := history.get(message.id)):
-            history_obj.data[-1]["exception"] = exc.to_dict()
+            history_obj.data["first_message"]["exception"] = exc.to_dict()
 
         for history_obj in history.values():
             history_obj.save()

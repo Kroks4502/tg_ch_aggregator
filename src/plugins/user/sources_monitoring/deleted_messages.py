@@ -37,12 +37,13 @@ async def deleted_messages(client: Client, messages: list[Message]):
         )
 
         exc = None
+        history_data = {}
         try:
             if not history_obj:
                 raise MessageNotFoundOnHistoryError(operation=DELETE, message=message)
 
             history_obj.deleted_at = dt.datetime.now()
-            history_obj.data.append(dict(source=json.loads(message.__str__())))
+            history_data = dict(source=json.loads(message.__str__()))
 
             if not history_obj.category_message_id:
                 raise MessageNotOnCategoryError(operation=DELETE, message=message)
@@ -64,8 +65,11 @@ async def deleted_messages(client: Client, messages: list[Message]):
         except pyrogram_errors.BadRequest as error:
             exc = MessageBadRequestError(operation=DELETE, message=message, error=error)
         finally:
-            if exc and history_obj:
-                history_obj.data[-1]["exception"] = exc.to_dict()
-
             if history_obj:
+                if exc:
+                    history_data["exception"] = exc.to_dict()
+                    history_obj.data["last_message_with_error"] = history_data
+                else:
+                    history_obj.data["last_message_without_error"] = history_data
+
                 history_obj.save()

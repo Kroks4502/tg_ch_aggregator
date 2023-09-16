@@ -215,7 +215,13 @@ def _get_messages(category_id: int, start: int, end: int, last: int):
 
 
 def get_short_text(data: dict, line: int) -> str:
-    if not data or not (message_data := data[0].get("category")):
+    if not data or not (
+        message_data := (
+            (data.get("last_message_without_error") or data.get("first_message")).get(
+                "category"
+            )
+        )
+    ):
         return ""
 
     try:
