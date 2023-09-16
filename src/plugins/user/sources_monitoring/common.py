@@ -8,7 +8,6 @@ from pyrogram.types import (
     Message,
 )
 
-from config import TELEGRAM_MAX_CAPTION_LENGTH, TELEGRAM_MAX_TEXT_LENGTH
 from models import Source
 from plugins.user.exceptions import (
     MessageBlockedByIdError,
@@ -24,6 +23,7 @@ from plugins.user.utils.rewriter.header import (
     HeaderController,
 )
 from plugins.user.utils.text_length import tg_len
+from settings import TELEGRAM_MAX_CAPTION_LENGTH, TELEGRAM_MAX_TEXT_LENGTH
 
 blocking_messages = ChatsLocks("all")
 

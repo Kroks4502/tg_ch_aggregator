@@ -5,17 +5,15 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from dotenv import load_dotenv
-from gevent.socket import wait_read, wait_write
-from playhouse.postgres_ext import PostgresqlExtDatabase
-from psycopg2 import extensions
 
 BASE_DIR = Path(__file__).parent
 SESSIONS_DIR = BASE_DIR.parent / "sessions"
 
 LOGS_DIR = BASE_DIR.parent / "logs"
-LOG_FORMAT = "%(asctime)s : %(levelname)s : %(message)s"
+LOG_FORMAT = "%(asctime)s : %(name)s : %(levelname)s : %(message)s"
 
 load_dotenv(BASE_DIR.parent / ".env")
+
 API_ID = os.getenv("api_id")
 API_HASH = os.getenv("api_hash")
 BOT_TOKEN = os.getenv("bot_token")
@@ -26,31 +24,11 @@ TELEGRAM_MAX_TEXT_LENGTH = 4096
 
 APP_START_DATETIME = dt.datetime.now()
 
-
-def patch_psycopg2():
-    extensions.set_wait_callback(_psycopg2_gevent_callback)
-
-
-def _psycopg2_gevent_callback(conn, timeout=None):
-    while True:
-        state = conn.poll()
-        if state == extensions.POLL_OK:
-            break
-        if state == extensions.POLL_READ:
-            wait_read(conn.fileno(), timeout=timeout)
-        elif state == extensions.POLL_WRITE:
-            wait_write(conn.fileno(), timeout=timeout)
-        else:
-            raise ValueError("poll() returned unexpected result")
-
-
-DATABASE = PostgresqlExtDatabase(
-    os.getenv("postgresql_database"),
-    user=os.getenv("postgresql_user"),
-    password=os.getenv("postgresql_password"),
-    host=os.getenv("postgresql_host"),
-    port=os.getenv("postgresql_port"),
-)
+POSTGRESQL_DATABASE = os.getenv("postgresql_database")
+POSTGRESQL_USER = os.getenv("postgresql_user")
+POSTGRESQL_PASSWORD = os.getenv("postgresql_password")
+POSTGRESQL_HOST = os.getenv("postgresql_host")
+POSTGRESQL_PORT = os.getenv("postgresql_port")
 
 
 def configure_logging():

@@ -3,8 +3,8 @@ import os
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from config import LOGS_DIR
 from plugins.bot.utils import custom_filters
+from settings import LOGS_DIR
 
 
 @Client.on_callback_query(
