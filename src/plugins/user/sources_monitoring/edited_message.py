@@ -45,6 +45,7 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
 
     blocked = None
     history_obj = None
+    history_data = {}
     exc = None
     try:
         blocked = set_blocking(
@@ -54,14 +55,15 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
         )
 
         history_obj = MessageHistory.get_or_none(
-            source_id=message.chat.id, source_message_id=message.id
+            source_id=message.chat.id,
+            source_message_id=message.id,
         )
 
         if not history_obj:
             raise MessageNotFoundOnHistoryError(operation=EDIT, message=message)
 
         history_obj.edited_at = message.edit_date
-        history_obj.data.append(dict(source=json.loads(message.__str__())))
+        history_data["source"] = json.loads(message.__str__())
 
         if not history_obj.category_message_id:
             raise MessageNotOnCategoryError(operation=EDIT, message=message)
@@ -108,7 +110,7 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
             source.category_id,
         )
 
-        history_obj.data[-1]["category"] = json.loads(category_message.__str__())
+        history_data["category"] = json.loads(category_message.__str__())
 
     except MessageBaseError as e:
         exc = e
@@ -129,5 +131,9 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
 
         if history_obj:
             if exc:
-                history_obj.data[-1]["exception"] = exc.to_dict()
+                history_data["exception"] = exc.to_dict()
+                history_obj.data["last_message_with_error"] = history_data
+            else:
+                history_obj.data["last_message_without_error"] = history_data
+
             history_obj.save()

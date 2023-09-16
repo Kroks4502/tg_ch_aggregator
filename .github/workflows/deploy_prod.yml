@@ -4,6 +4,7 @@ on:
   push:
     branches:
      - master
+     - hotfix/*
   workflow_dispatch:
 
 jobs:
@@ -23,6 +24,9 @@ jobs:
             mv logs "logs_$(date +%Y-%m-%d_%H-%M-%S)"
             git reset --hard HEAD
             git pull
+
+            git checkout ${{ github.ref.name }}
+
             yoyo apply --database postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@localhost/${{ secrets.DB_NAME }}
             systemctl start tgbot
   send_message:
