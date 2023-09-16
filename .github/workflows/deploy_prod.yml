@@ -4,6 +4,7 @@ on:
   push:
     branches:
      - master
+     - bugfix/terminating_postrgresql
   workflow_dispatch:
 
 jobs:
@@ -23,6 +24,9 @@ jobs:
             mv logs "logs_$(date +%Y-%m-%d_%H-%M-%S)"
             git reset --hard HEAD
             git pull
+
+            git checkout bugfix/terminating_postrgresql
+
             yoyo apply --database postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@localhost/${{ secrets.DB_NAME }}
             systemctl start tgbot
   send_message:
