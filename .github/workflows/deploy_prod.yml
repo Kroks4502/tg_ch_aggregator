@@ -23,9 +23,9 @@ jobs:
             cd tg_ch_aggregator/
             mv logs "logs_$(date +%Y-%m-%d_%H-%M-%S)"
             git reset --hard HEAD
-            git pull
 
             git checkout ${{ github.ref.name }}
+            git pull
 
             yoyo apply --database postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@localhost/${{ secrets.DB_NAME }}
             systemctl start tgbot
