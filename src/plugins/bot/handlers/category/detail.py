@@ -20,7 +20,7 @@ async def detail_category(_, callback_query: CallbackQuery):
     if category_obj and is_admin(callback_query.from_user.id):
         menu.add_button.edit_delete()
 
-    menu.add_button.sources()
+    menu.add_button.sources(category_id=category_id)
     menu.add_button.alert_rules(
         user_id=callback_query.from_user.id,
         category_id=category_id,
