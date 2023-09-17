@@ -136,14 +136,14 @@ class ButtonAdder(ButtonAdderBase):
             back_step=back_step,
         )
 
-    def edit_delete(self, back_step: int = 0):
-        self._add_row_many_buttons(
-            buttons=(EDIT_MINI_BTN, DELETE_MINI_BTN),
-            back_step=back_step,
-        )
-
     def confirmation_delete(self, back_step: int = 0):
         self._add_row_button(
             button=CONFIRMATION_DELETE_BTN,
+            back_step=back_step,
+        )
+
+    def row_edit_delete(self, back_step: int = 0):
+        self._add_row_many_buttons(
+            buttons=(EDIT_MINI_BTN, DELETE_MINI_BTN),
             back_step=back_step,
         )

@@ -21,7 +21,7 @@ async def detail_source(_, callback_query: CallbackQuery):
 
     last_text = []
     if is_admin(callback_query.from_user.id):
-        menu.add_button.edit_delete()
+        menu.add_button.row_edit_delete()
 
         menu.add_button.messages_histories()
 
