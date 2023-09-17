@@ -25,7 +25,8 @@ async def detail_cleanup_regex(_, callback_query: CallbackQuery):
         pattern = cleanup_list[cleanup_id]
 
     if is_admin(callback_query.from_user.id):
-        menu.add_row_many_buttons(("📝", ":edit"), ("✖️", ":delete"))
+        menu.add_button.edit()
+        menu.add_button.delete()
 
     text = await menu.get_text(source_obj=source_obj, cleanup_pattern=pattern)
     await callback_query.message.edit_text(
