@@ -35,13 +35,18 @@ class InputWaitManager:
             "kwargs": kwargs,
         }
 
+        logging.debug("Добавлен обработчик ожидания сообщения из чата %s", chat_id)
+
     def remove(
         self,
-        client,
-        chat_id,
+        client: Client,
+        chat_id: int,
     ) -> dict[str]:
         input_chat = self._waiting_chats.pop(chat_id)
         client.remove_handler(*input_chat["handler"])
+
+        logging.debug("Удален обработчик ожидания сообщения из чата %s", chat_id)
+
         return input_chat
 
     async def __input_text(
