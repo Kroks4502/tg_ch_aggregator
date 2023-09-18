@@ -3,11 +3,13 @@ from pyrogram.types import CallbackQuery, Chat, ChatPrivileges, Message
 
 from clients import user
 from models import Category
-from plugins.bot.constants import CANCEL
+from plugins.bot.constants import CANCEL, CATEGORY_NAME_TPL, MAX_LENGTH_CATEGORY_NAME
 from plugins.bot.menu import Menu
 from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
 from plugins.bot.utils.managers import input_wait_manager
+from plugins.bot.utils.senders import send_message_to_admins
+from plugins.bot.utils.validator import MessageValidator
 
 
 @Client.on_callback_query(
@@ -37,20 +39,18 @@ async def add_category_waiting_input(
 ):
     menu = Menu(callback_query.data)
 
-    new_channel_name = f"{message.text} | Aggregator"
+    new_channel_name = CATEGORY_NAME_TPL.format(message.text)
     new_message = await message.reply_text(f"⏳ Создаю канал «{new_channel_name}»…")
 
-    async def reply(text):
-        await new_message.edit_text(
-            text,
-            reply_markup=menu.reply_markup,
-            disable_web_page_preview=True,
-        )
-        # Удаляем предыдущее меню
-        await callback_query.message.delete()
-
-    if len(message.text) > 80:
-        await reply("❌ Название категории не должно превышать 80 символов")
+    validator = MessageValidator(
+        menu=menu,
+        message=message,
+        edit_message=new_message,
+        delete_message=callback_query.message,
+    )
+    if not await validator.is_text():
+        return
+    if not await validator.text_length_less_than(MAX_LENGTH_CATEGORY_NAME):
         return
 
     new_channel: Chat = await user.create_channel(
@@ -77,4 +77,15 @@ async def add_category_waiting_input(
         title=new_channel.title,
     )
     cat_link = await get_channel_formatted_link(category_obj.id)
-    await reply(f"✅ Категория **{cat_link}** создана")
+
+    success_text = f"✅ Категория **{cat_link}** создана"
+    await new_message.edit_text(
+        text=success_text,
+        reply_markup=menu.reply_markup,
+        disable_web_page_preview=True,
+    )
+
+    # Удаляем предыдущее меню
+    await callback_query.message.delete()
+
+    await send_message_to_admins(client, callback_query, success_text)
