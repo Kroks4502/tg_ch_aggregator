@@ -46,7 +46,7 @@ async def list_source(_, callback_query: CallbackQuery):
     await callback_query.message.edit_text(
         text=await menu.get_text(
             category_obj=category_obj,
-            last_text="" if category_obj else "**Источники**",
+            last_text="**Источники**",
         ),
         reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
