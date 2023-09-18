@@ -13,6 +13,7 @@ def get_main_menu(data: Message | CallbackQuery, path: str = "/") -> Menu:
         menu.add_button.categories()
         menu.add_button.sources()
         menu.add_button.alert_rules(user_id=data.from_user.id)
+        menu.add_button.messages_histories()
         menu.add_button.filters()
         menu.add_button.cleanups()
         menu.add_button.options()

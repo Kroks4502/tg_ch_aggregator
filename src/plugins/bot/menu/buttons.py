@@ -10,10 +10,10 @@ SOURCES_BTN = ButtonData(title="📚 Источники", path="s")
 FILTERS_BTN = ButtonData(title="🪤 Фильтры", path="ft")
 CLEANUPS_BTN = ButtonData(title="🧹 Очистка", path="cl")
 ALERT_RULES_BTN = ButtonData(title="🔔 Уведомления", path="r")
+MESSAGES_HISTORIES_BTN = ButtonData(title="📖 Сообщения", path="mh")
 CHECK_POST_BTN = ButtonData(title="🚧 Проверить пост", path=":check_post")
 OPTIONS_BTN = ButtonData(title="🛠 Настройки", path="o")
 
-MESSAGES_HISTORIES_BTN = ButtonData(title="📖 История сообщений", path="mh")
 FILTERS_HISTORIES_BTN = ButtonData(title="📙 История фильтрации", path="fh")
 
 ADD_BTN = ButtonData(title="➕ Добавить", path=":add")
