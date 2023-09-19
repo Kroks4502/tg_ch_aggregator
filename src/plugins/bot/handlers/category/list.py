@@ -5,7 +5,6 @@ from pyrogram.types import CallbackQuery
 from models import Category, Source
 from plugins.bot.menu import Menu
 from plugins.bot.utils.checks import is_admin
-from plugins.bot.utils.statistic import get_statistic_text
 from utils.menu import ButtonData
 
 
@@ -40,7 +39,7 @@ async def list_category(_, callback_query: CallbackQuery):
     )
 
     await callback_query.message.edit_text(
-        text=f"**Категории**\n\n{get_statistic_text()}",
+        text="**Категории**",
         reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
     )

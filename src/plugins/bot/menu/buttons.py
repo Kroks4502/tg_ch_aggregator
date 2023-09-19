@@ -11,6 +11,7 @@ FILTERS_BTN = ButtonData(title="🪤 Фильтры", path="ft")
 CLEANUPS_BTN = ButtonData(title="🧹 Очистка", path="cl")
 ALERT_RULES_BTN = ButtonData(title="🔔 Уведомления", path="r")
 MESSAGES_HISTORIES_BTN = ButtonData(title="📖 Сообщения", path="mh")
+STATISTICS_BTN = ButtonData(title="📊 Статистика", path="stat")
 CHECK_POST_BTN = ButtonData(title="🚧 Проверить пост", path=":check_post")
 OPTIONS_BTN = ButtonData(title="🛠 Настройки", path="o")
 
@@ -109,6 +110,12 @@ class ButtonAdder(ButtonAdderBase):
     def messages_histories(self, back_step: int = 0):
         self._add_row_button(
             button=MESSAGES_HISTORIES_BTN,
+            back_step=back_step,
+        )
+
+    def statistics(self, back_step: int = 0):
+        self._add_row_button(
+            button=STATISTICS_BTN,
             back_step=back_step,
         )
 

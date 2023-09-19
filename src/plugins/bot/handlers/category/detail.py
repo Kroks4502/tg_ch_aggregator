@@ -1,10 +1,9 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from models import Category, MessageHistory
+from models import Category
 from plugins.bot.menu import Menu
 from plugins.bot.utils.checks import is_admin
-from plugins.bot.utils.statistic import get_statistic_text
 
 
 @Client.on_callback_query(
@@ -27,12 +26,11 @@ async def detail_category(_, callback_query: CallbackQuery):
     )
     menu.add_button.messages_histories()
     menu.add_button.filters_histories()
+    menu.add_button.statistics()
 
-    statistic_text = get_statistic_text(where=MessageHistory.category == category_obj)
     await callback_query.message.edit_text(
         text=await menu.get_text(
             category_obj=category_obj,
-            last_text=statistic_text,
         ),
         reply_markup=menu.reply_markup,
         disable_web_page_preview=True,
