@@ -73,15 +73,7 @@ class MenuAbstract(abc.ABC):
         last_text: str = None,
     ) -> str:
         """Получить текст меню."""
-        pagination_text = ""
-        if self.pagination and self.pagination.is_exists():
-            pagination_text = (
-                f"Страница {self.pagination.page} из {self.pagination.last_page}"
-            )
-
-        result_text_items = [
-            item for item in (start_text, last_text, pagination_text) if item
-        ]
+        result_text_items = [item for item in (start_text, last_text) if item]
 
         return "\n\n".join(result_text_items) or ""
 

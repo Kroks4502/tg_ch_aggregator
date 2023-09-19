@@ -43,6 +43,8 @@ class Pagination:
             if self.page > 2:
                 first_params = "⏪", path_tmpl.format(1)
 
+        pages = f"{self.page}/{self.last_page}", "·"
+
         if self.page < self.last_page:
             next_page = self.page + 1
             next_params = "➡️", path_tmpl.format(next_page)
@@ -50,7 +52,7 @@ class Pagination:
             if self.page < self.last_page - 1:
                 last_params = "⏩", path_tmpl.format(self.last_page)
 
-        return [first_params, prev_params, next_params, last_params]
+        return [first_params, prev_params, pages, next_params, last_params]
 
     def is_exists(self) -> bool:
         """Доступны ли кнопки пагинации или они все пустые."""
