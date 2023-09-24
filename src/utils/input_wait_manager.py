@@ -5,7 +5,7 @@ from pyrogram import Client
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import Message
 
-from plugins.bot.utils import custom_filters
+from utils import custom_filters
 
 
 class InputWaitManager:
@@ -67,6 +67,3 @@ class InputWaitManager:
             )
             logging.error(f"{msg}: {e}", exc_info=True)
             await message.reply(f"❌ {msg}:\n{e}")
-
-
-input_wait_manager = InputWaitManager()

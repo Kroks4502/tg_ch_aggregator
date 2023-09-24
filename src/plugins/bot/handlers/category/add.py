@@ -1,60 +1,23 @@
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, Chat, ChatPrivileges, Message
+from pyrogram import Client
+from pyrogram.types import Chat, ChatPrivileges, Message
 
 from clients import user
 from models import Category
+from plugins.bot import router, validators
 from plugins.bot.constants import CANCEL, CATEGORY_NAME_TPL, MAX_LENGTH_CATEGORY_NAME
-from plugins.bot.menu import Menu
-from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
-from plugins.bot.utils.managers import input_wait_manager
-from plugins.bot.utils.senders import send_message_to_admins
-from plugins.bot.utils.validator import MessageValidator
 
 
-@Client.on_callback_query(
-    filters.regex(r"/c/:add/$") & custom_filters.admin_only,
-)
-async def add_category(client: Client, callback_query: CallbackQuery):
-    await callback_query.answer()
-    await callback_query.message.reply(
-        "ОК. Ты добавляешь новую категорию, "
-        "которая будет получать сообщения из источников. "
-        "Будет создан новый канал-агрегатор.\n\n"
-        f"**Введи название категории** или {CANCEL}"
-    )
-
-    input_wait_manager.add(
-        callback_query.message.chat.id,
-        add_category_waiting_input,
-        client,
-        callback_query,
-    )
-
-
+@router.wait_input(initial_text="⏳ Создаю канал для категории…", send_to_admins=True)
 async def add_category_waiting_input(
     client: Client,
     message: Message,
-    callback_query: CallbackQuery,
 ):
-    menu = Menu(callback_query.data)
-
-    new_channel_name = CATEGORY_NAME_TPL.format(message.text)
-    new_message = await message.reply_text(f"⏳ Создаю канал «{new_channel_name}»…")
-
-    validator = MessageValidator(
-        menu=menu,
-        message=message,
-        edit_message=new_message,
-        delete_message=callback_query.message,
-    )
-    if not await validator.is_text():
-        return
-    if not await validator.text_length_less_than(MAX_LENGTH_CATEGORY_NAME):
-        return
+    validators.is_text(message)
+    validators.text_length_less_than(message, MAX_LENGTH_CATEGORY_NAME)
 
     new_channel: Chat = await user.create_channel(
-        new_channel_name,
+        CATEGORY_NAME_TPL.format(message.text),
         f"Создан ботом {client.me.username}",
     )
 
@@ -78,14 +41,18 @@ async def add_category_waiting_input(
     )
     cat_link = await get_channel_formatted_link(category_obj.id)
 
-    success_text = f"✅ Категория **{cat_link}** создана"
-    await new_message.edit_text(
-        text=success_text,
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
+    return f"✅ Категория **{cat_link}** создана"
+
+
+@router.page(
+    path=r"/c/:add/",
+    reply=True,
+    add_wait_for_input=add_category_waiting_input,
+)
+async def add_category():
+    return (
+        "ОК. Ты добавляешь новую категорию, "
+        "которая будет получать сообщения из источников. "
+        "Будет создан новый канал-агрегатор.\n\n"
+        f"**Введи название категории** или {CANCEL}"
     )
-
-    # Удаляем предыдущее меню
-    await callback_query.message.delete()
-
-    await send_message_to_admins(client, callback_query, success_text)

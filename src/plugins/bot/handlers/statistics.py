@@ -1,10 +1,9 @@
 from datetime import datetime, timedelta
 
 from peewee import CTE, Column, Expression, fn
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
 
 from models import MessageHistory
+from plugins.bot import router
 from plugins.bot.menu import Menu
 
 STATISTIC_TMPL = """            день | неделя | месяц
@@ -14,14 +13,8 @@ STATISTIC_TMPL = """            день | неделя | месяц
 удалено   | {deleted_1d:4} | {deleted_7d:6} | {deleted_30d:5}"""
 
 
-@Client.on_callback_query(
-    filters.regex(r"/stat/$"),
-)
-async def message_history_statistics(_, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data)
-
+@router.page(path=r"/stat/")
+async def message_history_statistics(menu: Menu):
     statistic_where = None
     if source_id := menu.path.get_value("s"):
         statistic_where = MessageHistory.source == source_id
@@ -30,11 +23,7 @@ async def message_history_statistics(_, callback_query: CallbackQuery):
 
     statistic_text = get_statistic_text(where=statistic_where)
 
-    await callback_query.message.edit_text(
-        text=f"**Статистика**\n\n{statistic_text}",
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
-    )
+    return f"**Статистика**\n\n{statistic_text}"
 
 
 def get_statistic_text(where: Expression = None):

@@ -1,55 +1,20 @@
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, Message
+from pyrogram.types import Message
 
 from models import AlertRule
-from plugins.bot.constants import CANCEL, INVALID_PATTERN_TEXT
+from plugins.bot import router, validators
+from plugins.bot.constants import CANCEL
 from plugins.bot.menu import Menu
-from plugins.bot.utils import custom_filters
-from plugins.bot.utils.checks import is_valid_pattern
-from plugins.bot.utils.managers import input_wait_manager
 
 
-@Client.on_callback_query(
-    filters.regex(r"/r/:add/regex/$") & custom_filters.admin_only,
-)
-async def add_regex_alert_rule(client: Client, callback_query: CallbackQuery):
-    await callback_query.answer()
-    await callback_query.message.reply(
-        "ОК. Ты добавляешь новое правило уведомления.\n\n"
-        f"**Введи регулярное выражение** или {CANCEL}"
-    )
-
-    input_wait_manager.add(
-        callback_query.message.chat.id,
-        add_regex_alert_rule_waiting_input,
-        client,
-        callback_query,
-    )
-
-
+@router.wait_input(back_step=2)
 async def add_regex_alert_rule_waiting_input(
-    _,
     message: Message,
-    callback_query: CallbackQuery,
+    menu: Menu,
 ):
-    menu = Menu(callback_query.data, back_step=2)
+    pattern = str(message.text)
+    validators.is_valid_pattern(pattern)
 
     category_id = menu.path.get_value("c")
-
-    async def reply(t):
-        await message.reply_text(
-            text=t,
-            reply_markup=menu.reply_markup,
-            disable_web_page_preview=True,
-        )
-        # Удаляем предыдущее меню
-        await callback_query.message.delete()
-
-    pattern = str(message.text)
-    if not is_valid_pattern(pattern):
-        await reply(INVALID_PATTERN_TEXT)
-        return
-
     AlertRule.create(
         user_id=message.from_user.id,
         category_id=category_id,
@@ -57,8 +22,19 @@ async def add_regex_alert_rule_waiting_input(
         config=dict(regex=pattern),
     )
 
-    text = (
+    return (
         "✅ Правило уведомления о сообщениях соответствующих регулярному выражению"
         f" `{pattern}` добавлен"
     )
-    await reply(text)
+
+
+@router.page(
+    path=r"/r/:add/regex/",
+    reply=True,
+    add_wait_for_input=add_regex_alert_rule_waiting_input,
+)
+async def add_regex_alert_rule():
+    return (
+        "ОК. Ты добавляешь новое правило уведомления.\n\n"
+        f"**Введи регулярное выражение** или {CANCEL}"
+    )

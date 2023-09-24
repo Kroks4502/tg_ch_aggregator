@@ -1,8 +1,6 @@
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
-
 from alerts.configs import AlertCounterConfig, AlertRegexConfig
 from models import AlertRule
+from plugins.bot import router
 from plugins.bot.menu import Menu
 
 RULE_TYPE_TMPL = "Тип: **{}**"
@@ -12,14 +10,8 @@ RULE_COUNTER_THRESHOLD_TMPL = "Порог: **{}** шт."
 RULE_REGEX_TMPL = "Паттерн: `{}`"
 
 
-@Client.on_callback_query(
-    filters.regex(r"/r/\d+/(\?new|)$"),
-)
-async def detail_alert_rule(client: Client, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data)
-
+@router.page(path=r"/r/\d+/")
+async def detail_alert_rule(menu: Menu):
     rule_id = menu.path.get_value("r")
     rule_obj: AlertRule = AlertRule.get(rule_id)
 
@@ -44,19 +36,4 @@ async def detail_alert_rule(client: Client, callback_query: CallbackQuery):
 
     menu.add_button.delete()
 
-    text = await menu.get_text(alert_rule_obj=rule_obj, last_text=last_text)
-
-    if menu.need_send_new_message:
-        await client.send_message(
-            chat_id=callback_query.message.chat.id,
-            text=text,
-            reply_markup=menu.reply_markup,
-            disable_web_page_preview=True,
-        )
-        return
-
-    await callback_query.message.edit_text(
-        text=text,
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
-    )
+    return await menu.get_text(alert_rule_obj=rule_obj, last_text=last_text)

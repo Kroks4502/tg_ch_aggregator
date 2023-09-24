@@ -1,24 +1,16 @@
 from peewee import JOIN
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
 
 from common import get_message_link, get_shortened_text
 from filter_types import FILTER_TYPES_BY_ID
 from models import Filter, MessageHistory, Source
+from plugins.bot import router
 from plugins.bot.constants import DEFAULT_NUM_ITEMS_ON_TEXT
 from plugins.bot.menu import Menu
-from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
 
 
-@Client.on_callback_query(
-    filters.regex(r"/fh/(p/\d+/|)$") & custom_filters.admin_only,
-)
-async def filter_history(_, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data)
-
+@router.page(path=r"/fh/", pagination=True)
+async def filter_history(menu: Menu):
     source_filter = Source.alias()
     query = (
         MessageHistory.select(MessageHistory, Source, Filter, source_filter)
@@ -56,14 +48,8 @@ async def filter_history(_, callback_query: CallbackQuery):
             f'__{f.source_message_id} {f.created_at.strftime("%Y.%m.%d, %H:%M:%S")}__'
         )
 
-    text = (
+    return (
         f"**Отфильтрованные сообщения{start_text}**\n\n"
         + "\n\n".join(text_items)
         + f"\n\nВсего: **{pagination.total_items}**"
-    )
-
-    await callback_query.message.edit_text(
-        text=text,
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
     )

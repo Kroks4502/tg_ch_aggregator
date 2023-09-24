@@ -1,24 +1,17 @@
 import peewee
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
 
 from models import Category, Filter, Source
+from plugins.bot import router
 from plugins.bot.menu import Menu
-from plugins.bot.utils.checks import is_admin
 from utils.menu import ButtonData
 
 
-@Client.on_callback_query(
-    filters.regex(r"/s/(p/\d+/|)$"),
-)
-async def list_source(_, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(path=callback_query.data)
-
+@router.page(path=r"/s/", pagination=True)
+async def list_source(menu: Menu):
     category_id = menu.path.get_value("c")
     category_obj = Category.get(category_id) if category_id else None
-    if category_obj and is_admin(callback_query.from_user.id):
+
+    if category_obj and menu.is_admin_user():
         menu.add_button.add()
 
     query = (
@@ -43,11 +36,7 @@ async def list_source(_, callback_query: CallbackQuery):
         ]
     )
 
-    await callback_query.message.edit_text(
-        text=await menu.get_text(
-            category_obj=category_obj,
-            last_text="**Источники**",
-        ),
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
+    return await menu.get_text(
+        category_obj=category_obj,
+        last_text="**Источники**",
     )

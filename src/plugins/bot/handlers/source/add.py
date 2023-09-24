@@ -1,58 +1,24 @@
 import re
 
 import peewee
-from pyrogram import Client, filters
 from pyrogram.enums import ChatType
 from pyrogram.errors import RPCError
-from pyrogram.types import CallbackQuery, Message
+from pyrogram.types import Message
 
 from clients import user
 from models import Category, Source
+from plugins.bot import router
 from plugins.bot.constants import CANCEL
 from plugins.bot.menu import Menu
-from plugins.bot.utils import custom_filters
 from plugins.bot.utils.chat_info import get_chat_info
 from plugins.bot.utils.links import get_channel_formatted_link
-from plugins.bot.utils.managers import input_wait_manager
-from plugins.bot.utils.senders import send_message_to_admins
 
 
-@Client.on_callback_query(
-    filters.regex(r"^/c/-\d+/s/:add/$") & custom_filters.admin_only,
-)
-async def add_source(client: Client, callback_query: CallbackQuery):
-    await callback_query.answer()
-    await callback_query.message.reply(
-        "ОК. Ты добавляешь новый источник.\n\n"
-        "**Введи публичное имя канала, частную ссылку, "
-        f"ID, перешли сообщение из него** или {CANCEL}"
-    )
-
-    input_wait_manager.add(
-        callback_query.message.chat.id, add_source_waiting_input, client, callback_query
-    )
-
-
+@router.wait_input(initial_text="⏳ Проверка…", send_to_admins=True)
 async def add_source_waiting_input(  # noqa: C901
-    client: Client,
     message: Message,
-    callback_query: CallbackQuery,
+    menu: Menu,
 ):
-    menu = Menu(callback_query.data)
-
-    #
-
-    new_message = await message.reply_text("⏳ Проверка…")
-
-    async def edit_text(text):
-        await new_message.edit_text(
-            text,
-            reply_markup=menu.reply_markup,
-            disable_web_page_preview=True,
-        )
-        # Удаляем предыдущее меню
-        await callback_query.message.delete()
-
     try:
         if message.forward_from_chat:
             chat = message.forward_from_chat
@@ -65,36 +31,40 @@ async def add_source_waiting_input(  # noqa: C901
                 input_text = re.sub("https://t.me/", "", message.text)
                 chat = await user.get_chat(input_text)
     except RPCError as e:
-        await edit_text(f"❌ Что-то пошло не так\n\n{e}")
-        return
+        raise ValueError(f"❌ Что-то пошло не так\n\n{e}")
 
     if chat.type != ChatType.CHANNEL:
-        await edit_text("❌ Это не канал")
-        return
-
-    #
+        raise ValueError("❌ Это не канал")
 
     try:
         await user.join_chat(chat.username if chat.username else chat.id)
     except RPCError as e:
-        await edit_text(f"❌ Основной клиент не может подписаться на канал\n\n{e}")
-        return
+        raise ValueError(f"❌ Основной клиент не может подписаться на канал\n\n{e}")
 
     category_id = menu.path.get_value("c")
     try:
         source_obj = Source.create(id=chat.id, title=chat.title, category=category_id)
     except peewee.IntegrityError:
-        await edit_text("❗️Этот канал уже используется")
-        return
+        raise ValueError("❗️Этот канал уже используется")
 
     category_obj: Category = Category.get(category_id)
     src_link = await get_channel_formatted_link(source_obj.id)
     cat_link = await get_channel_formatted_link(category_obj.id)
 
     warnings = await get_chat_info(source_obj)
-    success_text = (
+    return (
         f"✅ Источник **{src_link}** добавлен в категорию **{cat_link}**\n\n{warnings}"
     )
-    await edit_text(success_text)
 
-    await send_message_to_admins(client, callback_query, success_text)
+
+@router.page(
+    path=r"/c/-\d+/s/:add/",
+    reply=True,
+    add_wait_for_input=add_source_waiting_input,
+)
+async def add_source():
+    return (
+        "ОК. Ты добавляешь новый источник.\n\n"
+        "**Введи публичное имя канала, частную ссылку, "
+        f"ID, перешли сообщение из него** или {CANCEL}"
+    )

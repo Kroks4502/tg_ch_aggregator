@@ -1,28 +1,16 @@
 from peewee import JOIN, fn
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
 
 from models import Category, Source
+from plugins.bot import router
 from plugins.bot.menu import Menu
-from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
-from plugins.bot.utils.senders import send_message_to_admins
 from utils.menu import ButtonData
 
 
-@Client.on_callback_query(
-    filters.regex(r"/s/-\d+/:edit/nc/$") & custom_filters.admin_only,
-)
-async def edit_source_category(_, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data)
+@router.page(path=r"/s/-\d+/:edit/nc/")
+async def edit_source_category(menu: Menu):
     source_id = menu.path.get_value("s")
     source_obj: Source = Source.get(source_id)
-    text = await menu.get_text(
-        source_obj=source_obj,
-        last_text="Ты **меняешь категорию** у источника.\nВыбери новую категорию:",
-    )
 
     query = (
         Category.select(
@@ -37,21 +25,14 @@ async def edit_source_category(_, callback_query: CallbackQuery):
         data=[ButtonData(i.title, i.id, i.amount) for i in query],
     )
 
-    await callback_query.message.edit_text(
-        text=text,
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
+    return await menu.get_text(
+        source_obj=source_obj,
+        last_text="Ты **меняешь категорию** у источника.\nВыбери новую категорию:",
     )
 
 
-@Client.on_callback_query(
-    filters.regex(r"/s/-\d+/:edit/nc/-\d+/$") & custom_filters.admin_only,
-)
-async def set_source_category(client: Client, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data, back_step=2)
-
+@router.page(path=r"/s/-\d+/:edit/nc/-\d+/", send_to_admins=True, back_step=2)
+async def set_source_category(menu: Menu):
     source_id = menu.path.get_value("s")
     source_obj = Source.get(source_id)
 
@@ -63,17 +44,12 @@ async def set_source_category(client: Client, callback_query: CallbackQuery):
     source_obj.category = new_category_obj
     source_obj.save()
 
+    menu.path.set_value("с", new_category_id)
+
     src_link = await get_channel_formatted_link(source_obj.id)
     cat_link_old = await get_channel_formatted_link(old_category_obj.id)
     cat_link_new = await get_channel_formatted_link(new_category_obj.id)
-    text = (
+    return (
         f"✅ Категория источника **{src_link}** изменена с **{cat_link_old}** на"
         f" **{cat_link_new}**"
     )
-    await callback_query.message.edit_text(
-        text=text,
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
-    )
-
-    await send_message_to_admins(client, callback_query, text)

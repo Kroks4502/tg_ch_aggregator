@@ -1,22 +1,13 @@
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
-
 from common import get_message_link, get_shortened_text
 from models import Category, MessageHistory, Source
+from plugins.bot import router
 from plugins.bot.constants import DEFAULT_NUM_ITEMS_ON_TEXT
 from plugins.bot.menu import Menu
-from plugins.bot.utils import custom_filters
 from plugins.bot.utils.links import get_channel_formatted_link
 
 
-@Client.on_callback_query(
-    filters.regex(r"/mh/(p/\d+/|)$") & custom_filters.admin_only,
-)
-async def message_history(_, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data)
-
+@router.page(path=r"/mh/", pagination=True)
+async def message_history(menu: Menu):
     query = (
         MessageHistory.select(MessageHistory, Source, Category)
         .join(Source)
@@ -55,14 +46,8 @@ async def message_history(_, callback_query: CallbackQuery):
             f'__{item.source_message_id} {item.created_at.strftime("%Y.%m.%d, %H:%M:%S")}__'
         )
 
-    text = (
+    return (
         f"**История сообщений{start_text}**\n\n"
         + "\n\n".join(text_items)
         + f"\n\nВсего: **{pagination.total_items}**"
-    )
-
-    await callback_query.message.edit_text(
-        text=text,
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
     )

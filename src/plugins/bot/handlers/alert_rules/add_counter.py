@@ -1,29 +1,22 @@
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, Message
+from pyrogram.types import Message
 
 from alerts.counter_rule import add_evaluation_counter_rule_job
 from models import AlertRule, Category
+from plugins.bot import router
 from plugins.bot.constants import CANCEL
 from plugins.bot.handlers.alert_rules.detail import (
     RULE_COUNTER_JOB_INTERVAL_TMPL,
     RULE_TYPE_TMPL,
 )
 from plugins.bot.menu import Menu
-from plugins.bot.utils import custom_filters
-from plugins.bot.utils.managers import input_wait_manager
 from scheduler import scheduler
 
 RULE_NEW_TEXT = "**Новое правило уведомлений**"
 RULE_TYPE_TEXT = f"{RULE_TYPE_TMPL.format('Счётчик сообщений')}"
 
 
-@Client.on_callback_query(
-    filters.regex(r"/r/:add/counter/$") & custom_filters.admin_only,
-)
-async def add_counter_alert_rule_step_1(_, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data)
+@router.page(path=r"/r/:add/counter/")
+async def add_counter_alert_rule_step_1(menu: Menu):
     menu.add_row_many_buttons(
         ("5m", "job_int/5"),
         ("10m", "job_int/10"),
@@ -36,7 +29,7 @@ async def add_counter_alert_rule_step_1(_, callback_query: CallbackQuery):
     )
 
     category_id = menu.path.get_value("c")
-    text = await menu.get_text(
+    return await menu.get_text(
         category_obj=Category.get(category_id) if category_id else None,
         last_text=(
             f"{RULE_NEW_TEXT}\n"
@@ -45,20 +38,9 @@ async def add_counter_alert_rule_step_1(_, callback_query: CallbackQuery):
         ),
     )
 
-    await callback_query.message.edit_text(
-        text=text,
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
-    )
 
-
-@Client.on_callback_query(
-    filters.regex(r"/r/:add/counter/job_int/\d+/$") & custom_filters.admin_only,
-)
-async def add_counter_alert_rule_step_2(_, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data, back_step=2)
+@router.page(path=r"/r/:add/counter/job_int/\d+/", back_step=2)
+async def add_counter_alert_rule_step_2(menu: Menu):
     menu.add_row_many_buttons(
         ("5m", "count_int/5"),
         ("10m", "count_int/10"),
@@ -71,7 +53,7 @@ async def add_counter_alert_rule_step_2(_, callback_query: CallbackQuery):
 
     category_id = menu.path.get_value("c")
     job_interval = menu.path.get_value("job_int")
-    text = await menu.get_text(
+    return await menu.get_text(
         category_obj=Category.get(category_id) if category_id else None,
         last_text=(
             f"{RULE_NEW_TEXT}\n{RULE_TYPE_TEXT}\n{RULE_COUNTER_JOB_INTERVAL_TMPL.format(job_interval)}\n\nВыбери"
@@ -80,62 +62,20 @@ async def add_counter_alert_rule_step_2(_, callback_query: CallbackQuery):
         ),
     )
 
-    await callback_query.message.edit_text(
-        text=text,
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
-    )
 
-
-@Client.on_callback_query(
-    filters.regex(r"/r/:add/counter/job_int/\d+/count_int/\d+/$")
-    & custom_filters.admin_only,
-)
-async def add_counter_alert_rule_step_3(client: Client, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data, back_step=2)
-    job_interval = menu.path.get_value("job_int")
-    count_interval = menu.path.get_value("count_int")
-    await callback_query.message.reply(
-        "ОК. Ты добавляешь новое правило уведомления с проверкой раз в"
-        f" {job_interval} мин. и окном проверки {count_interval} мин.\n\n**Введи"
-        f" количество сообщений для срабатывания уведомления** или {CANCEL}"
-    )
-
-    input_wait_manager.add(
-        callback_query.message.chat.id,
-        add_counter_alert_rule_waiting_input,
-        client,
-        callback_query,
-    )
-
-
+@router.wait_input(back_step=6)
 async def add_counter_alert_rule_waiting_input(
-    _,
     message: Message,
-    callback_query: CallbackQuery,
+    menu: Menu,
 ):
-    menu = Menu(callback_query.data, back_step=6)
-
     category_id = menu.path.get_value("c")
     job_interval = menu.path.get_value("job_int")
     count_interval = menu.path.get_value("count_int")
 
-    async def reply(t):
-        await message.reply_text(
-            text=t,
-            reply_markup=menu.reply_markup,
-            disable_web_page_preview=True,
-        )
-        # Удаляем предыдущее меню
-        await callback_query.message.delete()
-
     try:
         threshold = int(message.text)
     except ValueError:
-        await reply("❌ Невалидный порог срабатывания уведомления")
-        return
+        raise ValueError("❌ Невалидный порог срабатывания уведомления")
 
     rule_obj = AlertRule.create(
         user_id=message.from_user.id,
@@ -150,10 +90,25 @@ async def add_counter_alert_rule_waiting_input(
 
     add_evaluation_counter_rule_job(scheduler=scheduler, alert_rule=rule_obj)
 
-    text = (
+    return (
         "✅ Правило уведомления "
         f"с проверкой раз в {job_interval} мин., "
         f"окном проверки {count_interval} мин. "
         f"и порогом срабатывания `{threshold}` шт. добавлено"
     )
-    await reply(text)
+
+
+@router.page(
+    path=r"/r/:add/counter/job_int/\d+/count_int/\d+/",
+    back_step=2,
+    reply=True,
+    add_wait_for_input=add_counter_alert_rule_waiting_input,
+)
+async def add_counter_alert_rule_step_3(menu: Menu):
+    job_interval = menu.path.get_value("job_int")
+    count_interval = menu.path.get_value("count_int")
+    return (
+        "ОК. Ты добавляешь новое правило уведомления с проверкой раз в"
+        f" {job_interval} мин. и окном проверки {count_interval} мин.\n\n**Введи"
+        f" количество сообщений для срабатывания уведомления** или {CANCEL}"
+    )
