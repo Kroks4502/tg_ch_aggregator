@@ -8,8 +8,7 @@ from plugins.bot import router
 from plugins.bot.menu import Menu
 from plugins.bot.menu_text import get_menu_text
 
-# ─  ─  ─  -| день | неделя | месяц
-STATISTIC_TMPL = """─   ─   ─ | день | неделя | месяц
+STATISTIC_TMPL = """—   —   — | день | неделя | месяц
 переслано | {fdw_1d:4} | {fdw_7d:6} | {fdw_30d:5}
 отредакт. | {edited_1d:4} | {edited_7d:6} | {edited_30d:5}
 фильтр    | {filtered_1d:4} | {filtered_7d:6} | {filtered_30d:5}
