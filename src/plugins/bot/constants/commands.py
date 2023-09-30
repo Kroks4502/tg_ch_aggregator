@@ -1,0 +1,5 @@
+START_TEXT = "start"
+CANCEL_TEXT = "cancel"
+
+START_COMMAND = f"/{START_TEXT}"
+CANCEL_COMMAND = f"/{CANCEL_TEXT}"

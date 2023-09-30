@@ -1,22 +1,15 @@
 import peewee
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
 
 from models import Category, Source
+from plugins.bot import router
+from plugins.bot.handlers.category.common.utils import get_category_menu_text
 from plugins.bot.menu import Menu
-from plugins.bot.utils.checks import is_admin
 from utils.menu import ButtonData
 
 
-@Client.on_callback_query(
-    filters.regex(r"/c/(p/\d+/|)$"),
-)
-async def list_category(_, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data)
-
-    if is_admin(callback_query.from_user.id):
+@router.page(path=r"/c/", pagination=True)
+async def list_category(menu: Menu):
+    if menu.is_admin_user():
         menu.add_button.add()
 
     query = (
@@ -38,8 +31,4 @@ async def list_category(_, callback_query: CallbackQuery):
         ],
     )
 
-    await callback_query.message.edit_text(
-        text="**Категории**",
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
-    )
+    return await get_category_menu_text()

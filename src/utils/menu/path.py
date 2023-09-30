@@ -16,11 +16,14 @@ class Path:
 
     def get_value(self, prefix: str) -> int | None:
         try:
-            return int(
-                self._search_first_group(r"/" + prefix + r"/([\d-]+)/", self.raw_path)
-            )
+            return int(self._search_first_group(rf"/{prefix}/([\d-]+)/", self.raw_path))
         except ValueError:
             return None
+
+    def set_value(self, prefix: str, value: str | int) -> None:
+        self.raw_path = re.sub(
+            rf"/{prefix}/([\d-]+)/", f"/{prefix}/{value}/", self.raw_path, 1
+        )
 
     def _search_first_group(self, pattern: str, path: str = "") -> str:
         path = path or self.raw_path

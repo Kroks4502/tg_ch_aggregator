@@ -1,28 +1,23 @@
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
-
-from models import Filter, Source
+from models import Filter
+from plugins.bot import router
+from plugins.bot.handlers.filter.common.constants import (
+    PLURAL_COMMON_FILTER_TITLE,
+    PLURAL_FILTER_TITLE,
+)
+from plugins.bot.handlers.filter.common.utils import get_filter_menu_text
 from plugins.bot.menu import Menu
-from plugins.bot.utils.checks import is_admin
 from utils.menu import ButtonData
 
 
-@Client.on_callback_query(
-    filters.regex(r"/ft/\d+/f/(p/\d+/|)$"),
-)
-async def list_filters(_, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data, back_step=2)
-
+@router.page(path=r"/ft/\d+/f/", pagination=True, back_step=2)
+async def list_filters(menu: Menu):
     filter_type_id = menu.path.get_value("ft")
     source_id = menu.path.get_value("s")
-    source_obj: Source = Source.get(source_id) if source_id else None
 
-    if is_admin(callback_query.from_user.id):
+    if menu.is_admin_user():
         menu.add_button.add()
 
-    if source_obj:
+    if source_id:
         query = Filter.select().where(
             (Filter.source == source_id) & (Filter.type == filter_type_id)
         )
@@ -39,9 +34,9 @@ async def list_filters(_, callback_query: CallbackQuery):
         ],
     )
 
-    text = await menu.get_text(source_obj=source_obj, filter_type_id=filter_type_id)
-    await callback_query.message.edit_text(
-        text=text,
-        reply_markup=menu.reply_markup,
-        disable_web_page_preview=True,
+    return await get_filter_menu_text(
+        title=PLURAL_FILTER_TITLE,
+        title_common=PLURAL_COMMON_FILTER_TITLE,
+        source_id=source_id,
+        filter_type_id=filter_type_id,
     )

@@ -1,18 +1,13 @@
 import os
 
-from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
 
-from plugins.bot.utils import custom_filters
+from plugins.bot import router
 from settings import LOGS_DIR
 
 
-@Client.on_callback_query(
-    filters.regex(r"/:get_logs/$") & custom_filters.admin_only,
-)
-async def get_logs(_, callback_query: CallbackQuery):
-    await callback_query.answer("Загрузка...")
-
+@router.page(path=r"/logs/", callback_answer_text="Загрузка...")
+async def get_logs(callback_query: CallbackQuery):
     info_message = ""
     for filename in os.listdir(LOGS_DIR):
         file_path = LOGS_DIR / filename

@@ -1,52 +1,45 @@
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, Message
+from pyrogram import Client
+from pyrogram.types import Message
 
-from plugins.bot.constants import MAIN_MENU_TEXT
+from models import GlobalSettings
+from plugins.bot import input_wait_manager, router
+from plugins.bot.constants.commands import CANCEL_TEXT, START_TEXT
+from plugins.bot.constants.text import MAIN_MENU_TEXT
 from plugins.bot.menu import Menu
-from plugins.bot.utils.checks import is_admin
 
 
-def get_main_menu(data: Message | CallbackQuery, path: str = "/") -> Menu:
-    menu = Menu(path)
+@router.command(commands=[START_TEXT, CANCEL_TEXT])
+async def main_menu_by_command(client: Client, message: Message, menu: Menu):
+    try:
+        input_wait_manager.remove(client=client, chat_id=message.chat.id)
+    except KeyError:
+        pass
 
-    if is_admin(data.from_user.id):
+    _set_main_menu_buttons(menu)
+    return MAIN_MENU_TEXT
+
+
+@router.page(path=r"^/", admin_only=False)
+async def main_menu_by_button(menu: Menu):
+    _set_main_menu_buttons(menu)
+    return MAIN_MENU_TEXT
+
+
+def _set_main_menu_buttons(menu: Menu):
+    if menu.is_admin_user():
         menu.add_button.categories()
         menu.add_button.sources()
-        menu.add_button.alert_rules(user_id=data.from_user.id)
+        menu.add_button.alert_rules(user_id=menu.user.id)
         menu.add_button.messages_histories()
         menu.add_button.statistics()
         menu.add_button.filters()
-        menu.add_button.cleanups()
+
+        amount_cleanups = GlobalSettings.get(key="cleanup_list").value
+        menu.add_button.cleanups(amount=len(amount_cleanups))
+
         menu.add_button.options()
 
-    return menu
 
-
-@Client.on_callback_query(
-    filters.regex(r"^/(\?new|)$"),
-)
-async def set_main_menu(client: Client, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = get_main_menu(callback_query, path=callback_query.data)
-
-    if menu.need_send_new_message:
-        await client.send_message(
-            chat_id=callback_query.message.chat.id,
-            text=MAIN_MENU_TEXT,
-            reply_markup=menu.reply_markup,
-        )
-        return
-
-    await callback_query.message.edit_text(
-        text=MAIN_MENU_TEXT,
-        reply_markup=menu.reply_markup,
-    )
-
-
-@Client.on_callback_query(
-    filters.regex(r"·/$"),
-)
-async def empty_button(_, callback_query: CallbackQuery):
-    """Пустая кнопка для пагинации"""
-    await callback_query.answer()
+@router.page(path=r"·/", admin_only=False)
+async def empty():
+    """Обработчик для пустой кнопки"""

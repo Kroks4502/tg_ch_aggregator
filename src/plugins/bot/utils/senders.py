@@ -1,35 +1,30 @@
 import logging
 
-from pyrogram import Client
+from pyrogram import Client, types
 from pyrogram.errors import RPCError
-from pyrogram.types import CallbackQuery
-from pyrogram.types import User as PyUser
 
 from models import User
 
 
 async def send_message_to_admins(
     client: Client,
-    callback_query: CallbackQuery,
+    user: types.User,
     text: str,
 ) -> None:
     """Отправка сообщений всем администраторам бота."""
-    from_user = callback_query.from_user
-    admins = User.select(User.id).where(
-        (User.id != from_user.id) & User.is_admin == True
-    )
+    admins = User.select(User.id).where((User.id != user.id) & User.is_admin == True)
     for admin in admins:
         try:
             await client.send_message(
                 admin.id,
-                f"{get_username(from_user)}\n{text}",
+                f"{get_username(user)}\n{text}",
                 disable_web_page_preview=True,
             )
         except RPCError as e:
             logging.error(e, exc_info=True)
 
 
-def get_username(user: PyUser) -> str:
+def get_username(user: types.User) -> str:
     """Получить имя пользователя для сообщения администраторам."""
     if user.username:
         return f"@{user.username}"

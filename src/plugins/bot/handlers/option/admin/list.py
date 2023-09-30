@@ -1,20 +1,13 @@
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery
-
 from models import User
+from plugins.bot import router
+from plugins.bot.handlers.option.admin.common.constants import PLURAL_USER_TITLE
 from plugins.bot.menu import Menu
-from plugins.bot.utils import custom_filters
+from plugins.bot.menu_text import get_menu_text
 from utils.menu import ButtonData
 
 
-@Client.on_callback_query(
-    filters.regex(r"/a/(p/\d+/|)$") & custom_filters.admin_only,
-)
-async def list_admins(_, callback_query: CallbackQuery):
-    await callback_query.answer()
-
-    menu = Menu(callback_query.data)
-
+@router.page(path=r"/u/", pagination=True)
+async def list_users(menu: Menu):
     menu.add_button.add()
 
     query = User.select(
@@ -30,7 +23,4 @@ async def list_admins(_, callback_query: CallbackQuery):
         ],
     )
 
-    await callback_query.message.edit_text(
-        text="**Список администраторов:**",
-        reply_markup=menu.reply_markup,
-    )
+    return get_menu_text(title=PLURAL_USER_TITLE)
