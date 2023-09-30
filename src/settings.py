@@ -22,7 +22,7 @@ DEVELOP_MODE = os.getenv("develop_mode")
 TELEGRAM_MAX_CAPTION_LENGTH = 1024
 TELEGRAM_MAX_TEXT_LENGTH = 4096
 
-USER_BOT_NAME = "🤖 UserBot"
+USER_BOT_NAME = "UserBot"
 
 APP_START_DATETIME = dt.datetime.now()
 

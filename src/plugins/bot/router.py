@@ -317,7 +317,7 @@ class CallbackQueryRouter:
         if send_to_admins and text:
             await send_message_to_admins(
                 client=self.client,
-                text=f"{self._get_username(user)}\n{text}",
+                text=f"Действие пользователя {self._get_username(user)}\n\n{text}",
                 except_user_id=user.id,
             )
 

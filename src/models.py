@@ -34,6 +34,8 @@ class User(BaseModel):
     id = BigIntegerField(primary_key=True)
     username = CharField()
     is_admin = BooleanField(default=False)
+    added_at = DateTimeField(default=datetime.now)
+    last_interaction_at = DateTimeField(default=datetime.now)
 
     def __str__(self):
         return str(self.username)
