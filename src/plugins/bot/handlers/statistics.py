@@ -3,27 +3,41 @@ from datetime import datetime, timedelta
 from peewee import CTE, Column, Expression, fn
 
 from models import MessageHistory
+from plugins.bot import menu_params as g_params
 from plugins.bot import router
 from plugins.bot.menu import Menu
+from plugins.bot.menu_text import get_menu_text
 
-STATISTIC_TMPL = """            день | неделя | месяц
+# ─  ─  ─  -| день | неделя | месяц
+STATISTIC_TMPL = """─   ─   ─ | день | неделя | месяц
 переслано | {fdw_1d:4} | {fdw_7d:6} | {fdw_30d:5}
 отредакт. | {edited_1d:4} | {edited_7d:6} | {edited_30d:5}
 фильтр    | {filtered_1d:4} | {filtered_7d:6} | {filtered_30d:5}
 удалено   | {deleted_1d:4} | {deleted_7d:6} | {deleted_30d:5}"""
 
+STATISTIC_TITLE = "Статистика сообщений"
+COMMON_STATISTIC_TITLE = f"Общая {STATISTIC_TITLE.lower()}"
+
 
 @router.page(path=r"/stat/")
 async def message_history_statistics(menu: Menu):
+    source_id = menu.path.get_value("s")
+    category_id = menu.path.get_value("c")
+
+    params = None
     statistic_where = None
-    if source_id := menu.path.get_value("s"):
+    if source_id:
+        params = (await g_params.source(source_id),)
         statistic_where = MessageHistory.source == source_id
-    elif category_id := menu.path.get_value("c"):
+    elif category_id:
+        params = (await g_params.category(category_id),)
         statistic_where = MessageHistory.category == category_id
 
-    statistic_text = get_statistic_text(where=statistic_where)
-
-    return f"**Статистика**\n\n{statistic_text}"
+    return get_menu_text(
+        title=STATISTIC_TITLE if source_id or category_id else COMMON_STATISTIC_TITLE,
+        params=params,
+        content=get_statistic_text(where=statistic_where),
+    )
 
 
 def get_statistic_text(where: Expression = None):
@@ -72,9 +86,7 @@ def get_statistic_text(where: Expression = None):
         .with_cte(counts_cte)
     )
 
-    return (
-        f"Статистика сообщений\n`{STATISTIC_TMPL.format(**next(iter(query.dicts())))}`"
-    )
+    return f"`{STATISTIC_TMPL.format(**next(iter(query.dicts())))}`"
 
 
 def get_sub_query(counts_cte: CTE, count_col: Column, interval: datetime, alias: str):

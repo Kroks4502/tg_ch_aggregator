@@ -1,7 +1,7 @@
 from common import get_message_link, get_shortened_text
 from models import Category, MessageHistory, Source
 from plugins.bot import router
-from plugins.bot.constants import DEFAULT_NUM_ITEMS_ON_TEXT
+from plugins.bot.constants.settings import DEFAULT_NUM_ITEMS_ON_TEXT
 from plugins.bot.menu import Menu
 from plugins.bot.utils.links import get_channel_formatted_link
 

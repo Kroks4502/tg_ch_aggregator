@@ -2,7 +2,15 @@ from pyrogram.types import Message
 
 from models import AlertRule
 from plugins.bot import router, validators
-from plugins.bot.constants import CANCEL
+from plugins.bot.handlers.alert_rules.common.constants import (
+    ACTION_ENTER_REGEX,
+    SINGULAR_ALERT_RULE_TITLE,
+    SINGULAR_COMMON_ALERT_RULE_TITLE,
+)
+from plugins.bot.handlers.alert_rules.common.utils import (
+    get_alert_rule_menu_success_text,
+    get_dialog_text,
+)
 from plugins.bot.menu import Menu
 
 
@@ -21,9 +29,12 @@ async def edit_regex_alert_rule_waiting_input(
     rule_obj.config["regex"] = pattern
     rule_obj.save()
 
-    return (
-        "✅ Правило уведомления о сообщениях соответствующих регулярному выражению"
-        f" изменено c `{old_pattern}` на `{pattern}`"
+    return await get_alert_rule_menu_success_text(
+        title=SINGULAR_ALERT_RULE_TITLE,
+        title_common=SINGULAR_COMMON_ALERT_RULE_TITLE,
+        user_id=menu.user.id,
+        rule_obj=rule_obj,
+        action=f"изменено (старый паттерн `{old_pattern}`)",
     )
 
 
@@ -34,9 +45,11 @@ async def edit_regex_alert_rule_waiting_input(
 )
 async def edit_regex_alert_rule(menu: Menu):
     rule_id = menu.path.get_value("r")
-    rule_obj = AlertRule.get(rule_id)
-
-    return (
-        f"ОК. Ты изменяешь правило уведомления `{rule_obj.config['regex']}`.\n\n"
-        f"**Введи регулярное выражение** или {CANCEL}"
+    rule_obj: AlertRule = AlertRule.get(rule_id)
+    return await get_dialog_text(
+        user_id=menu.user.id,
+        category_id=rule_obj.category_id,
+        doing="изменяешь",
+        action=ACTION_ENTER_REGEX,
+        pattern=rule_obj.config.get("regex"),
     )

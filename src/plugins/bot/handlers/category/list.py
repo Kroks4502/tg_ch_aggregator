@@ -2,6 +2,7 @@ import peewee
 
 from models import Category, Source
 from plugins.bot import router
+from plugins.bot.handlers.category.common.utils import get_category_menu_text
 from plugins.bot.menu import Menu
 from utils.menu import ButtonData
 
@@ -30,4 +31,4 @@ async def list_category(menu: Menu):
         ],
     )
 
-    return "**Категории**"
+    return await get_category_menu_text()

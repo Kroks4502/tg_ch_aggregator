@@ -6,22 +6,27 @@ from pyrogram.types import Message
 
 from models import User
 from plugins.bot import router
-from plugins.bot.constants import CANCEL
-from plugins.bot.utils.links import get_user_formatted_link
+from plugins.bot.constants.text import ERROR_UNKNOWN
+from plugins.bot.handlers.option.admin.common.constants import (
+    DIALOG_ADD_TEXT,
+    ERROR_NOT_USER,
+    ERROR_USER_IS_ADMIN,
+)
+from plugins.bot.handlers.option.admin.common.utils import get_user_menu_success_text
 
 
 @router.wait_input(send_to_admins=True)
-async def add_admin_waiting_input(
+async def add_user_waiting_input(
     client: Client,
     message: Message,
 ):
     try:
         chat = await client.get_chat(message.text)
     except RPCError as e:
-        raise ValueError(f"❌ Что-то пошло не так\n\n{e}")
+        raise ValueError(f"{ERROR_UNKNOWN}\n\n{e}")
 
     if chat.type != ChatType.PRIVATE:
-        raise ValueError("❌ Это не пользователь")
+        raise ValueError(ERROR_NOT_USER)
 
     if chat.username:
         username = chat.username
@@ -31,22 +36,17 @@ async def add_admin_waiting_input(
             f'{chat.last_name + " " if chat.last_name else ""}'
         )
     try:
-        admin_obj = User.create(id=chat.id, username=username, is_admin=True)
+        user_obj = User.create(id=chat.id, username=username, is_admin=True)
     except peewee.IntegrityError:
-        raise ValueError("❗️Этот пользователь уже администратор")
+        raise ValueError(ERROR_USER_IS_ADMIN)
 
-    adm_link = await get_user_formatted_link(admin_obj.id)
-
-    return f"✅ Администратор **{adm_link}** добавлен"
+    return await get_user_menu_success_text(user_id=user_obj.id, action="добавлен")
 
 
 @router.page(
-    path=r"/a/:add/",
+    path=r"/u/:add/",
     reply=True,
-    add_wait_for_input=add_admin_waiting_input,
+    add_wait_for_input=add_user_waiting_input,
 )
-async def add_admin():
-    return (
-        "ОК. Ты добавляешь нового администратора.\n\n"
-        f"**Введи ID или имя пользователя** или {CANCEL}"
-    )
+async def add_user():
+    return DIALOG_ADD_TEXT

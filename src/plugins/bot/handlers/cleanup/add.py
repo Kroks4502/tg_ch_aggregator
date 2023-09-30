@@ -2,14 +2,11 @@ from pyrogram.types import Message
 
 from models import GlobalSettings, Source
 from plugins.bot import router, validators
-from plugins.bot.constants import CANCEL
-from plugins.bot.menu import Menu
-from plugins.bot.utils.links import get_channel_formatted_link
-
-ASK_TEXT_TPL = (
-    f"ОК. Ты добавляешь {{}} очистки текста{{}}.\n\n**Введи паттерн** или {CANCEL}"
+from plugins.bot.handlers.cleanup.common.utils import (
+    get_cleanup_menu_success_text,
+    get_dialog_enter_pattern_text,
 )
-SUC_TEXT_TPL = "✅ {} очистки текста `{}` добавлен {}"
+from plugins.bot.menu import Menu
 
 
 @router.wait_input(send_to_admins=True)
@@ -21,19 +18,20 @@ async def add_cleanup_regex_waiting_input(
     validators.is_valid_pattern(pattern)
 
     source_id = menu.path.get_value("s")
-    source_obj: Source = Source.get(source_id) if source_id else None
-    if source_obj:
+    if source_id:
+        source_obj: Source = Source.get(source_id)
         source_obj.cleanup_list.append(pattern)
         source_obj.save()
+    else:
+        global_settings_obj = GlobalSettings.get(key="cleanup_list")
+        global_settings_obj.value.append(pattern)
+        global_settings_obj.save()
 
-        src_link = await get_channel_formatted_link(source_obj.id)
-        return SUC_TEXT_TPL.format("Паттерн", pattern, f"для источника {src_link}")
-
-    global_settings_obj = GlobalSettings.get(key="cleanup_list")
-    global_settings_obj.value.append(pattern)
-    global_settings_obj.save()
-
-    return SUC_TEXT_TPL.format("Общий паттерн", pattern, "")
+    return await get_cleanup_menu_success_text(
+        source_id=source_id,
+        pattern=pattern,
+        action="добавлен",
+    )
 
 
 @router.page(
@@ -43,10 +41,7 @@ async def add_cleanup_regex_waiting_input(
 )
 async def add_cleanup_regex(menu: Menu):
     source_id = menu.path.get_value("s")
-    source_obj: Source = Source.get(source_id) if source_id else None
-
-    if source_obj:
-        src_link = await get_channel_formatted_link(source_obj.id)
-        return ASK_TEXT_TPL.format("паттерн", f" для источника {src_link}")
-
-    return ASK_TEXT_TPL.format("общий паттерн", "")
+    return await get_dialog_enter_pattern_text(
+        source_id=source_id,
+        action="добавляешь",
+    )

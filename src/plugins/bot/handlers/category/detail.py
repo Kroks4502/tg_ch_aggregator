@@ -1,13 +1,12 @@
-from models import Category
 from plugins.bot import router
+from plugins.bot.handlers.category.common.utils import get_category_menu_text
 from plugins.bot.menu import Menu
 
 
 @router.page(path=r"/c/-\d+/")
 async def detail_category(menu: Menu):
     category_id = menu.path.get_value("c")
-    category_obj = Category.get(category_id) if category_id else None
-    if category_obj and menu.is_admin_user():
+    if menu.is_admin_user():
         menu.add_button.row_edit_delete()
 
     menu.add_button.sources(category_id=category_id)
@@ -19,6 +18,4 @@ async def detail_category(menu: Menu):
     menu.add_button.filters_histories()
     menu.add_button.statistics()
 
-    return await menu.get_text(
-        category_obj=category_obj,
-    )
+    return await get_category_menu_text(category_id=category_id)

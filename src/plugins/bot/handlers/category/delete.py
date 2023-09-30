@@ -1,20 +1,22 @@
 from models import Category
 from plugins.bot import router
-from plugins.bot.constants import CONF_DEL_TEXT_TPL
+from plugins.bot.handlers.category.common.constants import QUESTION_CONF_DEL
+from plugins.bot.handlers.category.common.utils import (
+    get_category_menu_success_text,
+    get_category_menu_text,
+)
 from plugins.bot.menu import Menu
-from plugins.bot.utils.links import get_channel_formatted_link
 
 
 @router.page(path=r"/c/-\d+/:delete/")
-async def confirmation_delete_category(menu: Menu):
+async def category_deletion_confirmation(menu: Menu):
     category_id = menu.path.get_value("c")
-    category_obj: Category = Category.get(category_id)
 
     menu.add_button.confirmation_delete()
 
-    return await menu.get_text(
-        category_obj=category_obj,
-        last_text=CONF_DEL_TEXT_TPL.format("категорию"),
+    return await get_category_menu_text(
+        category_id=category_id,
+        question=QUESTION_CONF_DEL,
     )
 
 
@@ -25,6 +27,7 @@ async def delete_category(menu: Menu):
 
     category_obj.delete_instance()
 
-    cat_link = await get_channel_formatted_link(category_obj.id)
-
-    return f"✅ Категория **{cat_link}** удалена"
+    return await get_category_menu_success_text(
+        category_id=category_obj.id,
+        action="удалена",
+    )

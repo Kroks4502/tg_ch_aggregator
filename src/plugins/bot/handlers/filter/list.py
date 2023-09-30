@@ -1,5 +1,10 @@
-from models import Filter, Source
+from models import Filter
 from plugins.bot import router
+from plugins.bot.handlers.filter.common.constants import (
+    PLURAL_COMMON_FILTER_TITLE,
+    PLURAL_FILTER_TITLE,
+)
+from plugins.bot.handlers.filter.common.utils import get_filter_menu_text
 from plugins.bot.menu import Menu
 from utils.menu import ButtonData
 
@@ -8,12 +13,11 @@ from utils.menu import ButtonData
 async def list_filters(menu: Menu):
     filter_type_id = menu.path.get_value("ft")
     source_id = menu.path.get_value("s")
-    source_obj: Source = Source.get(source_id) if source_id else None
 
     if menu.is_admin_user():
         menu.add_button.add()
 
-    if source_obj:
+    if source_id:
         query = Filter.select().where(
             (Filter.source == source_id) & (Filter.type == filter_type_id)
         )
@@ -30,4 +34,9 @@ async def list_filters(menu: Menu):
         ],
     )
 
-    return await menu.get_text(source_obj=source_obj, filter_type_id=filter_type_id)
+    return await get_filter_menu_text(
+        title=PLURAL_FILTER_TITLE,
+        title_common=PLURAL_COMMON_FILTER_TITLE,
+        source_id=source_id,
+        filter_type_id=filter_type_id,
+    )

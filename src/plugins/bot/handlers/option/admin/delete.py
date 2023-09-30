@@ -1,29 +1,30 @@
 from models import User
 from plugins.bot import router
-from plugins.bot.constants import CONF_DEL_TEXT_TPL
+from plugins.bot.handlers.option.admin.common.constants import QUESTION_CONF_DEL
+from plugins.bot.handlers.option.admin.common.utils import (
+    get_user_menu_success_text,
+    get_user_menu_text,
+)
 from plugins.bot.menu import Menu
-from plugins.bot.utils.links import get_user_formatted_link
 
 
-@router.page(path=r"/a/\d+/:delete/")
-async def confirmation_delete_admin(menu: Menu):
-    admin_id = menu.path.get_value("a")
-    admin_obj: User = User.get(admin_id)
+@router.page(path=r"/u/\d+/:delete/")
+async def user_deletion_confirmation(menu: Menu):
+    user_id = menu.path.get_value("u")
 
     menu.add_button.confirmation_delete()
 
-    return await menu.get_text(
-        user_obj=admin_obj,
-        last_text=CONF_DEL_TEXT_TPL.format("администратора"),
+    return await get_user_menu_text(
+        user_id=user_id,
+        question=QUESTION_CONF_DEL,
     )
 
 
-@router.page(path=r"/a/\d+/:delete/:y/", back_step=3, send_to_admins=True)
-async def delete_admin(menu: Menu):
-    admin_id = menu.path.get_value("a")
-    admin_obj: User = User.get(admin_id)
+@router.page(path=r"/u/\d+/:delete/:y/", back_step=3, send_to_admins=True)
+async def delete_user(menu: Menu):
+    user_id = menu.path.get_value("u")
+    user_obj: User = User.get(user_id)
 
-    admin_obj.delete_instance()
+    user_obj.delete_instance()
 
-    adm_link = await get_user_formatted_link(admin_obj.id)
-    return f"✅ Администратор **{adm_link}** удален"
+    return await get_user_menu_success_text(user_id=user_id, action="удален")

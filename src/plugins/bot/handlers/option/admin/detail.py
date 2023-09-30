@@ -1,15 +1,14 @@
 from clients import user
-from models import User
 from plugins.bot import router
+from plugins.bot.handlers.option.admin.common.utils import get_user_menu_text
 from plugins.bot.menu import Menu
 
 
-@router.page(path=r"/a/\d+/")
-async def detail_admin(menu: Menu):
-    admin_id = menu.path.get_value("a")
-    admin_obj: User = User.get(admin_id)
+@router.page(path=r"/u/\d+/")
+async def user_detail(menu: Menu):
+    user_id = menu.path.get_value("u")
 
-    if admin_obj.id != user.me.id:
+    if user_id != user.me.id:
         menu.add_button.delete()
 
-    return await menu.get_text(user_obj=admin_obj)
+    return await get_user_menu_text(user_id=user_id)

@@ -1,11 +1,16 @@
 from pyrogram import Client
-from pyrogram.types import Chat, ChatPrivileges, Message
+from pyrogram.types import ChatPrivileges, Message
 
 from clients import user
 from models import Category
 from plugins.bot import router, validators
-from plugins.bot.constants import CANCEL, CATEGORY_NAME_TPL, MAX_LENGTH_CATEGORY_NAME
-from plugins.bot.utils.links import get_channel_formatted_link
+from plugins.bot.constants.settings import MAX_LENGTH_CATEGORY_NAME
+from plugins.bot.constants.text import CATEGORY_NAME_TPL, DIALOG
+from plugins.bot.handlers.category.common.constants import (
+    ACTION_ENTER_CATEGORY_NAME,
+    ADD_CATEGORY_TEXT,
+)
+from plugins.bot.handlers.category.common.utils import get_category_menu_success_text
 
 
 @router.wait_input(initial_text="⏳ Создаю канал для категории…", send_to_admins=True)
@@ -16,7 +21,7 @@ async def add_category_waiting_input(
     validators.is_text(message)
     validators.text_length_less_than(message, MAX_LENGTH_CATEGORY_NAME)
 
-    new_channel: Chat = await user.create_channel(
+    new_channel = await user.create_channel(
         CATEGORY_NAME_TPL.format(message.text),
         f"Создан ботом {client.me.username}",
     )
@@ -35,13 +40,14 @@ async def add_category_waiting_input(
         ),
     )
 
-    category_obj: Category = Category.create(
+    category_obj = Category.create(
         id=new_channel.id,
         title=new_channel.title,
     )
-    cat_link = await get_channel_formatted_link(category_obj.id)
-
-    return f"✅ Категория **{cat_link}** создана"
+    return await get_category_menu_success_text(
+        category_id=category_obj.id,
+        action="создана",
+    )
 
 
 @router.page(
@@ -50,9 +56,7 @@ async def add_category_waiting_input(
     add_wait_for_input=add_category_waiting_input,
 )
 async def add_category():
-    return (
-        "ОК. Ты добавляешь новую категорию, "
-        "которая будет получать сообщения из источников. "
-        "Будет создан новый канал-агрегатор.\n\n"
-        f"**Введи название категории** или {CANCEL}"
+    return DIALOG.format(
+        doing=ADD_CATEGORY_TEXT,
+        action=ACTION_ENTER_CATEGORY_NAME,
     )

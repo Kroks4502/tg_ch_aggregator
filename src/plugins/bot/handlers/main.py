@@ -1,13 +1,14 @@
 from pyrogram import Client
 from pyrogram.types import Message
 
+from models import GlobalSettings
 from plugins.bot import input_wait_manager, router
+from plugins.bot.constants.commands import CANCEL_TEXT, START_TEXT
+from plugins.bot.constants.text import MAIN_MENU_TEXT
 from plugins.bot.menu import Menu
 
-MAIN_MENU_TEXT = "**Агрегатор каналов**"
 
-
-@router.command(commands=["start", "cancel"])
+@router.command(commands=[START_TEXT, CANCEL_TEXT])
 async def main_menu_by_command(client: Client, message: Message, menu: Menu):
     try:
         input_wait_manager.remove(client=client, chat_id=message.chat.id)
@@ -32,7 +33,10 @@ def _set_main_menu_buttons(menu: Menu):
         menu.add_button.messages_histories()
         menu.add_button.statistics()
         menu.add_button.filters()
-        menu.add_button.cleanups()
+
+        amount_cleanups = GlobalSettings.get(key="cleanup_list").value
+        menu.add_button.cleanups(amount=len(amount_cleanups))
+
         menu.add_button.options()
 
 

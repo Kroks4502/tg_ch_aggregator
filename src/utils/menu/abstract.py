@@ -66,17 +66,6 @@ class MenuAbstract(abc.ABC):
         )
         return self.pagination
 
-    def get_text(
-        self,
-        *,
-        start_text: str = None,
-        last_text: str = None,
-    ) -> str:
-        """Получить текст меню."""
-        result_text_items = [item for item in (start_text, last_text) if item]
-
-        return "\n\n".join(result_text_items) or ""
-
     def add_row_button(self, text: str, path: str) -> None:
         """
         Добавить строку из одной кнопки.

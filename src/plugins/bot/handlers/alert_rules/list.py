@@ -1,8 +1,12 @@
 from alerts.common import get_alert_rule_title
-from models import AlertRule, Category
+from models import AlertRule
 from plugins.bot import router
+from plugins.bot.handlers.alert_rules.common.constants import (
+    PLURAL_ALERT_RULE_TITLE,
+    PLURAL_COMMON_ALERT_RULE_TITLE,
+)
+from plugins.bot.handlers.alert_rules.common.utils import get_alert_rule_menu_text
 from plugins.bot.menu import Menu
-from plugins.bot.utils.links import get_user_formatted_link
 from utils.menu import ButtonData
 
 
@@ -28,10 +32,9 @@ async def list_alerts_rules(menu: Menu):
         ],
     )
 
-    return await menu.get_text(
-        category_obj=Category.get(category_id) if category_id else None,
-        last_text=(
-            f"**{'П' if category_id else 'Общие п'}равила уведомлений"
-            f" {await get_user_formatted_link(menu.user.id)}**"
-        ),
+    return await get_alert_rule_menu_text(
+        title=PLURAL_ALERT_RULE_TITLE,
+        title_common=PLURAL_COMMON_ALERT_RULE_TITLE,
+        user_id=menu.user.id,
+        category_id=category_id,
     )

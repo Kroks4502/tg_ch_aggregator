@@ -1,11 +1,13 @@
 from models import User
 from plugins.bot import router
+from plugins.bot.handlers.option.admin.common.constants import PLURAL_USER_TITLE
 from plugins.bot.menu import Menu
+from plugins.bot.menu_text import get_menu_text
 from utils.menu import ButtonData
 
 
-@router.page(path=r"/a/", pagination=True)
-async def list_admins(menu: Menu):
+@router.page(path=r"/u/", pagination=True)
+async def list_users(menu: Menu):
     menu.add_button.add()
 
     query = User.select(
@@ -21,4 +23,4 @@ async def list_admins(menu: Menu):
         ],
     )
 
-    return "**Список администраторов:**"
+    return get_menu_text(title=PLURAL_USER_TITLE)

@@ -1,20 +1,30 @@
 from models import Source
 from plugins.bot import router
-from plugins.bot.constants import CONF_DEL_TEXT_TPL
+from plugins.bot.handlers.source.common.constants import (
+    QUESTION_CONF_DEL,
+    SINGULAR_SOURCE_TITLE,
+)
+from plugins.bot.handlers.source.common.utils import (
+    get_source_menu_success_text,
+    get_source_menu_text,
+)
 from plugins.bot.menu import Menu
-from plugins.bot.utils.links import get_channel_formatted_link
 
 
 @router.page(path=r"/s/-\d+/:delete/")
-async def confirmation_delete_source(menu: Menu):
+async def source_deletion_confirmation(menu: Menu):
     source_id = menu.path.get_value("s")
     source_obj: Source = Source.get(source_id)
 
     menu.add_button.confirmation_delete()
 
-    return await menu.get_text(
-        source_obj=source_obj,
-        last_text=CONF_DEL_TEXT_TPL.format("источник"),
+    return await get_source_menu_text(
+        title=SINGULAR_SOURCE_TITLE,
+        source_id=source_id,
+        category_id=source_obj.category_id,
+        alias=source_obj.title_alias,
+        is_rewrite=source_obj.is_rewrite,
+        question=QUESTION_CONF_DEL,
     )
 
 
@@ -25,5 +35,4 @@ async def delete_source(menu: Menu):
 
     source_obj.delete_instance()
 
-    src_link = await get_channel_formatted_link(source_obj.id)
-    return f"✅ Источник **{src_link}** удален"
+    return await get_source_menu_success_text(source_id=source_id, action="удален")
