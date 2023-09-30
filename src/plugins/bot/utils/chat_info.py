@@ -1,12 +1,12 @@
 from async_lru import alru_cache
 
-from clients import user
+from clients import user_client
 from models import Source
 
 
 @alru_cache(maxsize=256)
 async def get_chat_info(source_obj: Source) -> str:
-    chat = await user.get_chat(source_obj.id)
+    chat = await user_client.get_chat(source_obj.id)
     text = []
     if chat.is_verified:
         text.append(f"Проверен: {chat.is_verified} ✅")

@@ -3,7 +3,7 @@ import re
 
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from clients import bot
+from clients import bot_client
 from common import get_words
 from models import AlertHistory, AlertRule
 
@@ -34,7 +34,7 @@ async def check_message_by_regex_alert_rule(
 
         match_text = match[0]
 
-        await bot.send_message(
+        await bot_client.send_message(
             chat_id=alert_rule.user_id,
             text=MSG_TEXT_TMPL.format(
                 pattern=pattern,

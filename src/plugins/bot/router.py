@@ -5,8 +5,8 @@ from typing import Callable, Optional
 import pyrogram
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
+from common import send_message_to_admins
 from plugins.bot.menu import Menu
-from plugins.bot.utils.senders import send_message_to_admins
 from utils import custom_filters
 from utils.input_wait_manager import InputWaitManager
 
@@ -274,15 +274,6 @@ class CallbackQueryRouter:
             if arg_name in available_kwargs
         }
 
-    async def _send_message_to_admins(
-        self,
-        send_to_admins: bool,
-        user: "pyrogram.types.User",
-        text: str,
-    ):
-        if send_to_admins and text:
-            await send_message_to_admins(self.client, user, text)
-
     async def _add_to_input_wait_manager(
         self,
         add_wait_for_input: Callable,
@@ -316,3 +307,28 @@ class CallbackQueryRouter:
                     reply_markup=markup,
                     disable_web_page_preview=True,
                 )
+
+    async def _send_message_to_admins(
+        self,
+        send_to_admins: bool,
+        user: "pyrogram.types.User",
+        text: str,
+    ):
+        if send_to_admins and text:
+            await send_message_to_admins(
+                client=self.client,
+                text=f"{self._get_username(user)}\n{text}",
+                except_user_id=user.id,
+            )
+
+    @staticmethod
+    def _get_username(user: "pyrogram.types.User") -> str:
+        """Получить имя пользователя для сообщения администраторам."""
+        if user.username:
+            return f"@{user.username}"
+
+        full_name = (
+            f'{user.first_name + " " if user.first_name else ""}'
+            f'{user.last_name if user.last_name else ""}'
+        )
+        return f"{full_name} ({user.id})" if full_name else f"{user.id}"

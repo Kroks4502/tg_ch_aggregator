@@ -1,8 +1,8 @@
 from pyrogram import compose
 
 import db
-from clients import bot, user
-from scheduler import start_scheduler
+from clients import bot_client, user_client
+from scheduler.run import run_scheduler
 from settings import configure_logging
 
 
@@ -12,9 +12,9 @@ def main():
     db.connect()
     db.patch_psycopg2()
 
-    start_scheduler()
+    run_scheduler()
 
-    compose([bot, user])
+    compose([bot_client, user_client])
 
 
 if __name__ == "__main__":

@@ -7,7 +7,13 @@ try:
 except ValueError:
     sys.path.append(src_path)
 
-from clients import bot, user  # noqa: E402
+from clients import bot_client, user_client  # noqa: E402
+
+SUCCESS_MESSAGE_TEXT = (
+    "Сессии пользователя `{user_id}` (`{user_username}`) "
+    "и бота `{bot_id}` (`{bot_username}`) актуальны"
+)
+
 
 if __name__ == "__main__":
 
@@ -17,17 +23,21 @@ if __name__ == "__main__":
         При создании сессии нужно будет пройти авторизацию.
         Для отправки сообщения пользователь уже должен был общаться с ботом.
         """
-        bot.plugins = None
-        user.plugins = None
-        async with bot, user:
-            bot_info = await bot.get_me()
-            user_info = await user.get_me()
-            await bot.send_message(
-                chat_id=user_info.id,
-                text=(
-                    f"Сессии пользователя `{user_info.id}` (`{user_info.username}`) "
-                    f"и бота `{bot_info.id}` (`{bot_info.username}`) актуальны"
-                ),
+        bot_client.plugins = None
+        user_client.plugins = None
+        async with bot_client, user_client:
+            bot_info = await bot_client.get_me()
+            user_info = await user_client.get_me()
+            text = SUCCESS_MESSAGE_TEXT.format(
+                user_id=user_info.id,
+                user_username=user_info.username,
+                bot_id=bot_info.id,
+                bot_username=bot_info.username,
             )
+            await bot_client.send_message(
+                chat_id=user_info.id,
+                text=text,
+            )
+        print(text)  # noqa: T201
 
-    user.run(create_sessions())
+    user_client.run(create_sessions())

@@ -1,7 +1,7 @@
 from pyrogram import Client
 from pyrogram.types import ChatPrivileges, Message
 
-from clients import user
+from clients import user_client
 from models import Category
 from plugins.bot import router, validators
 from plugins.bot.constants.settings import MAX_LENGTH_CATEGORY_NAME
@@ -21,7 +21,7 @@ async def add_category_waiting_input(
     validators.is_text(message)
     validators.text_length_less_than(message, MAX_LENGTH_CATEGORY_NAME)
 
-    new_channel = await user.create_channel(
+    new_channel = await user_client.create_channel(
         CATEGORY_NAME_TPL.format(message.text),
         f"Создан ботом {client.me.username}",
     )

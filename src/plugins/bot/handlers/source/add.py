@@ -5,7 +5,7 @@ import peewee
 from pyrogram.errors import RPCError, UserAlreadyParticipant
 from pyrogram.types import Chat, ChatPreview, Message
 
-from clients import user
+from clients import user_client
 from models import Source
 from plugins.bot import router, validators
 from plugins.bot.constants.text import ERROR_UNKNOWN
@@ -63,14 +63,14 @@ async def _get_chat(message: Message) -> tuple[Chat | ChatPreview, int | str]:
     try:
         source_link = message.text.strip(" /\n")
         if source_link.startswith("https://t.me/+"):
-            return await user.get_chat(source_link), source_link
+            return await user_client.get_chat(source_link), source_link
 
         chat_username = re.sub(
             pattern=r"(https://)|((\.|)t\.me(/|))",
             repl="",
             string=source_link,
         )
-        return await user.get_chat(chat_username), chat_username
+        return await user_client.get_chat(chat_username), chat_username
 
     except RPCError as e:
         logging.error(e, exc_info=True)
@@ -79,9 +79,9 @@ async def _get_chat(message: Message) -> tuple[Chat | ChatPreview, int | str]:
 
 async def _join_to_chat(source_link: str) -> Chat:
     try:
-        return await user.join_chat(source_link)
+        return await user_client.join_chat(source_link)
     except UserAlreadyParticipant:
-        return await user.get_chat(source_link)
+        return await user_client.get_chat(source_link)
     except RPCError as e:
         logging.error(e, exc_info=True)
         raise ValueError(f"{ERROR_JOIN_CHAT_FAILED}\n\n{e}")

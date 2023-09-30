@@ -1,4 +1,4 @@
-from clients import user
+from clients import user_client
 from plugins.bot import router
 from plugins.bot.handlers.option.admin.common.utils import get_user_menu_text
 from plugins.bot.menu import Menu
@@ -8,7 +8,7 @@ from plugins.bot.menu import Menu
 async def user_detail(menu: Menu):
     user_id = menu.path.get_value("u")
 
-    if user_id != user.me.id:
+    if user_id != user_client.me.id:
         menu.add_button.delete()
 
     return await get_user_menu_text(user_id=user_id)

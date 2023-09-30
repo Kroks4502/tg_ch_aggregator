@@ -1,4 +1,3 @@
-from alerts.counter_rule import remove_evaluation_counter_rule_job
 from models import AlertRule
 from plugins.bot import router
 from plugins.bot.handlers.alert_rules.common.constants import (
@@ -11,7 +10,7 @@ from plugins.bot.handlers.alert_rules.common.utils import (
     get_alert_rule_menu_text,
 )
 from plugins.bot.menu import Menu
-from scheduler import scheduler
+from scheduler.jobs.alerts import remove_evaluation_counter_rule_job
 
 
 @router.page(path=r"/r/\d+/:delete/")
@@ -40,7 +39,7 @@ async def delete_alert_rule(menu: Menu):
     rule_obj.delete_instance()
 
     if rule_obj.type == "counter":
-        remove_evaluation_counter_rule_job(scheduler=scheduler, alert_rule_obj=rule_obj)
+        remove_evaluation_counter_rule_job(alert_rule_obj=rule_obj)
 
     return await get_alert_rule_menu_success_text(
         title=SINGULAR_ALERT_RULE_TITLE,

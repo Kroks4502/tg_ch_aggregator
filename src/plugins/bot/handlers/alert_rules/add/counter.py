@@ -1,6 +1,5 @@
 from pyrogram.types import Message
 
-from alerts.counter_rule import add_evaluation_counter_rule_job
 from models import AlertRule
 from plugins.bot import router
 from plugins.bot.handlers.alert_rules.common.constants import (
@@ -17,7 +16,7 @@ from plugins.bot.handlers.alert_rules.common.utils import (
     get_dialog_text,
 )
 from plugins.bot.menu import Menu
-from scheduler import scheduler
+from scheduler.jobs.alerts import add_evaluation_counter_rule_job
 
 
 @router.page(path=r"/r/:add/counter/")
@@ -96,7 +95,7 @@ async def add_counter_alert_rule(
         ),
     )
 
-    add_evaluation_counter_rule_job(scheduler=scheduler, alert_rule=rule_obj)
+    add_evaluation_counter_rule_job(alert_rule=rule_obj)
 
     return await get_alert_rule_menu_success_text(
         title=NEW_ALERT_RULE_TITLE,

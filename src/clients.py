@@ -4,7 +4,7 @@ from settings import API_HASH, API_ID, BOT_TOKEN, SESSIONS_DIR
 
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
-user = Client(
+user_client = Client(
     "user",
     API_ID,
     API_HASH,
@@ -14,7 +14,7 @@ user = Client(
     workdir=SESSIONS_DIR,
 )
 
-bot = Client(
+bot_client = Client(
     "bot",
     API_ID,
     API_HASH,

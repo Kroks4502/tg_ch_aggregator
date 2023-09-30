@@ -1,49 +1,19 @@
 import time
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from peewee import SQL, fn
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from alerts.common import get_alert_rule_title
 from alerts.configs import AlertCounterConfig
-from clients import bot
+from clients import bot_client
 from common import get_message_link, get_words
 from models import AlertHistory, AlertRule, MessageHistory
 
-JOB_NAME_TMPL = "counter_alert_rule_{}"
 MSG_TEXT_TMPL = "Сработало правило {title}\n\n{messages}"
 MAX_WORDS = 10
 
 
-def add_evaluation_counter_rule_job(
-    scheduler: AsyncIOScheduler,
-    alert_rule: AlertRule,
-):
-    """Добавить задачу для оценки правила уведомления на основе количества сообщений."""
-    config = AlertCounterConfig(**alert_rule.config)
-
-    async def job():
-        await _evaluation_counter_rule_job(alert_rule)
-
-    job_name = JOB_NAME_TMPL.format(alert_rule.id)
-    scheduler.add_job(
-        func=job,
-        trigger="interval",
-        minutes=config.job_interval,
-        id=job_name,
-        name=job_name,
-    )
-
-
-def remove_evaluation_counter_rule_job(
-    scheduler: AsyncIOScheduler,
-    alert_rule_obj: AlertRule,
-):
-    """Удалить задачу для оценки правила уведомления на основе количества сообщений."""
-    scheduler.remove_job(JOB_NAME_TMPL.format(alert_rule_obj.id))
-
-
-async def _evaluation_counter_rule_job(alert_rule: AlertRule):
+async def evaluation_counter_rule_job(alert_rule: AlertRule):
     """Задача оценки правила уведомления типа счётчик для планировщика."""
     config = AlertCounterConfig(**alert_rule.config)
 
@@ -54,7 +24,7 @@ async def _evaluation_counter_rule_job(alert_rule: AlertRule):
     if amount_messages > config.threshold:
         end_unix_time = int(time.time())
         start_unix_time = end_unix_time - config.count_interval * 60
-        await bot.send_message(
+        await bot_client.send_message(
             chat_id=alert_rule.user_id,
             text=MSG_TEXT_TMPL.format(
                 title=get_alert_rule_title(alert_rule),

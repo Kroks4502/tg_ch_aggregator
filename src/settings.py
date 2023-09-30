@@ -22,6 +22,8 @@ DEVELOP_MODE = os.getenv("develop_mode")
 TELEGRAM_MAX_CAPTION_LENGTH = 1024
 TELEGRAM_MAX_TEXT_LENGTH = 4096
 
+USER_BOT_NAME = "🤖 UserBot"
+
 APP_START_DATETIME = dt.datetime.now()
 
 POSTGRESQL_DATABASE = os.getenv("postgresql_database")
@@ -50,3 +52,4 @@ def configure_logging():
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger("peewee").setLevel(logging.DEBUG)
         logging.getLogger("pyrogram").setLevel(logging.INFO)
+        logging.getLogger("apscheduler").setLevel(logging.INFO)
