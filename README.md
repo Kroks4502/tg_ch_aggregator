@@ -35,6 +35,7 @@
     yoyo apply --database postgresql://{{ db_user }}:{{ db_pass }}@localhost/{{ db_name }}
     ```
 4. Пройти авторизацию в Telegram [create_tg_sessions.py](create_tg_sessions.py)
+5. Запустить [main.py](src/main.py)
 
 [Python-url]: https://www.python.org/
 [Python-badge]: https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54
