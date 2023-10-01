@@ -35,8 +35,8 @@ def text_length_less_than(message: Message, length: int) -> None:
 def is_valid_pattern(pattern: str) -> None:
     try:
         re.compile(pattern)
-    except (re.error, RecursionError):
-        raise ValueError(ERROR_INVALID_REGEX)
+    except (re.error, RecursionError) as e:
+        raise ValueError(ERROR_INVALID_REGEX.format(e))
 
 
 def is_channel(chat: Chat | ChatPreview) -> None:

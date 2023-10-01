@@ -22,7 +22,7 @@ QUESTION_EDIT_PAGE = "Что ты хочешь изменить?"
 
 ERROR_UNKNOWN = ERROR_TEXT.format(text="Что-то пошло не так")
 ERROR_NOT_CHANNEL = ERROR_TEXT.format(text="Это не канал")
-ERROR_INVALID_REGEX = ERROR_TEXT.format(text="Невалидное регулярное выражение")
+ERROR_INVALID_REGEX = ERROR_TEXT.format(text="Невалидное регулярное выражение: `{}`")
 ERROR_INVALID_LENGTH = ERROR_TEXT.format(
     text="Количество символов не должно превышать {length}"
 )
