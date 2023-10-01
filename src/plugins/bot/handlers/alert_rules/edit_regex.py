@@ -1,5 +1,6 @@
 from pyrogram.types import Message
 
+from alerts.configs import AlertRegexConfig
 from models import AlertRule
 from plugins.bot import router, validators
 from plugins.bot.handlers.alert_rules.common.constants import (
@@ -46,10 +47,11 @@ async def edit_regex_alert_rule_waiting_input(
 async def edit_regex_alert_rule(menu: Menu):
     rule_id = menu.path.get_value("r")
     rule_obj: AlertRule = AlertRule.get(rule_id)
+    config = AlertRegexConfig(**rule_obj.config)
     return await get_dialog_text(
         user_id=menu.user.id,
         category_id=rule_obj.category_id,
         doing="изменяешь",
         action=ACTION_ENTER_REGEX,
-        pattern=rule_obj.config.get("regex"),
+        pattern=config.regex,
     )

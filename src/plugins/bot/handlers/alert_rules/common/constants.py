@@ -29,6 +29,8 @@ THRESHOLD_TEXT = "порогом срабатывания {threshold} шт."
 REGEX_TEXT = "на основе регулярного выражения `{regex}`"
 CATEGORY_TEXT = "для категории {}"
 
+LAST_FIRED_TEXT = "⏮ Последнее срабатывание"
+
 # ACTION
 
 ACTION_ENTER_REGEX = "Введи регулярное выражение"

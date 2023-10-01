@@ -12,6 +12,7 @@ from peewee import (
 )
 from playhouse.postgres_ext import BinaryJSONField, JSONField
 
+from common.db_json_fields import DBJsonFieldEncoder
 from db import psql_db
 from filter_types import FilterType
 
@@ -77,7 +78,7 @@ class AlertRule(BaseModel):
         null=True,
     )
     type = CharField(max_length=32)  # counter | regex
-    config = BinaryJSONField()
+    config = BinaryJSONField(dumps=DBJsonFieldEncoder.json_dumper)
 
     class Meta:
         table_name = "alert_rule"
@@ -92,7 +93,11 @@ class AlertHistory(BaseModel):
         null=True,
     )
     fired_at = DateTimeField(default=datetime.now)
-    data = BinaryJSONField()
+    data = BinaryJSONField(dumps=DBJsonFieldEncoder.json_dumper)
+    alert_rule = ForeignKeyField(
+        AlertRule,
+        backref="history",
+    )
 
     class Meta:
         table_name = "alert_history"

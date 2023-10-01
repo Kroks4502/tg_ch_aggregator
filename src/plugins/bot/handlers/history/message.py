@@ -1,4 +1,5 @@
-from common import get_message_link, get_shortened_text
+from common.links import get_message_link
+from common.text import get_shortened_text
 from models import Category, MessageHistory, Source
 from plugins.bot import router
 from plugins.bot.constants.settings import DEFAULT_NUM_ITEMS_ON_TEXT

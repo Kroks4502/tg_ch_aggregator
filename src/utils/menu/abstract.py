@@ -36,6 +36,7 @@ class MenuAbstract(abc.ABC):
         :param back_step: Количество шагов для кнопки "Назад".
         """
         self.inline_keyboard = []
+        self.after_pagination_buttons_row = []
 
         self.raw_path = path
         self.path = Path(self.get_path_without_params())
@@ -44,6 +45,8 @@ class MenuAbstract(abc.ABC):
         self.back_step = back_step
         self.pagination = None
         self.need_send_new_message = False if self.raw_path.find("?new") == -1 else True
+
+        self.set_footer_buttons = True
 
     def get_path_without_params(self) -> str:
         """Получить путь без номера страницы и других параметров."""
@@ -66,17 +69,39 @@ class MenuAbstract(abc.ABC):
         )
         return self.pagination
 
-    def add_row_button(self, text: str, path: str) -> None:
+    def add_row_button(self, text: str, path: str, new: bool = False) -> None:
         """
         Добавить строку из одной кнопки.
 
         :param text: Текст кнопки.
         :param path: Абсолютный или относительный путь.
+        :param new: Отправлять новое сообщение.
         """
         self.inline_keyboard.append(
             [
-                InlineKeyboardButton(text=text, callback_data=self.path.join(path)),
+                self._get_inline_keyboard_button(text=text, path=path, new=new),
             ]
+        )
+
+    def add_row_button_after_pagination(
+        self, text: str, path: str, new: bool = False
+    ) -> None:
+        """
+        Добавить строку из одной кнопки после пагинации.
+
+        :param text: Текст кнопки.
+        :param path: Абсолютный или относительный путь.
+        :param new: Отправлять новое сообщение.
+        """
+        self.after_pagination_buttons_row.append(
+            [
+                self._get_inline_keyboard_button(text=text, path=path, new=new),
+            ]
+        )
+
+    def _get_inline_keyboard_button(self, text: str, path: str, new: bool = False):
+        return InlineKeyboardButton(
+            text=text, callback_data=self.path.join(path) + ("?new" if new else "")
         )
 
     def add_row_many_buttons(self, *buttons_args: tuple[str, str]) -> None:
@@ -124,11 +149,19 @@ class MenuAbstract(abc.ABC):
     def reply_markup(self):
         pagination_buttons_row = self.get_pagination_buttons_row()
         footer_buttons_row = self.get_footer_buttons_row()
-        if not (self.inline_keyboard or pagination_buttons_row or footer_buttons_row):
+        if not (
+            self.inline_keyboard
+            or self.after_pagination_buttons_row
+            or pagination_buttons_row
+            or footer_buttons_row
+        ):
             return None
 
         return InlineKeyboardMarkup(
-            self.inline_keyboard + [pagination_buttons_row] + [footer_buttons_row]
+            self.inline_keyboard
+            + [pagination_buttons_row]
+            + self.after_pagination_buttons_row
+            + [footer_buttons_row]
         )
 
     def get_pagination_buttons_row(self) -> list:
@@ -141,7 +174,7 @@ class MenuAbstract(abc.ABC):
         ]
 
     def get_footer_buttons_row(self) -> list[InlineKeyboardButton]:
-        if self.path.is_root():
+        if self.path.is_root() or not self.set_footer_buttons:
             return []
 
         footer_buttons_row = [

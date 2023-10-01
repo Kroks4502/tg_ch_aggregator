@@ -2,8 +2,10 @@ from plugins.bot import router
 from plugins.bot.handlers.category.common.utils import get_category_menu_text
 from plugins.bot.menu import Menu
 
+CATEGORY_CALLBACK_DATA = "/c/{category_id}/"
 
-@router.page(path=r"/c/-\d+/")
+
+@router.page(path=CATEGORY_CALLBACK_DATA.format(category_id=r"-\d+"))
 async def detail_category(menu: Menu):
     category_id = menu.path.get_value("c")
     if menu.is_admin_user():

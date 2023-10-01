@@ -3,15 +3,14 @@ import logging
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from clients import bot_client, user_client
-from common import send_message_to_admins
+from common.senders import send_message_to_admins
 from models import Category, Source
+from plugins.bot.handlers.category.detail import CATEGORY_CALLBACK_DATA
+from plugins.bot.handlers.source.detail import DETAIL_SOURCE_PATH
 from settings import USER_BOT_NAME
 
 GO_TO_CATEGORY = "Перейти к категории"
 GO_TO_SOURCE = "Перейти к источнику"
-
-CATEGORY_CALLBACK_DATA = "/c/{}/?new"
-SOURCE_CALLBACK_DATA = "/s/{}/?new"
 
 ERROR_NOT_FOUND_CHANNEL = (
     f"{{channel_title}} ({{channel_id}}) отсутствует в диалогах {USER_BOT_NAME}"
@@ -43,14 +42,14 @@ async def send_not_found_chat_message_to_admins(db_obj: Source | Category):
             channel_id=db_obj.id,
         )
         button_text = GO_TO_SOURCE
-        callback_data = SOURCE_CALLBACK_DATA.format(db_obj.id)
+        callback_data = DETAIL_SOURCE_PATH.format(db_obj.id) + "?new"
     else:
         text = ERROR_NOT_FOUND_CATEGORY.format(
             channel_title=db_obj.title,
             channel_id=db_obj.id,
         )
         button_text = GO_TO_CATEGORY
-        callback_data = CATEGORY_CALLBACK_DATA.format(db_obj.id)
+        callback_data = CATEGORY_CALLBACK_DATA.format(db_obj.id) + "?new"
 
     logging.warning(text)
     await send_message_to_admins(

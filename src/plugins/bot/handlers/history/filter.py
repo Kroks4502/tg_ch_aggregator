@@ -1,6 +1,7 @@
 from peewee import JOIN
 
-from common import get_message_link, get_shortened_text
+from common.links import get_message_link
+from common.text import get_shortened_text
 from filter_types import FILTER_TYPES_BY_ID
 from models import Filter, MessageHistory, Source
 from plugins.bot import router

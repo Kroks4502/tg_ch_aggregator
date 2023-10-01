@@ -4,8 +4,10 @@ from plugins.bot.handlers.source.common.constants import SINGULAR_SOURCE_TITLE
 from plugins.bot.handlers.source.common.utils import get_source_menu_text
 from plugins.bot.menu import Menu
 
+DETAIL_SOURCE_PATH = "/s/{source_id}/"
 
-@router.page(path=r"/s/-\d+/")
+
+@router.page(path=DETAIL_SOURCE_PATH.format(source_id=r"-\d+"))
 async def detail_source(menu: Menu):
     source_id = menu.path.get_value("s")
     source_obj: Source = Source.get(source_id)

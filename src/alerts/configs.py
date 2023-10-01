@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
+from common.db_json_fields import DBJsonField
+
 
 @dataclass
-class AlertCounterConfig:
+class AlertCounterConfig(DBJsonField):
     """
     Конфигурация правила уведомления типа "counter".
 
@@ -17,7 +19,7 @@ class AlertCounterConfig:
 
 
 @dataclass
-class AlertRegexConfig:
+class AlertRegexConfig(DBJsonField):
     """
     Конфигурация правила уведомления типа "regex".
 
@@ -25,3 +27,23 @@ class AlertRegexConfig:
     """
 
     regex: str
+
+
+# HISTORY
+
+
+@dataclass
+class AlertHistory(DBJsonField):
+    type: str
+    user_id: int
+
+
+@dataclass
+class AlertCounterHistory(AlertHistory, AlertCounterConfig):
+    actual_amount_messages: int
+
+
+@dataclass
+class AlertRegexHistory(AlertHistory, AlertRegexConfig):
+    message: dict
+    match_text: str

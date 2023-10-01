@@ -5,7 +5,7 @@ from typing import Callable, Optional
 import pyrogram
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from common import send_message_to_admins
+from common.senders import send_message_to_admins
 from plugins.bot.menu import Menu
 from utils import custom_filters
 from utils.input_wait_manager import InputWaitManager
@@ -65,7 +65,8 @@ class CallbackQueryRouter:
                 client: "pyrogram.Client",
                 callback_query: "pyrogram.types.CallbackQuery",
             ):
-                await callback_query.answer(text=callback_answer_text)
+                if callback_query.id is not ...:
+                    await callback_query.answer(text=callback_answer_text)
 
                 menu = Menu(
                     path=callback_query.data,

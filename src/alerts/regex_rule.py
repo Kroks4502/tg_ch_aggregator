@@ -4,22 +4,22 @@ from re import Match
 
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
+from alerts.configs import AlertRegexHistory
 from clients import bot_client
-from common import get_words
+from common.text import get_words
 from models import AlertHistory, AlertRule
+from plugins.bot.handlers.alert_rules.common.constants import SINGULAR_ALERT_RULE_TITLE
+from plugins.bot.handlers.alert_rules.detail import DETAIL_ALERT_RULE_PATH
+from plugins.bot.handlers.category.message import (
+    GET_CATEGORY_MESSAGE_BUTTON_TEXT,
+    GET_CATEGORY_MESSAGE_PATH,
+)
 from plugins.bot.utils.links import get_channel_formatted_link
 
 FIRING_COUNTER_ALERT_RULE_TEXT = (
     "**В категории {category_link} опубликовано сообщение, подходящее "
     "под паттерн `{pattern}`:**\n\n{message_text}"
 )
-
-FIRING_COUNTER_BUTTON_GET_MSG_TEXT = "Сообщение"
-FIRING_COUNTER_BUTTON_GET_MSG_DATA = "/c/{category_id}/m/{message_id}/"
-
-FIRING_COUNTER_BUTTON_GET_RULE_TEXT = "Правило уведомления"
-FIRING_COUNTER_BUTTON_GET_RULE_DATA = "/r/{rule_id}/?new"
-
 NUMBER_OF_WORDS = 20
 
 
@@ -59,16 +59,17 @@ async def check_message_by_regex_alert_rule(
                 [
                     [
                         InlineKeyboardButton(
-                            text=FIRING_COUNTER_BUTTON_GET_RULE_TEXT,
-                            callback_data=FIRING_COUNTER_BUTTON_GET_RULE_DATA.format(
+                            text=SINGULAR_ALERT_RULE_TITLE,
+                            callback_data=DETAIL_ALERT_RULE_PATH.format(
                                 rule_id=alert_rule.id,
-                            ),
+                            )
+                            + "?new",
                         )
                     ],
                     [
                         InlineKeyboardButton(
-                            text=FIRING_COUNTER_BUTTON_GET_MSG_TEXT,
-                            callback_data=FIRING_COUNTER_BUTTON_GET_MSG_DATA.format(
+                            text=GET_CATEGORY_MESSAGE_BUTTON_TEXT,
+                            callback_data=GET_CATEGORY_MESSAGE_PATH.format(
                                 category_id=category_id,
                                 message_id=message.id,
                             ),
@@ -80,13 +81,14 @@ async def check_message_by_regex_alert_rule(
         )
         AlertHistory.create(
             category_id=category_id,
-            data=dict(
-                type="regex",
+            data=AlertRegexHistory(
+                type=alert_rule.type,
                 user_id=alert_rule.user_id,
-                regex=pattern,
                 message=json.loads(message.__str__()),
                 match_text=match[0],
+                **alert_rule.config,
             ),
+            alert_rule_id=alert_rule.id,
         )
 
 
