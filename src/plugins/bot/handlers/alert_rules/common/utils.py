@@ -129,22 +129,38 @@ async def get_alert_rule_menu_success_text(
     rule_obj: AlertRule,
     action: str,
 ) -> str:
-    user_link = await get_user_formatted_link(user_id)
-    user_text = USER_TEXT.format(user_link)
-    category_text = ""
+    text = await get_full_text_about_alert_rule(
+        title=title,
+        title_common=title_common,
+        rule_obj=rule_obj,
+        user_id=user_id,
+    )
+    return SUCCESS_TEXT.format(text=f"{text} {action}")
+
+
+async def get_full_text_about_alert_rule(
+    title: str,
+    title_common: str,
+    rule_obj: AlertRule,
+    user_id: int = None,
+):
+    user_text = ""
+    if user_id:
+        user_link = await get_user_formatted_link(user_id)
+        user_text = f" {USER_TEXT.format(user_link)}"
 
     if rule_obj.category_id:
         category_link = await get_channel_formatted_link(rule_obj.category_id)
         category_text = f" {CATEGORY_TEXT.format(category_link)}"
     else:
+        category_text = ""
         title = title_common
 
     if rule_obj.type == "counter":
-        text = (
-            f"{user_text} {JOB_INTERVAL_TEXT}, {COUNT_INTERVAL_TEXT} и {THRESHOLD_TEXT}"
+        return (
+            f"{title}{user_text} {JOB_INTERVAL_TEXT}, {COUNT_INTERVAL_TEXT} и"
+            f" {THRESHOLD_TEXT}"
             + category_text
         ).format(**rule_obj.config)
-    else:
-        text = f"{user_text} {REGEX_TEXT}{category_text}".format(**rule_obj.config)
 
-    return SUCCESS_TEXT.format(text=f"{title} {text} {action}")
+    return f"{title}{user_text} {REGEX_TEXT}{category_text}".format(**rule_obj.config)

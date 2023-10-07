@@ -1,13 +1,11 @@
-import time
-
 from peewee import SQL, fn
 
 from alerts.configs import AlertCounterConfig, AlertCounterHistory
 from common.call_handlers import call_callback_query_handler
 from models import AlertHistory, AlertRule, MessageHistory
-from plugins.bot.handlers.alert_rules.counter_messages import (
+from plugins.bot.handlers.alert_rules.alert_counter import get_alert_counter_messages
+from plugins.bot.handlers.alert_rules.common.constants import (
     ALERT_COUNTER_MESSAGES_PATH,
-    get_alert_counter_messages,
 )
 
 
@@ -20,7 +18,7 @@ async def evaluation_counter_rule_job(alert_rule: AlertRule):
         count_interval=config.count_interval,
     )
     if amount_messages > config.threshold:
-        AlertHistory.create(
+        alert_history_obj = AlertHistory.create(
             category_id=alert_rule.category_id,
             data=AlertCounterHistory(
                 type=alert_rule.type,
@@ -30,17 +28,13 @@ async def evaluation_counter_rule_job(alert_rule: AlertRule):
             ),
             alert_rule_id=alert_rule.id,
         )
-        end_ts = int(time.time())
-        start_ts = end_ts - config.count_interval * 60
 
         await call_callback_query_handler(
             func=get_alert_counter_messages,
             user_id=alert_rule.user_id,
-            callback_query_data=(
+            path=(
                 ALERT_COUNTER_MESSAGES_PATH.format(
-                    rule_id=alert_rule.id,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
+                    alert_id=alert_history_obj.id,
                 )
                 + "?new"
             ),

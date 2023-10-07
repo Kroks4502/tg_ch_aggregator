@@ -64,6 +64,7 @@ class CallbackQueryRouter:
             async def inner(
                 client: "pyrogram.Client",
                 callback_query: "pyrogram.types.CallbackQuery",
+                **kwargs,
             ):
                 if callback_query.id is not ...:
                     await callback_query.answer(text=callback_answer_text)
@@ -82,7 +83,8 @@ class CallbackQueryRouter:
                             menu=menu,
                             callback_query=callback_query,
                         ),
-                    )
+                    ),
+                    **kwargs,
                 )
 
                 await self._send_final_text(

@@ -9,8 +9,17 @@ from clients import bot_client
 async def call_callback_query_handler(
     func: Callable[..., Awaitable],
     user_id: int,
-    callback_query_data: str,
-):
+    path: str,
+    **kwargs,
+) -> None:
+    """
+    Вызов функции обработчика пути меню.
+
+    :param func: Обработчик для вызова.
+    :param user_id: Пользователь, для которого вызывается обработчик.
+    :param path: Путь меню.
+    :param kwargs: Дополнительные аргументы вызова обработчика.
+    """
     from_user = User(id=user_id)
     await func(
         bot_client,
@@ -19,7 +28,7 @@ async def call_callback_query_handler(
             id=...,
             from_user=from_user,
             chat_instance=...,
-            data=callback_query_data,
+            data=path,
             message=Message(
                 client=bot_client,
                 id=...,
@@ -31,4 +40,5 @@ async def call_callback_query_handler(
                 ),
             ),
         ),
+        **kwargs,
     )

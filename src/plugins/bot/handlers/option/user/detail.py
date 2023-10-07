@@ -1,8 +1,8 @@
 from clients import user_client
 from models import User
 from plugins.bot import router
+from plugins.bot.constants.settings import FORMAT_TIMESTAMP
 from plugins.bot.handlers.option.user.common.constants import (
-    FORMAT_TIMESTAMP,
     PARAM_ADDED_AT_TEXT,
     PARAM_LAST_INTERACTION_AT_TEXT,
     PARAM_USER_ADMIN_TEXT,

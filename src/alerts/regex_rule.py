@@ -8,8 +8,10 @@ from alerts.configs import AlertRegexHistory
 from clients import bot_client
 from common.text import get_words
 from models import AlertHistory, AlertRule
-from plugins.bot.handlers.alert_rules.common.constants import SINGULAR_ALERT_RULE_TITLE
-from plugins.bot.handlers.alert_rules.detail import DETAIL_ALERT_RULE_PATH
+from plugins.bot.handlers.alert_rules.common.constants import (
+    ALERT_RULE_DETAIL_PATH,
+    SINGULAR_ALERT_RULE_TITLE,
+)
 from plugins.bot.handlers.category.message import (
     GET_CATEGORY_MESSAGE_BUTTON_TEXT,
     GET_CATEGORY_MESSAGE_PATH,
@@ -60,7 +62,7 @@ async def check_message_by_regex_alert_rule(
                     [
                         InlineKeyboardButton(
                             text=SINGULAR_ALERT_RULE_TITLE,
-                            callback_data=DETAIL_ALERT_RULE_PATH.format(
+                            callback_data=ALERT_RULE_DETAIL_PATH.format(
                                 rule_id=alert_rule.id,
                             )
                             + "?new",

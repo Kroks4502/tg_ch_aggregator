@@ -50,3 +50,13 @@ ERROR_INVALID_THRESHOLD = ERROR_TEXT.format(
     text="Невалидный порог срабатывания уведомления"
 )
 QUESTION_SELECT_ALERT_RULE_TYPE = "Выбери тип правила"
+
+# ALERT COUNTER MESSAGE
+
+ALERT_COUNTER_MAX_WORDS = 20
+ALERT_COUNTER_MAX_MESSAGES = 8
+
+# PATH
+
+ALERT_COUNTER_MESSAGES_PATH = "/a/{alert_id}/"
+ALERT_RULE_DETAIL_PATH = "/r/{rule_id}/"
