@@ -3,38 +3,36 @@ from peewee import SQL, fn
 from alerts.configs import AlertCounterConfig, AlertCounterHistory
 from common.call_handlers import call_callback_query_handler
 from models import AlertHistory, AlertRule, MessageHistory
-from plugins.bot.handlers.alert_rules.alert_counter import get_alert_counter_messages
-from plugins.bot.handlers.alert_rules.common.constants import (
-    ALERT_COUNTER_MESSAGES_PATH,
-)
+from plugins.bot.handlers.alert_rules.alert.detail import alert_detail
+from plugins.bot.handlers.alert_rules.common.constants import ALERT_DETAIL_PATH
 
 
-async def evaluation_counter_rule_job(alert_rule: AlertRule):
+async def evaluation_counter_rule_job(rule_obj: AlertRule):
     """Задача оценки правила уведомления типа счётчик для планировщика."""
-    config = AlertCounterConfig(**alert_rule.config)
+    config = AlertCounterConfig(**rule_obj.config)
 
     amount_messages = _get_amount_messages(
-        category_id=alert_rule.category_id,
+        category_id=rule_obj.category_id,
         count_interval=config.count_interval,
     )
     if amount_messages > config.threshold:
-        alert_history_obj = AlertHistory.create(
-            category_id=alert_rule.category_id,
+        alert_obj = AlertHistory.create(
+            category_id=rule_obj.category_id,
             data=AlertCounterHistory(
-                type=alert_rule.type,
-                user_id=alert_rule.user_id,
+                type=rule_obj.type,
+                user_id=rule_obj.user_id,
                 actual_amount_messages=amount_messages,
-                **alert_rule.config,
+                **rule_obj.config,
             ),
-            alert_rule_id=alert_rule.id,
+            alert_rule_id=rule_obj.id,
         )
 
         await call_callback_query_handler(
-            func=get_alert_counter_messages,
-            user_id=alert_rule.user_id,
+            func=alert_detail,
+            user_id=rule_obj.user_id,
             path=(
-                ALERT_COUNTER_MESSAGES_PATH.format(
-                    alert_id=alert_history_obj.id,
+                ALERT_DETAIL_PATH.format(
+                    alert_id=alert_obj.id,
                 )
                 + "?new"
             ),

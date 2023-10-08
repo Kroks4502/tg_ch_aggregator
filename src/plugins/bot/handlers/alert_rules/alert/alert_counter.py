@@ -6,12 +6,10 @@ from alerts.configs import AlertCounterHistory
 from common.links import get_message_link
 from common.text import get_words
 from models import AlertHistory, MessageHistory, Source
-from plugins.bot import router
 from plugins.bot.constants.settings import FORMAT_TIMESTAMP
 from plugins.bot.handlers.alert_rules.common.constants import (
     ALERT_COUNTER_MAX_MESSAGES,
     ALERT_COUNTER_MAX_WORDS,
-    ALERT_COUNTER_MESSAGES_PATH,
     ALERT_RULE_DETAIL_PATH,
     SINGULAR_ALERT_RULE_TITLE,
 )
@@ -20,17 +18,17 @@ from plugins.bot.menu import Menu
 from plugins.bot.menu_text import get_menu_text
 from plugins.bot.utils.links import get_channel_formatted_link
 
-
-@router.page(
-    path=ALERT_COUNTER_MESSAGES_PATH.format(
-        alert_id=r"\d+",
-    ),
-    pagination=True,
-    back_step=2,
+FIRING_REGEX_ALERT_RULE_CATEGORY = "В категории {category_link}"
+FIRING_REGEX_ALERT_RULE_TITLE = (
+    "За последние {interval} мин. опубликовано сообщений: {amount} шт."
 )
-async def get_alert_counter_messages(menu: Menu):
-    alert_id = menu.path.get_value("a")
-    alert_obj: AlertHistory = AlertHistory.get(alert_id)
+
+
+async def get_alert_counter_messages(
+    menu: Menu,
+    alert_obj: AlertHistory,
+    firing_right_now: bool,
+):
     alert_data = AlertCounterHistory(**alert_obj.data)
 
     end_ts = alert_obj.fired_at
@@ -61,20 +59,28 @@ async def get_alert_counter_messages(menu: Menu):
         )
     )
 
-    if menu.path.get_value("r"):
-        title = alert_obj.fired_at.strftime(FORMAT_TIMESTAMP)
-    else:
-        title = f"За последние {alert_data.count_interval} мин. "
-        if alert_obj.category_id:
-            category_link = await get_channel_formatted_link(alert_obj.category_id)
-            title += f"в категории {category_link} "
-        title += f"опубликовано сообщений: {alert_data.actual_amount_messages} шт."
+    title = FIRING_REGEX_ALERT_RULE_TITLE.format(
+        interval=alert_data.count_interval,
+        amount=alert_data.actual_amount_messages,
+    )
+    if alert_obj.category_id:
+        category_link = await get_channel_formatted_link(alert_obj.category_id)
+        title = (
+            FIRING_REGEX_ALERT_RULE_CATEGORY.format(
+                category_link=category_link,
+            )
+            + f" {title.lower()}"
+        )
+
+    if firing_right_now:
         menu.add_row_button_after_pagination(
             text=SINGULAR_ALERT_RULE_TITLE,
             path=ALERT_RULE_DETAIL_PATH.format(rule_id=alert_obj.alert_rule_id),
             new=True,
         )
         menu.set_footer_buttons = False
+    else:
+        title = f"__{alert_obj.fired_at.strftime(FORMAT_TIMESTAMP)}__\n\n" + title
 
     category_messages_text = _get_category_messages_texts(category_messages)
     return get_menu_text(
@@ -84,7 +90,9 @@ async def get_alert_counter_messages(menu: Menu):
 
 
 def _get_query_history_category_messages(
-    category_id: int, start_ts: datetime, end_ts: datetime
+    category_id: int,
+    start_ts: datetime,
+    end_ts: datetime,
 ):
     mh: MessageHistory = MessageHistory.alias()
     where = (

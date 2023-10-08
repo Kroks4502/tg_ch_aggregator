@@ -44,6 +44,13 @@ class AlertCounterHistory(AlertHistory, AlertCounterConfig):
 
 
 @dataclass
+class MatchData(DBJsonField):
+    start: int
+    end: int
+    text: str
+
+
+@dataclass
 class AlertRegexHistory(AlertHistory, AlertRegexConfig):
     message: dict
-    match_text: str
+    match: MatchData | dict
