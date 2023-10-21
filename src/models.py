@@ -57,7 +57,7 @@ class Source(BaseModel):
     cleanup_list = JSONField(default=[])
 
     # Формировать новое сообщение (True) или пересылать сообщение (False)
-    is_rewrite = BooleanField(default=False)
+    is_rewrite = BooleanField(default=True)
 
 
 class Filter(BaseModel):
