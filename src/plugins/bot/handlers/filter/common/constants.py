@@ -25,6 +25,8 @@ FILTER_PATTERN_TEXT = "c паттерном `{}`"
 
 FILTER_NOT_FOUND = "Фильтр не найден"
 
+FILTER_LAST_FIRED_CONTENT = "Последнее срабатывание:\n{}"
+
 # SUCCESS TEXT
 
 SUCCESS_FILTER_PATTERN_ADD_TEXT = f"{FILTER_PATTERN_TEXT} создан"

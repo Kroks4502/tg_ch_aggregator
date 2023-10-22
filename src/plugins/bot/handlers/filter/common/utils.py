@@ -24,6 +24,7 @@ async def get_filter_menu_text(
     filter_type_id: int = None,
     pattern: str = None,
     question: str = "",
+    content: str = None,
 ):
     text_params = []
 
@@ -41,6 +42,7 @@ async def get_filter_menu_text(
     return get_menu_text(
         title=title,
         params=text_params,
+        content=content,
         question=question,
     )
 
