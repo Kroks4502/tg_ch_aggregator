@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from peewee import CTE, Column, Expression, fn
+from peewee import CTE, SQL, Column, Expression, fn
 
 from models import MessageHistory
 from plugins.bot import menu_params as g_params
@@ -56,7 +56,9 @@ def get_statistic_text(where: Expression = None):
             MessageHistory.edited_at,
             MessageHistory.filter_id,
             MessageHistory.deleted_at,
-            MessageHistory.data.path("last_message_with_error").alias("error"),
+            fn.JSONB_EXISTS(MessageHistory.data, "last_message_with_error").alias(
+                "error"
+            ),
         )
         .where(
             (MessageHistory.created_at >= interval_30d)
@@ -69,8 +71,8 @@ def get_statistic_text(where: Expression = None):
     edited_at = counts_cte.c.edited_at
     deleted_at = counts_cte.c.deleted_at
     filter_id = counts_cte.c.filter_id
-    error = counts_cte.c.error
 
+    errors_count_case = SQL("CASE WHEN (error = TRUE) THEN 1 END")
     query = (
         MessageHistory.select(
             fn.COUNT(created_at).alias("fdw_30d"),
@@ -85,9 +87,9 @@ def get_statistic_text(where: Expression = None):
             fn.COUNT(counts_cte.c.deleted_at).alias("deleted_30d"),
             get_sub_query(counts_cte, deleted_at, interval_7d, "deleted_7d"),
             get_sub_query(counts_cte, deleted_at, interval_1d, "deleted_1d"),
-            fn.COUNT(counts_cte.c.error).alias("errors_30d"),
-            get_sub_query(counts_cte, error, interval_7d, "errors_7d"),
-            get_sub_query(counts_cte, error, interval_1d, "errors_1d"),
+            fn.COUNT(errors_count_case).alias("errors_30d"),
+            get_sub_query(counts_cte, errors_count_case, interval_7d, "errors_7d"),
+            get_sub_query(counts_cte, errors_count_case, interval_1d, "errors_1d"),
         )
         .from_(counts_cte)
         .with_cte(counts_cte)
@@ -96,7 +98,9 @@ def get_statistic_text(where: Expression = None):
     return f"`{STATISTIC_TMPL.format(**next(iter(query.dicts())))}`"
 
 
-def get_sub_query(counts_cte: CTE, count_col: Column, interval: datetime, alias: str):
+def get_sub_query(
+    counts_cte: CTE, count_col: Column | SQL, interval: datetime, alias: str
+):
     return (
         counts_cte.select(fn.COUNT(count_col))
         .where(counts_cte.c.created_at >= interval)
