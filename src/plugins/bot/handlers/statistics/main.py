@@ -56,9 +56,9 @@ def get_statistic_text(where: Expression = None):
             MessageHistory.edited_at,
             MessageHistory.filter_id,
             MessageHistory.deleted_at,
-            fn.JSONB_EXISTS(MessageHistory.data, "last_message_with_error").alias(
-                "error"
-            ),
+            MessageHistory.data.path(
+                "last_message_with_error", "exception", "name"
+            ).alias("error"),
         )
         .where(
             (MessageHistory.created_at >= interval_30d)
@@ -72,7 +72,13 @@ def get_statistic_text(where: Expression = None):
     deleted_at = counts_cte.c.deleted_at
     filter_id = counts_cte.c.filter_id
 
-    errors_count_case = SQL("CASE WHEN (error = TRUE) THEN 1 END")
+    errors_count_case = SQL(
+        "CASE WHEN (error not in ('MessageNotModifiedError'"
+        ", 'MessageNotOnCategoryError', 'MessageNotRewrittenError'"
+        ", 'MessageFilteredError'"
+        ", 'MessageIdInvalidError'"
+        ")) THEN 1 END"
+    )
     query = (
         MessageHistory.select(
             fn.COUNT(created_at).alias("fdw_30d"),
@@ -94,12 +100,14 @@ def get_statistic_text(where: Expression = None):
         .from_(counts_cte)
         .with_cte(counts_cte)
     )
-
     return f"`{STATISTIC_TMPL.format(**next(iter(query.dicts())))}`"
 
 
 def get_sub_query(
-    counts_cte: CTE, count_col: Column | SQL, interval: datetime, alias: str
+    counts_cte: CTE,
+    count_col: Column | SQL,
+    interval: datetime,
+    alias: str,
 ):
     return (
         counts_cte.select(fn.COUNT(count_col))
