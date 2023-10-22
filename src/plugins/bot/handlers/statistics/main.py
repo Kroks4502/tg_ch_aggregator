@@ -33,6 +33,8 @@ async def message_history_statistics(menu: Menu):
         params = (await g_params.category(category_id),)
         statistic_where = MessageHistory.category == category_id
 
+    menu.add_row_button("📊 Фильтры", "f/d/7")
+
     return get_menu_text(
         title=STATISTIC_TITLE if source_id or category_id else COMMON_STATISTIC_TITLE,
         params=params,

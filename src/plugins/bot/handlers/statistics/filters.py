@@ -6,7 +6,7 @@ from filter_types import FILTER_TYPES_BY_ID
 from models import Filter, MessageHistory
 from plugins.bot import menu_params as g_params
 from plugins.bot import router
-from plugins.bot.handlers.filter.common.constants import (
+from plugins.bot.handlers.statistics.common.constants import (
     STATISTIC_FILTER_ANTI_TOP_10,
     STATISTIC_FILTER_COMMON_TITLE,
     STATISTIC_FILTER_DATA_NOT_FOUND,
@@ -29,7 +29,7 @@ INTERVAL_BUTTONS_DATA = {
 }
 
 
-@router.page(path=r"/ft/stat/d/\d+/", back_step=3)
+@router.page(path=r"/stat/f/d/\d+/", back_step=3)
 async def filter_history_statistics(menu: Menu):
     source_id = menu.path.get_value("s")
     days = menu.path.get_value("d")

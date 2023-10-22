@@ -17,7 +17,6 @@ async def list_types_filters(menu: Menu):
     source_id = menu.path.get_value("s")
 
     menu.add_button.filters_histories()
-    menu.add_button.filters_statistics()
 
     query = Filter.select(
         Filter.type, peewee.fn.Count(Filter.id).alias("count")
