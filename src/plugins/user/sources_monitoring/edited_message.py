@@ -17,6 +17,7 @@ from plugins.user.exceptions import (
     MessageNotOnCategoryError,
     MessageNotRewrittenError,
     MessageTooLongError,
+    MessageUnknownError,
     Operation,
 )
 from plugins.user.sources_monitoring.common import (
@@ -130,6 +131,8 @@ async def edit_regular_message(client: Client, message: Message):  # noqa: C901
         exc = MessageTooLongError(operation=EDIT, message=message, error=error)
     except pyrogram_errors.BadRequest as error:
         exc = MessageBadRequestError(operation=EDIT, message=message, error=error)
+    except Exception as error:
+        exc = MessageUnknownError(operation=EDIT, message=message, error=error)
     finally:
         if blocked:
             blocked.remove(value=message.id)

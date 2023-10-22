@@ -2,8 +2,7 @@ import logging
 from enum import Enum
 
 from pyrogram import errors as pyrogram_errors
-from pyrogram.enums import ChatType
-from pyrogram.types import Chat, Message
+from pyrogram.types import Message
 
 from plugins.user.utils.chats_locks import MessagesLocks
 from settings import APP_START_DATETIME
@@ -203,10 +202,10 @@ class MessageTooLongError(MessageBaseError):
 
 
 class MessageBadRequestError(MessageBaseError):
-    """Сообщение привело к непредвиденной ошибке."""
+    """Сообщение привело к необработанной ошибке при запросе."""
 
     logging_level = logging.ERROR
-    end_tmpl = "оно привело к непредвиденной ошибке {error}"
+    end_tmpl = "оно привело к необработанной ошибке при запросе {error}"
 
     def __init__(
         self,
@@ -217,13 +216,22 @@ class MessageBadRequestError(MessageBaseError):
         super().__init__(operation=operation, message=message, error=error)
 
 
+class MessageUnknownError(MessageBaseError):
+    """Сообщение привело к неизвестной ошибке."""
+
+    logging_level = logging.ERROR
+    end_tmpl = "оно привело к неизвестной ошибке {error}"
+
+    def __init__(
+        self,
+        operation: Operation,
+        message: Message,
+        error: Exception,
+    ):
+        super().__init__(operation=operation, message=message, error=error)
+
+
 class MessageCleanedFullyError(MessageBaseError):
     """Сообщение при очистке осталось без текста."""
 
     end_tmpl = "при очистке оно осталось без текста и не будет опубликовано в категории"
-
-
-if __name__ == "__main__":
-    raise MessageMediaWithoutCaptionError(
-        Operation.NEW, Message(id=0, chat=Chat(id=0, type=ChatType.CHANNEL))
-    )

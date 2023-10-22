@@ -13,6 +13,7 @@ from plugins.user.exceptions import (
     MessageBaseError,
     MessageNotFoundOnHistoryError,
     MessageNotOnCategoryError,
+    MessageUnknownError,
     Operation,
 )
 from plugins.user.utils import custom_filters
@@ -64,6 +65,8 @@ async def deleted_messages(client: Client, messages: list[Message]):
             exc = e
         except pyrogram_errors.BadRequest as error:
             exc = MessageBadRequestError(operation=DELETE, message=message, error=error)
+        except Exception as error:
+            exc = MessageUnknownError(operation=DELETE, message=message, error=error)
         finally:
             if history_obj:
                 if exc:

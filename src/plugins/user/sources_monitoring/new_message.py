@@ -20,6 +20,7 @@ from plugins.user.exceptions import (
     MessageMediaWithoutCaptionError,
     MessageRepeatedError,
     MessageTooLongError,
+    MessageUnknownError,
     Operation,
 )
 from plugins.user.sources_monitoring.common import (
@@ -166,6 +167,8 @@ async def new_message(client: Client, message: Message):  # noqa: C901
         exc = MessageTooLongError(operation=NEW, message=message, error=error)
     except pyrogram_errors.BadRequest as error:
         exc = MessageBadRequestError(operation=NEW, message=message, error=error)
+    except Exception as error:
+        exc = MessageUnknownError(operation=NEW, message=message, error=error)
     finally:
         if blocked:
             blocked.remove(value=message.media_group_id or message.id)
