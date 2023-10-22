@@ -8,11 +8,12 @@ from plugins.bot import router
 from plugins.bot.menu import Menu
 from plugins.bot.menu_text import get_menu_text
 
-STATISTIC_TMPL = """—   —   — | день | неделя | месяц
-переслано | {fdw_1d:4} | {fdw_7d:6} | {fdw_30d:5}
-отредакт. | {edited_1d:4} | {edited_7d:6} | {edited_30d:5}
-фильтр    | {filtered_1d:4} | {filtered_7d:6} | {filtered_30d:5}
-удалено   | {deleted_1d:4} | {deleted_7d:6} | {deleted_30d:5}"""
+STATISTIC_TMPL = """сообщений —  | день | нед. | месяц
+- отправлено |{fdw_1d:5} |{fdw_7d:5} |{fdw_30d:6}
+- отредакт.  |{edited_1d:5} |{edited_7d:5} |{edited_30d:6}
+- отфильтр.  |{filtered_1d:5} |{filtered_7d:5} |{filtered_30d:6}
+- удалено    |{deleted_1d:5} |{deleted_7d:5} |{deleted_30d:6}
+- с ошибками |{errors_1d:5} |{errors_7d:5} |{errors_30d:6}"""
 
 STATISTIC_TITLE = "Статистика сообщений"
 COMMON_STATISTIC_TITLE = f"Общая {STATISTIC_TITLE.lower()}"
@@ -53,6 +54,7 @@ def get_statistic_text(where: Expression = None):
             MessageHistory.edited_at,
             MessageHistory.filter_id,
             MessageHistory.deleted_at,
+            MessageHistory.data.path("last_message_with_error").alias("error"),
         )
         .where(
             (MessageHistory.created_at >= interval_30d)
@@ -65,6 +67,7 @@ def get_statistic_text(where: Expression = None):
     edited_at = counts_cte.c.edited_at
     deleted_at = counts_cte.c.deleted_at
     filter_id = counts_cte.c.filter_id
+    error = counts_cte.c.error
 
     query = (
         MessageHistory.select(
@@ -80,6 +83,9 @@ def get_statistic_text(where: Expression = None):
             fn.COUNT(counts_cte.c.deleted_at).alias("deleted_30d"),
             get_sub_query(counts_cte, deleted_at, interval_7d, "deleted_7d"),
             get_sub_query(counts_cte, deleted_at, interval_1d, "deleted_1d"),
+            fn.COUNT(counts_cte.c.error).alias("errors_30d"),
+            get_sub_query(counts_cte, error, interval_7d, "errors_7d"),
+            get_sub_query(counts_cte, error, interval_1d, "errors_1d"),
         )
         .from_(counts_cte)
         .with_cte(counts_cte)

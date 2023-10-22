@@ -28,6 +28,8 @@ DELETE_MINI_BTN = ButtonData(title="✖️", path=":delete")
 
 CONFIRMATION_DELETE_BTN = ButtonData(title="❌ Подтвердить удаление", path=":y")
 
+FILTERS_STATISTICS_BTN = ButtonData(title="📊 Статистика", path="stat/d/7")
+
 
 class ButtonAdder(ButtonAdderBase):
     def _add_row_button(
@@ -122,6 +124,12 @@ class ButtonAdder(ButtonAdderBase):
     def filters_histories(self, back_step: int = 0):
         self._add_row_button(
             button=FILTERS_HISTORIES_BTN,
+            back_step=back_step,
+        )
+
+    def filters_statistics(self, back_step: int = 0):
+        self._add_row_button(
+            button=FILTERS_STATISTICS_BTN,
             back_step=back_step,
         )
 

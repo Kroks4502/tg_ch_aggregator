@@ -28,6 +28,7 @@ class CallbackQueryRouter:
         add_wait_for_input: Callable = None,
         callback_answer_text: str = None,
         group: int = 0,
+        command: bool = False,
     ):
         """
         Декоратор для организации меню путём обработки запросов обратного вызова,
@@ -50,7 +51,9 @@ class CallbackQueryRouter:
         :param add_wait_for_input: Добавить функцию ожидающую ввод от пользователя.
         :param callback_answer_text: Текст для метода answer of ~pyrogram.pyrogram.types.CallbackQuery.
         :param group: Группа обработчика.
+        :param command: Подключить обработку командами.
         """
+        origin_path = path
         if pagination:
             path += r"(p/\d+/|)"
         path += r"(\?new|)$"
@@ -115,6 +118,15 @@ class CallbackQueryRouter:
                 ),
                 group=group,
             )
+
+            if command:
+                self._page_as_command(
+                    func=func,
+                    path=origin_path,
+                    back_step=back_step,
+                    group=group,
+                    admin_only=admin_only,
+                )
 
             return inner
 
@@ -202,6 +214,68 @@ class CallbackQueryRouter:
             return inner
 
         return decorator
+
+    def _page_as_command(
+        self,
+        func: Callable,
+        path: str,
+        back_step: int,
+        group: int,
+        admin_only: bool,
+    ):
+        """
+        :param func: Функция для обработчика.
+        :param path: Путь меню.
+        :param back_step: Количество шагов для кнопки назад.
+        :param group: Группа обработчика.
+        :param admin_only: Доступно только администраторам.
+        """
+
+        async def inner(
+            client: "pyrogram.Client",
+            message: "pyrogram.types.Message",
+        ):
+            msg_path = message.text.replace("_", "/") + "/"
+            menu = Menu(
+                path=msg_path,
+                user=message.from_user,
+                back_step=back_step,
+            )
+            menu.set_footer_buttons = False
+
+            try:
+                text = await func(
+                    **self._get_func_kwargs(
+                        func,
+                        available_kwargs=dict(
+                            client=client,
+                            menu=menu,
+                            message=message,
+                        ),
+                    )
+                )
+            except ValueError as error:
+                text = str(error)
+
+            await self._send_final_text(
+                message=message,
+                reply=True,
+                text=text,
+                markup=menu.reply_markup,
+            )
+
+        commands = [path.strip("/").replace("/", "_")]
+        filters = pyrogram.filters.command(commands)
+        if admin_only:
+            filters &= custom_filters.admin_only
+
+        self.client.add_handler(
+            handler=MessageHandler(
+                callback=inner,
+                filters=filters,
+            ),
+            group=group,
+        )
 
     def command(
         self,

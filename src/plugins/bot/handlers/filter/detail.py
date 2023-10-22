@@ -1,7 +1,10 @@
+from peewee import DoesNotExist
+
 from filter_types import FilterType
 from models import Filter
 from plugins.bot import router
 from plugins.bot.handlers.filter.common.constants import (
+    FILTER_NOT_FOUND,
     SINGULAR_COMMON_FILTER_TITLE,
     SINGULAR_FILTER_TITLE,
 )
@@ -9,10 +12,13 @@ from plugins.bot.handlers.filter.common.utils import get_filter_menu_text
 from plugins.bot.menu import Menu
 
 
-@router.page(path=r"/f/\d+/")
+@router.page(path=r"/f/\d+/", command=True)
 async def filter_detail(menu: Menu):
     filter_id = menu.path.get_value("f")
-    filter_obj: Filter = Filter.get(filter_id)
+    try:
+        filter_obj: Filter = Filter.get(filter_id)
+    except DoesNotExist:
+        return FILTER_NOT_FOUND
 
     if menu.is_admin_user():
         if filter_obj.type not in (
