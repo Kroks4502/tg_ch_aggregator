@@ -56,6 +56,7 @@ class MessageBaseError(UserBaseError):
     def to_dict(self):
         return dict(
             name=self.__class__.__name__,
+            level=logging.getLevelName(self.logging_level),
             text=self.text,
             operation=self.operation.name,
             kwargs=str(self.kwargs),

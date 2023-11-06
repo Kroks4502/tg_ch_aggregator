@@ -56,9 +56,12 @@ def get_statistic_text(where: Expression = None):
             MessageHistory.edited_at,
             MessageHistory.filter_id,
             MessageHistory.deleted_at,
+            MessageHistory.data.path("first_message", "exception", "level").alias(
+                "first_msg_exc_lvl"
+            ),
             MessageHistory.data.path(
-                "last_message_with_error", "exception", "name"
-            ).alias("error"),
+                "last_message_with_error", "exception", "level"
+            ).alias("last_msg_exc_lvl"),
         )
         .where(
             (MessageHistory.created_at >= interval_30d)
@@ -73,11 +76,10 @@ def get_statistic_text(where: Expression = None):
     filter_id = counts_cte.c.filter_id
 
     errors_count_case = SQL(
-        "CASE WHEN (error not in ('MessageNotModifiedError'"
-        ", 'MessageNotOnCategoryError', 'MessageNotRewrittenError'"
-        ", 'MessageFilteredError'"
-        ", 'MessageIdInvalidError'"
-        ")) THEN 1 END"
+        "CASE WHEN ("
+        "first_msg_exc_lvl in ('WARNING', 'ERROR', 'CRITICAL')"
+        "OR last_msg_exc_lvl in ('WARNING', 'ERROR', 'CRITICAL')"
+        ") THEN 1 END"
     )
     query = (
         MessageHistory.select(
