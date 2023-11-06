@@ -261,8 +261,28 @@ async def new_one_message(
     message.web_page = None  # disable_web_page_preview = True
     return await message.copy(
         chat_id=source.category.id,
+        reply_to_message_id=get_reply_to_message_id(message),
         disable_notification=disable_notification,
     )
+
+
+def get_reply_to_message_id(message: Message):
+    if (
+        message.reply_to_message
+        and message.reply_to_message.chat
+        and message.reply_to_message.chat.id == message.chat.id
+    ):
+        try:
+            reply_to_message = MessageHistory.get(
+                (MessageHistory.source_id == message.chat.id)
+                & (MessageHistory.source_message_id == message.reply_to_message_id)
+                & MessageHistory.category_message_id.is_null(False)
+                & MessageHistory.deleted_at.is_null()
+            )
+        except DoesNotExist:
+            return None
+        return reply_to_message.category_message_id
+    return None
 
 
 async def new_media_group_messages(
