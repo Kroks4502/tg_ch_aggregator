@@ -1,6 +1,6 @@
 peewee==3.16.2
 # Pyrogram>=2.0.106
-git+https://github.com/KurimuzonAkuma/pyrogram.git
+git+https://github.com/Kroks4502/pyrogram.git
 python-dotenv==1.0.0
 APScheduler==3.10.1
 TgCrypto==1.2.5

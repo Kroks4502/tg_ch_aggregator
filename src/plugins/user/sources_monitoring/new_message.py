@@ -259,30 +259,54 @@ async def new_one_message(
     cut_long_message(message=message)
 
     message.web_page = None  # disable_web_page_preview = True
-    return await message.copy(
-        chat_id=source.category.id,
-        reply_to_message_id=get_reply_to_message_id(message),
-        disable_notification=disable_notification,
-    )
+
+    try:
+        return await message.copy(
+            chat_id=source.category.id,
+            disable_notification=disable_notification,
+            **get_reply_to(message),
+        )
+    except pyrogram_errors.BadRequest:
+        # Если неверно сформированы quote_text/quote_entities
+        return await message.copy(
+            chat_id=source.category.id,
+            disable_notification=disable_notification,
+        )
 
 
-def get_reply_to_message_id(message: Message):
-    if (
-        message.reply_to_message
-        and message.reply_to_message.chat
-        and message.reply_to_message.chat.id == message.chat.id
-    ):
+def get_reply_to(message: Message):
+    if not (message.reply_to_message and message.reply_to_message.chat):
+        return dict(
+            reply_to_chat_id=None,
+            reply_to_message_id=None,
+            quote_text=None,
+            quote_entities=None,
+        )
+
+    if message.reply_to_message.chat.id == message.chat.id:
         try:
-            reply_to_message = MessageHistory.get(
+            history_msg = MessageHistory.get(
                 (MessageHistory.source_id == message.chat.id)
                 & (MessageHistory.source_message_id == message.reply_to_message_id)
                 & MessageHistory.category_message_id.is_null(False)
                 & MessageHistory.deleted_at.is_null()
             )
         except DoesNotExist:
-            return None
-        return reply_to_message.category_message_id
-    return None
+            pass
+        else:
+            return dict(
+                reply_to_chat_id=history_msg.category_id,
+                reply_to_message_id=history_msg.category_message_id,
+                quote_text=message.quote_text,
+                quote_entities=message.quote_entities,
+            )
+
+    return dict(
+        reply_to_chat_id=message.reply_to_message.chat.id,
+        reply_to_message_id=message.reply_to_message_id,
+        quote_text=message.quote_text,
+        quote_entities=message.quote_entities,
+    )
 
 
 async def new_media_group_messages(
