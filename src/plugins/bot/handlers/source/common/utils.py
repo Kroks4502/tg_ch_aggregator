@@ -41,13 +41,15 @@ async def get_source_menu_text(
 
 
 async def get_dialog_text(
-    category_id: int,
     doing: str,
     action: str,
+    category_id: int = None,
     source_id: int = None,
 ):
-    category_link = await get_channel_formatted_link(category_id)
-    category_text = f"категории {category_link}"
+    category_text = ""
+    if category_id:
+        category_link = await get_channel_formatted_link(category_id)
+        category_text = f"категории {category_link}"
 
     source_text = SINGULAR_SOURCE_TEXT
     if source_id:
