@@ -3,6 +3,7 @@
 [Unit]
 Description=Tgbot
 After=network.target
+After=postgresql@14-main.service
 Requires=postgresql@14-main.service
 
 [Service]
