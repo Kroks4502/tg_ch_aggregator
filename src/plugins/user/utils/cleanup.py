@@ -44,14 +44,17 @@ def remove_text(message: Message, start: int, end: int, is_media: bool) -> int:
     separator = "\n\n"
     # message.Str to str
     text = str(message.caption or message.text)
-    text = text[:start] + f'{separator if start != 0 else ""}' + text[end:]
+    text = f"{text[:start]}{separator}{text[end:]}"
 
     entities_new = []
     cut_len = end - start - (tg_len(separator) if start != 0 else 0)
-    for entity in message.entities or message.caption_entities or []:
+    text_len = len(text.strip(" \n"))
+    for entity in message.entities or message.caption_entities or ():
         # Оставляем только разметку оставшегося текста
         offset = entity.offset
-        if offset < start and offset + entity.length <= start + tg_len(separator):
+        if offset < start:
+            if offset + entity.length > text_len:
+                entity.length = text_len - offset
             entities_new.append(entity)
         elif offset >= end:
             # Делаем сдвиг сущностей
