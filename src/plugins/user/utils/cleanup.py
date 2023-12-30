@@ -4,7 +4,9 @@ import re
 from pyrogram.types import Message
 
 from models import GlobalSettings, Source
-from plugins.user.utils.text_length import tg_len
+
+TEXT_SEPARATOR = "\n\n"
+STRIP_CHARS = " \n"
 
 
 def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
@@ -28,37 +30,84 @@ def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
             string=text,
             flags=re.IGNORECASE,
         )
-        cut_len = 0
+        offset = 0
         for match in find_result:
             start = match.start()
             end = match.end()
-            cut_len += remove_text(
+            offset += remove_text(
                 message=message,
-                start=start - cut_len,
-                end=end - cut_len,
+                start=start - offset,
+                end=end - offset,
                 is_media=is_media,
             )
 
 
-def remove_text(message: Message, start: int, end: int, is_media: bool) -> int:
-    separator = "\n\n"
+def remove_text(  # noqa: C901
+    message: Message,
+    start: int,
+    end: int,
+    is_media: bool,
+) -> int:
     # message.Str to str
     text = str(message.caption or message.text)
-    text = f"{text[:start]}{separator}{text[end:]}"
+    entities = message.caption_entities or message.entities or ()
+
+    fin_offset = end - start
+
+    text_before_start = text[:start]
+
+    text_before_start, text_before_start_cut_len_l = left_strip(text_before_start)
+    fin_offset += text_before_start_cut_len_l
+
+    text_before_start, text_before_start_cut_len_r = right_strip(text_before_start)
+    fin_offset += text_before_start_cut_len_r
+
+    text_after_end = text[end:]
+
+    text_after_end, text_after_end_cut_len_l = left_strip(text_after_end)
+    fin_offset += text_after_end_cut_len_l
+
+    text_after_end, _ = right_strip(text_after_end)
+
+    if text_before_start and text_after_end:
+        text = f"{text_before_start}{TEXT_SEPARATOR}{text_after_end}"
+        fin_offset -= len(TEXT_SEPARATOR)
+    else:
+        text = text_before_start or text_after_end
 
     entities_new = []
-    cut_len = end - start - (tg_len(separator) if start != 0 else 0)
-    text_len = len(text.strip(" \n"))
-    for entity in message.entities or message.caption_entities or ():
-        # Оставляем только разметку оставшегося текста
-        offset = entity.offset
-        if offset < start:
-            if offset + entity.length > text_len:
-                entity.length = text_len - offset
+    for entity in entities:
+        if entity.offset < start - text_before_start_cut_len_r:
+            end_entity_idx = entity.offset + entity.length
+            if start <= end_entity_idx < end:
+                entity.length = (
+                    text_before_start_cut_len_l + len(text_before_start) - entity.offset
+                )
+            elif end_entity_idx > end:
+                entity.length -= (
+                    text_before_start_cut_len_r
+                    + end
+                    - start
+                    + text_after_end_cut_len_l
+                    - (
+                        len(TEXT_SEPARATOR)
+                        if text_before_start and text_after_end
+                        else 0
+                    )
+                )
+            elif end_entity_idx == end:
+                entity.length -= text_before_start_cut_len_r + end - start
             entities_new.append(entity)
-        elif offset >= end:
-            # Делаем сдвиг сущностей
-            entity.offset -= cut_len
+        elif entity.offset + entity.length > end + text_after_end_cut_len_l:
+            entity.offset -= fin_offset
+
+            if entity.offset < 0:
+                entity.length -= (
+                    end - start + text_before_start_cut_len_r + text_after_end_cut_len_l
+                )
+                entity.offset = 0
+            elif entity.offset + entity.length > len(text):
+                entity.length = len(text) - entity.offset
             entities_new.append(entity)
 
     if is_media:
@@ -68,4 +117,14 @@ def remove_text(message: Message, start: int, end: int, is_media: bool) -> int:
         message.text = text
         message.entities = entities_new
 
-    return cut_len
+    return fin_offset
+
+
+def left_strip(text: str) -> tuple[str, int]:
+    res = text.lstrip(STRIP_CHARS)
+    return res, len(text) - len(res)
+
+
+def right_strip(text: str) -> tuple[str, int]:
+    res = text.rstrip(STRIP_CHARS)
+    return res, len(text) - len(res)
