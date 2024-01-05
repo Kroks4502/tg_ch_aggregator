@@ -34,44 +34,49 @@ def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
         for match in find_result:
             start = match.start()
             end = match.end()
-            offset += remove_text(
-                message=message,
+
+            text, entities, next_offset = remove_text(
+                text=str(message.caption or message.text),  # message.Str to str
+                entities=message.caption_entities or message.entities or (),
                 start=start - offset,
                 end=end - offset,
-                is_media=is_media,
             )
+            offset += next_offset
+
+            if is_media:
+                message.caption = text
+                message.caption_entities = entities
+            else:
+                message.text = text
+                message.entities = entities
 
 
 def remove_text(  # noqa: C901
-    message: Message,
+    text: str,
+    entities: list,
     start: int,
     end: int,
-    is_media: bool,
-) -> int:
-    # message.Str to str
-    text = str(message.caption or message.text)
-    entities = message.caption_entities or message.entities or ()
-
-    fin_offset = end - start
+) -> tuple[str, list, int]:
+    next_offset = end - start
 
     text_before_start = text[:start]
 
     text_before_start, text_before_start_cut_len_l = left_strip(text_before_start)
-    fin_offset += text_before_start_cut_len_l
+    next_offset += text_before_start_cut_len_l
 
     text_before_start, text_before_start_cut_len_r = right_strip(text_before_start)
-    fin_offset += text_before_start_cut_len_r
+    next_offset += text_before_start_cut_len_r
 
     text_after_end = text[end:]
 
     text_after_end, text_after_end_cut_len_l = left_strip(text_after_end)
-    fin_offset += text_after_end_cut_len_l
+    next_offset += text_after_end_cut_len_l
 
     text_after_end, _ = right_strip(text_after_end)
 
     if text_before_start and text_after_end:
         text = f"{text_before_start}{TEXT_SEPARATOR}{text_after_end}"
-        fin_offset -= len(TEXT_SEPARATOR)
+        next_offset -= len(TEXT_SEPARATOR)
     else:
         text = text_before_start or text_after_end
 
@@ -79,13 +84,17 @@ def remove_text(  # noqa: C901
     for entity in entities:
         if entity.offset < start - text_before_start_cut_len_r:
             end_entity_idx = entity.offset + entity.length
+
+            entity.offset -= text_before_start_cut_len_l
+            if entity.offset < 0:
+                entity.offset = 0
+
             if start <= end_entity_idx < end:
-                entity.length = (
-                    text_before_start_cut_len_l + len(text_before_start) - entity.offset
-                )
+                entity.length = len(text_before_start) - entity.offset
             elif end_entity_idx > end:
                 entity.length -= (
-                    text_before_start_cut_len_r
+                    text_before_start_cut_len_l
+                    + text_before_start_cut_len_r
                     + end
                     - start
                     + text_after_end_cut_len_l
@@ -97,27 +106,41 @@ def remove_text(  # noqa: C901
                 )
             elif end_entity_idx == end:
                 entity.length -= text_before_start_cut_len_r + end - start
+            else:
+                entity.length -= text_before_start_cut_len_l
+
+            if entity.length <= 0:
+                continue
+
             entities_new.append(entity)
+
         elif entity.offset + entity.length > end + text_after_end_cut_len_l:
-            entity.offset -= fin_offset
-
-            if entity.offset < 0:
-                entity.length -= (
-                    end - start + text_before_start_cut_len_r + text_after_end_cut_len_l
+            if (
+                entity.offset
+                - text_before_start_cut_len_l
+                - text_before_start_cut_len_r
+                - text_after_end_cut_len_l
+                - end
+                - start
+                <= 0
+            ):
+                len_cut_before_offset = entity.offset - len(text_before_start)
+                entity.offset -= len_cut_before_offset - (
+                    len(TEXT_SEPARATOR) if text_before_start and text_after_end else 0
                 )
-                entity.offset = 0
-            elif entity.offset + entity.length > len(text):
+                entity.length -= next_offset - len_cut_before_offset
+            else:
+                entity.offset -= next_offset
+
+            if entity.offset + entity.length > len(text):
                 entity.length = len(text) - entity.offset
+
+            if entity.length <= 0:
+                continue
+
             entities_new.append(entity)
 
-    if is_media:
-        message.caption = text
-        message.caption_entities = entities_new
-    else:
-        message.text = text
-        message.entities = entities_new
-
-    return fin_offset
+    return text, entities_new, next_offset
 
 
 def left_strip(text: str) -> tuple[str, int]:
