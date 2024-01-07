@@ -42,14 +42,14 @@ async def send_not_found_chat_message_to_admins(db_obj: Source | Category):
             channel_id=db_obj.id,
         )
         button_text = GO_TO_SOURCE
-        callback_data = DETAIL_SOURCE_PATH.format(db_obj.id) + "?new"
+        callback_data = DETAIL_SOURCE_PATH.format(source_id=db_obj.id) + "?new"
     else:
         text = ERROR_NOT_FOUND_CATEGORY.format(
             channel_title=db_obj.title,
             channel_id=db_obj.id,
         )
         button_text = GO_TO_CATEGORY
-        callback_data = CATEGORY_CALLBACK_DATA.format(db_obj.id) + "?new"
+        callback_data = CATEGORY_CALLBACK_DATA.format(category_id=db_obj.id) + "?new"
 
     logging.warning(text)
     await send_message_to_admins(
