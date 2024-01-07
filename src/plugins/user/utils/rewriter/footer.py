@@ -1,9 +1,9 @@
 from pyrogram.types import Message
 from pyrogram.types.messages_and_media.message import Str
 
-from config import TELEGRAM_MAX_CAPTION_LENGTH, TELEGRAM_MAX_TEXT_LENGTH
 from plugins.user.utils.rewriter.item import AbstractItemController
 from plugins.user.utils.text_length import tg_len
+from settings import TELEGRAM_MAX_CAPTION_LENGTH, TELEGRAM_MAX_TEXT_LENGTH
 
 CROPPED_TEXT = "…\n\n"
 LINK_TEXT = "Полное сообщение…"

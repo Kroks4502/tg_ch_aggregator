@@ -8,6 +8,7 @@ from pyrogram import filters
 from pyrogram.enums import MessageMediaType
 from pyrogram.types import Message
 
+from alerts.regex_rule import check_message_by_regex_alert_rule
 from models import MessageHistory, Source
 from plugins.user.exceptions import (
     MessageBadRequestError,
@@ -19,6 +20,7 @@ from plugins.user.exceptions import (
     MessageMediaWithoutCaptionError,
     MessageRepeatedError,
     MessageTooLongError,
+    MessageUnknownError,
 )
 from plugins.user.sources_monitoring.common import (
     add_header,
@@ -42,7 +44,7 @@ NEW = Operation.NEW
 )
 async def new_message(client: Client, message: Message):  # noqa: C901
     logging.debug(
-        'Источник %s отправил сообщение %s',
+        "Источник %s отправил сообщение %s",
         message.chat.id,
         message.id,
     )
@@ -82,15 +84,19 @@ async def new_message(client: Client, message: Message):  # noqa: C901
                 source_id=source.id,
                 source_message_id=msg.id,
                 source_media_group_id=msg.media_group_id,
-                source_forward_from_chat_id=msg.forward_from_chat.id
-                if msg.forward_from_message_id
-                else None,
+                source_forward_from_chat_id=(
+                    msg.forward_from_chat.id if msg.forward_from_message_id else None
+                ),
                 source_forward_from_message_id=msg.forward_from_message_id,
                 category_id=source.category_id,
                 repeat_history_id=repeat_history_id,
                 filter_id=filter_id,
                 created_at=msg.date,
-                data=[dict(source=json.loads(msg.__str__()))],
+                data=dict(
+                    first_message=dict(
+                        source=json.loads(msg.__str__()),
+                    ),
+                ),
             )
 
         if repeated:
@@ -108,7 +114,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             ]
 
             logging.info(
-                'Источник %s отправил сообщение %s, оно отправлено в категорию %s',
+                "Источник %s отправил сообщение %s, оно отправлено в категорию %s",
                 message.chat.id,
                 message.id,
                 source.category_id,
@@ -121,8 +127,10 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             )
 
             logging.info(
-                'Источник %s отправил сообщение %s в составе медиа группы %s, '
-                'сообщения отправлены в категорию %s',
+                (
+                    "Источник %s отправил сообщение %s в составе медиа группы %s, "
+                    "сообщения отправлены в категорию %s"
+                ),
                 message.chat.id,
                 message.id,
                 message.media_group_id,
@@ -134,7 +142,14 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             history_obj.category_message_rewritten = source.is_rewrite
             history_obj.category_message_id = cat_msg.id
             history_obj.category_media_group_id = cat_msg.media_group_id
-            history_obj.data[-1]['category'] = json.loads(cat_msg.__str__())
+            history_obj.data["first_message"]["category"] = json.loads(
+                cat_msg.__str__()
+            )
+
+            await check_message_by_regex_alert_rule(
+                category_id=history_obj.category_id,
+                message=cat_msg,
+            )
 
     except MessageBaseError as e:
         exc = e
@@ -144,8 +159,8 @@ async def new_message(client: Client, message: Message):  # noqa: C901
         exc = MessageForwardsRestrictedError(operation=NEW, message=message)
         if source and not source.is_rewrite:
             await send_error_to_admins(
-                f'⚠ Источник {message.chat.title} запрещает пересылку сообщений. '
-                'Установите режим перепечатывания сообщений.'
+                f"⚠ Источник {message.chat.title} запрещает пересылку сообщений. "
+                "Установите режим перепечатывания сообщений."
             )
     except (
         pyrogram_errors.MediaCaptionTooLong,
@@ -154,12 +169,14 @@ async def new_message(client: Client, message: Message):  # noqa: C901
         exc = MessageTooLongError(operation=NEW, message=message, error=error)
     except pyrogram_errors.BadRequest as error:
         exc = MessageBadRequestError(operation=NEW, message=message, error=error)
+    except Exception as error:
+        exc = MessageUnknownError(operation=NEW, message=message, error=error)
     finally:
         if blocked:
             blocked.remove(value=message.media_group_id or message.id)
 
         if exc and (history_obj := history.get(message.id)):
-            history_obj.data[-1]['exception'] = exc.to_dict()
+            history_obj.data["first_message"]["exception"] = exc.to_dict()
 
         for history_obj in history.values():
             history_obj.save()
@@ -240,13 +257,57 @@ async def new_one_message(
     if not (message.text or is_media):
         raise MessageCleanedFullyError(operation=NEW, message=message)
 
-    add_header(message=message)
+    add_header(source=source, message=message)
     cut_long_message(message=message)
 
     message.web_page = None  # disable_web_page_preview = True
-    return await message.copy(
-        chat_id=source.category.id,
-        disable_notification=disable_notification,
+
+    try:
+        return await message.copy(
+            chat_id=source.category.id,
+            disable_notification=disable_notification,
+            **get_reply_to(message),
+        )
+    except pyrogram_errors.BadRequest:
+        # Если неверно сформированы quote_text/quote_entities
+        return await message.copy(
+            chat_id=source.category.id,
+            disable_notification=disable_notification,
+        )
+
+
+def get_reply_to(message: Message):
+    if not (message.reply_to_message and message.reply_to_message.chat):
+        return dict(
+            reply_to_chat_id=None,
+            reply_to_message_id=None,
+            quote_text=None,
+            quote_entities=None,
+        )
+
+    if message.reply_to_message.chat.id == message.chat.id:
+        try:
+            history_msg = MessageHistory.get(
+                (MessageHistory.source_id == message.chat.id)
+                & (MessageHistory.source_message_id == message.reply_to_message_id)
+                & MessageHistory.category_message_id.is_null(False)
+                & MessageHistory.deleted_at.is_null()
+            )
+        except DoesNotExist:
+            pass
+        else:
+            return dict(
+                reply_to_chat_id=history_msg.category_id,
+                reply_to_message_id=history_msg.category_message_id,
+                quote_text=message.quote_text,
+                quote_entities=message.quote_entities,
+            )
+
+    return dict(
+        reply_to_chat_id=message.reply_to_message.chat.id,
+        reply_to_message_id=message.reply_to_message_id,
+        quote_text=message.quote_text,
+        quote_entities=message.quote_entities,
     )
 
 
@@ -272,11 +333,11 @@ async def new_media_group_messages(
         if msg.caption:
             media_has_caption = True
             cleanup_message(message=msg, source=source, is_media=True)
-            add_header(message=msg)
+            add_header(source=source, message=msg)
             cut_long_message(message=msg)
 
     if not media_has_caption:
-        add_header(message=messages[0])
+        add_header(source=source, message=messages[0])
 
     return await SendMediaGroup.send_media_group(
         client,

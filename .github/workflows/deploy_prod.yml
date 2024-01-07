@@ -4,6 +4,7 @@ on:
   push:
     branches:
      - master
+     - hotfix/*
   workflow_dispatch:
 
 jobs:
@@ -19,11 +20,16 @@ jobs:
           script_stop: true
           script: |
             systemctl stop tgbot
+
             cd tg_ch_aggregator/
             mv logs "logs_$(date +%Y-%m-%d_%H-%M-%S)"
+
             git reset --hard HEAD
+            git checkout ${{ github.ref_name }}
             git pull
+
             yoyo apply --database postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@localhost/${{ secrets.DB_NAME }}
+
             systemctl start tgbot
   send_message:
     runs-on: ubuntu-latest
@@ -34,4 +40,4 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: ${{ github.repository }} -> ${{ github.workflow }} успешно выполнен!
+          message: ${{ github.repository }} -> ${{ github.workflow }} -> ${{ github.ref_name }} успешно выполнен!

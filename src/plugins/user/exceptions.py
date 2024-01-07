@@ -1,12 +1,12 @@
 import logging
 
 from pyrogram import errors as pyrogram_errors
-from pyrogram.enums import ChatType
-from pyrogram.types import Chat, Message
+from pyrogram.types import Message
 
 from config import APP_START_DATETIME
 from plugins.user.types import Operation
 from plugins.user.utils.chats_locks import MessagesLocks
+from settings import APP_START_DATETIME
 
 
 class UserBaseError(Exception):
@@ -28,7 +28,7 @@ class MessageBaseError(UserBaseError):
         self.kwargs = kwargs
         logging.log(
             level=self.logging_level,
-            msg=f'{self.__class__.__name__} : {self.text}',
+            msg=f"{self.__class__.__name__} : {self.text}",
             exc_info=self.exc_info,
             stack_info=self.stack_info,
         )
@@ -51,6 +51,7 @@ class MessageBaseError(UserBaseError):
     def to_dict(self):
         return dict(
             name=self.__class__.__name__,
+            level=logging.getLevelName(self.logging_level),
             text=self.text,
             operation=self.operation.name,
             kwargs=str(self.kwargs),
@@ -63,7 +64,7 @@ class MessageBaseError(UserBaseError):
 class MessageBlockedByMediaGroupError(MessageBaseError):
     """Сообщение было ранее заблокировано по message.media_group_id."""
 
-    end_tmpl = 'но медиа группа {media_group_id} уже заблокирована {blocked}'
+    end_tmpl = "но медиа группа {media_group_id} уже заблокирована {blocked}"
 
     def __init__(self, operation: Operation, message: Message, blocked: MessagesLocks):
         super().__init__(
@@ -77,7 +78,7 @@ class MessageBlockedByMediaGroupError(MessageBaseError):
 class MessageBlockedByIdError(MessageBaseError):
     """Сообщение было ранее заблокировано по message.id."""
 
-    end_tmpl = 'но оно уже заблокировано {blocked}'
+    end_tmpl = "но оно уже заблокировано {blocked}"
 
     def __init__(self, operation: Operation, message: Message, blocked: MessagesLocks):
         super().__init__(operation=operation, message=message, blocked=blocked)
@@ -87,7 +88,7 @@ class MessageNotFoundOnHistoryError(MessageBaseError):
     """Сообщения нет в истории."""
 
     logging_level = logging.WARNING
-    end_tmpl = 'его нет в истории date={date}, edit_date={edit_date}'
+    end_tmpl = "его нет в истории date={date}, edit_date={edit_date}"
 
     def __init__(self, operation: Operation, message: Message):
         if (
@@ -115,22 +116,22 @@ class MessageNotFoundOnHistoryError(MessageBaseError):
 class MessageNotOnCategoryError(MessageBaseError):
     """Сообщение не публиковалось в категории."""
 
-    end_tmpl = 'оно не публиковалось в категории'
+    end_tmpl = "оно не публиковалось в категории"
 
 
 class MessageNotRewrittenError(MessageBaseError):
     """Сообщение нельзя отредактировать."""
 
     end_tmpl = (
-        'оно не может быть изменено в категории, '
-        'потому что было переслано и не перепечатывалось'
+        "оно не может быть изменено в категории, "
+        "потому что было переслано и не перепечатывалось"
     )
 
 
 class MessageNotModifiedError(MessageBaseError):
     """Сообщение не удалось перепечатать."""
 
-    end_tmpl = 'перепечатать сообщение в категории не удалось {error}'
+    end_tmpl = "перепечатать сообщение в категории не удалось {error}"
 
     def __init__(
         self,
@@ -144,26 +145,26 @@ class MessageNotModifiedError(MessageBaseError):
 class MessageRepeatedError(MessageBaseError):
     """Сообщение уже опубликовано в категории."""
 
-    end_tmpl = 'оно уже опубликовано в категории'
+    end_tmpl = "оно уже опубликовано в категории"
 
 
 class MessageFilteredError(MessageBaseError):
     """Сообщение не прошло фильтрацию."""
 
-    end_tmpl = 'оно было отфильтровано'
+    end_tmpl = "оно было отфильтровано"
 
 
 class MessageMediaWithoutCaptionError(MessageBaseError):
     """Сообщение не может содержать подпись."""
 
-    end_tmpl = 'но оно не может содержать подпись'
+    end_tmpl = "но оно не может содержать подпись"
 
 
 class MessageIdInvalidError(MessageBaseError):
     """Случай когда почти одновременно приходит сообщение о редактировании и удалении сообщения из источника."""
 
     logging_level = logging.WARNING
-    end_tmpl = 'оно привело к ошибке {error}'
+    end_tmpl = "оно привело к ошибке {error}"
 
     def __init__(
         self,
@@ -178,14 +179,14 @@ class MessageForwardsRestrictedError(MessageBaseError):
     """Сообщение запрещено пересылать."""
 
     logging_level = logging.WARNING
-    end_tmpl = 'но запрещает пересылку сообщений'
+    end_tmpl = "но запрещает пересылку сообщений"
 
 
 class MessageTooLongError(MessageBaseError):
     """Сообщение содержит слишком длинный текст."""
 
     logging_level = logging.ERROR
-    end_tmpl = 'но при перепечатывании оно превышает лимит знаков {error}'
+    end_tmpl = "но при перепечатывании оно превышает лимит знаков {error}"
 
     def __init__(
         self,
@@ -197,10 +198,10 @@ class MessageTooLongError(MessageBaseError):
 
 
 class MessageBadRequestError(MessageBaseError):
-    """Сообщение привело к непредвиденной ошибке."""
+    """Сообщение привело к необработанной ошибке при запросе."""
 
     logging_level = logging.ERROR
-    end_tmpl = 'оно привело к непредвиденной ошибке {error}'
+    end_tmpl = "оно привело к необработанной ошибке при запросе {error}"
 
     def __init__(
         self,
@@ -211,13 +212,22 @@ class MessageBadRequestError(MessageBaseError):
         super().__init__(operation=operation, message=message, error=error)
 
 
+class MessageUnknownError(MessageBaseError):
+    """Сообщение привело к неизвестной ошибке."""
+
+    logging_level = logging.ERROR
+    end_tmpl = "оно привело к неизвестной ошибке {error}"
+
+    def __init__(
+        self,
+        operation: Operation,
+        message: Message,
+        error: Exception,
+    ):
+        super().__init__(operation=operation, message=message, error=error)
+
+
 class MessageCleanedFullyError(MessageBaseError):
     """Сообщение при очистке осталось без текста."""
 
-    end_tmpl = 'при очистке оно осталось без текста и не будет опубликовано в категории'
-
-
-if __name__ == "__main__":
-    raise MessageMediaWithoutCaptionError(
-        Operation.NEW, Message(id=0, chat=Chat(id=0, type=ChatType.CHANNEL))
-    )
+    end_tmpl = "при очистке оно осталось без текста и не будет опубликовано в категории"

@@ -4,11 +4,18 @@ import re
 from pyrogram.types import Message
 
 from models import GlobalSettings, Source
-from plugins.user.utils.text_length import tg_len
+
+TEXT_SEPARATOR = "\n\n"
+STRIP_CHARS = " \n"
 
 
 def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
-    global_cleanup_list = next(GlobalSettings.get_cache(key='cleanup_list'))['value']
+    global_cleanup_list = (
+        GlobalSettings.select(GlobalSettings.value)
+        .where(GlobalSettings.key == "cleanup_list")
+        .get()
+        .value
+    )
 
     for pattern in itertools.chain(
         global_cleanup_list,
@@ -23,41 +30,138 @@ def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
             string=text,
             flags=re.IGNORECASE,
         )
-        cut_len = 0
+        offset = 0
         for match in find_result:
             start = match.start()
             end = match.end()
-            cut_len += remove_text(
-                message=message,
-                start=start - cut_len,
-                end=end - cut_len,
-                is_media=is_media,
+
+            text, entities, next_offset = remove_text(
+                text=str(message.caption or message.text),  # message.Str to str
+                entities=message.caption_entities or message.entities or (),
+                start=start - offset,
+                end=end - offset,
             )
+            offset += next_offset
+
+            if is_media:
+                message.caption = text
+                message.caption_entities = entities
+            else:
+                message.text = text
+                message.entities = entities
 
 
-def remove_text(message: Message, start: int, end: int, is_media: bool) -> int:
-    separator = '\n\n'
-    # message.Str to str
-    text = str(message.caption or message.text)
-    text = text[:start] + f'{separator if start != 0 else ""}' + text[end:]
+def remove_text(
+    text: str,
+    entities: list,
+    start: int,
+    end: int,
+) -> tuple[str, list, int]:
+    text_before_start = text[:start]
 
-    entities_new = []
-    cut_len = end - start - (tg_len(separator) if start != 0 else 0)
-    for entity in message.entities or message.caption_entities or []:
-        # Оставляем только разметку оставшегося текста
-        offset = entity.offset
-        if offset < start and offset + entity.length <= start + tg_len(separator):
-            entities_new.append(entity)
-        elif offset >= end:
-            # Делаем сдвиг сущностей
-            entity.offset -= cut_len
-            entities_new.append(entity)
+    text_before_start, tbs_strip_len_l = left_strip(text_before_start)
+    if tbs_strip_len_l:
+        entities = cut_entities(
+            entities=entities,
+            offset=0,
+            length=tbs_strip_len_l,
+        )
 
-    if is_media:
-        message.caption = text
-        message.caption_entities = entities_new
+    text_before_start, tbs_strip_len_r = right_strip(text_before_start)
+    if tbs_strip_len_r:
+        entities = cut_entities(
+            entities=entities,
+            offset=len(text_before_start),
+            length=tbs_strip_len_r,
+        )
+
+    if cut_length := end - start:
+        entities = cut_entities(
+            entities=entities,
+            offset=start - tbs_strip_len_l - tbs_strip_len_r,
+            length=cut_length,
+        )
+
+    text_after_end = text[end:]
+
+    text_after_end, tae_strip_len_l = left_strip(text_after_end)
+    if tae_strip_len_l:
+        entities = cut_entities(
+            entities=entities,
+            offset=len(text_before_start),
+            length=tae_strip_len_l,
+        )
+
+    text_after_end, tae_strip_len_r = right_strip(text_after_end)
+    if tae_strip_len_r:
+        entities = cut_entities(
+            entities=entities,
+            offset=len(text_before_start) + len(text_after_end),
+            length=tae_strip_len_r,
+        )
+
+    next_offset = end - start + tbs_strip_len_l + tbs_strip_len_r + tae_strip_len_l
+    if text_before_start and text_after_end:
+        text = f"{text_before_start}{TEXT_SEPARATOR}{text_after_end}"
+        next_offset -= len(TEXT_SEPARATOR)
+        entities = push_entities(
+            entities=entities,
+            offset=len(text_before_start),
+            length=len(TEXT_SEPARATOR),
+            text_length=len(text),
+        )
     else:
-        message.text = text
-        message.entities = entities_new
+        text = text_before_start or text_after_end
 
-    return cut_len
+    return text, entities, next_offset
+
+
+def left_strip(text: str) -> tuple[str, int]:
+    res = text.lstrip(STRIP_CHARS)
+    return res, len(text) - len(res)
+
+
+def right_strip(text: str) -> tuple[str, int]:
+    res = text.rstrip(STRIP_CHARS)
+    return res, len(text) - len(res)
+
+
+def cut_entities(entities: list, offset: int, length: int):
+    entities_new = []
+    end = offset + length
+
+    for entity in entities:
+        if entity.offset < offset:
+            if entity.offset + entity.length > offset:
+                if entity.offset + entity.length > end:
+                    entity.length -= length
+                else:
+                    entity.length = offset - entity.offset
+        elif entity.offset + entity.length > end:
+            if entity.offset < end:
+                shift = end - entity.offset
+                entity.offset -= length - shift
+                entity.length -= shift
+            else:
+                entity.offset -= length
+        else:
+            continue
+
+        entities_new.append(entity)
+
+    return entities_new
+
+
+def push_entities(entities: list, offset: int, length: int, text_length: int):
+    max_length = text_length + length
+
+    for entity in entities:
+        if entity.offset >= offset:
+            entity.offset += length
+        elif entity.offset + entity.length > offset:
+            entity.length += length
+
+        if entity.offset + entity.length > max_length:
+            entity.length = max_length - entity.offset
+
+    return entities

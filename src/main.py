@@ -1,17 +1,21 @@
 from pyrogram import compose
 
-from clients import bot, user
-from config import configure_logging
-from scheduler import start_scheduler
+import db
+from clients import bot_client, user_client
+from scheduler.run import run_scheduler
+from settings import configure_logging
 
 
 def main():
     configure_logging()
 
-    start_scheduler()
+    db.connect()
+    db.patch_psycopg2()
 
-    compose([bot, user])
+    run_scheduler()
+
+    compose([bot_client, user_client])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

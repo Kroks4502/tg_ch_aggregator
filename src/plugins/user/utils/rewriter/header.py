@@ -2,8 +2,8 @@ from pyrogram.types import Message
 
 from plugins.user.utils.rewriter.item import AbstractItemController
 
-SRC_TEXT_TMPL = '💬 Источник: {}'
-FWD_TEXT_TMPL = 'fwd: {}'
+SRC_TEXT_TMPL = "💬 {}"
+FWD_TEXT_TMPL = "fwd: {}"
 
 
 class HeaderController(AbstractItemController):

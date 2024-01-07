@@ -3,16 +3,16 @@ import logging
 from async_lru import alru_cache
 from pyrogram.errors import RPCError
 
-from clients import user
+from clients import user_client
 
 
 @alru_cache(maxsize=16)
 async def get_user_formatted_link(chat_id: int) -> str:
     """Получить отформатированную в markdown ссылку на пользователя по chat_id."""
     try:
-        chat = await user.get_chat(chat_id)
+        chat = await user_client.get_chat(chat_id)
         if chat.username:
-            return f'[{chat.username}](https://{chat.username}.t.me)'
+            return f"[{chat.username}](https://{chat.username}.t.me)"
         full_name = (
             f'{chat.first_name + " " if chat.first_name else ""}'
             f'{chat.last_name + " " if chat.last_name else ""}'
@@ -28,11 +28,11 @@ async def get_user_formatted_link(chat_id: int) -> str:
 async def get_channel_formatted_link(chat_id: int) -> str:
     """Получить отформатированную в markdown ссылку на канал по chat_id."""
     try:
-        chat = await user.get_chat(chat_id)
+        chat = await user_client.get_chat(chat_id)
         if chat.username:
-            return f'[{chat.title}](https://{chat.username}.t.me)'
+            return f"[{chat.title}](https://{chat.username}.t.me)"
         if chat.invite_link:
-            return f'[{chat.title}]({chat.invite_link})'
+            return f"[{chat.title}]({chat.invite_link})"
         return chat.title
     except RPCError as e:
         logging.warning(e, exc_info=True)

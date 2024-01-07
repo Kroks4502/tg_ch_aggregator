@@ -8,7 +8,7 @@ from pyrogram.types import (
     Message,
 )
 
-from config import TELEGRAM_MAX_CAPTION_LENGTH, TELEGRAM_MAX_TEXT_LENGTH
+from models import Source
 from plugins.user.exceptions import (
     MessageBlockedByIdError,
     MessageBlockedByMediaGroupError,
@@ -23,8 +23,9 @@ from plugins.user.utils.rewriter.header import (
     HeaderController,
 )
 from plugins.user.utils.text_length import tg_len
+from settings import TELEGRAM_MAX_CAPTION_LENGTH, TELEGRAM_MAX_TEXT_LENGTH
 
-blocking_messages = ChatsLocks('all')
+blocking_messages = ChatsLocks("all")
 
 
 def set_blocking(
@@ -57,20 +58,20 @@ def get_filter_id_or_none(message: Message, source_id: int) -> int | None:
     """Получить ID фильтра, который не прошёл текст сообщения."""
     inspector = FilterInspector(message=message, source_id=source_id)
 
-    if result := inspector.check_message_type():
-        return result['id']
+    if filter_obj := inspector.check_message_type():
+        return filter_obj.id
 
     if message.text or message.caption:
-        if result := inspector.check_white_text():
-            return result['id']
-        if result := inspector.check_text():
-            return result['id']
+        if filter_obj := inspector.check_white_text():
+            return filter_obj.id
+        if filter_obj := inspector.check_text():
+            return filter_obj.id
 
     entities = message.entities or message.caption_entities
     if entities:
         for entity in entities:
-            if result := inspector.check_entities(entity):
-                return result['id']
+            if filter_obj := inspector.check_entities(entity):
+                return filter_obj.id
 
     return  # noqa: R502
 
@@ -83,12 +84,12 @@ def get_input_media(
     # InputMedia*** в caption_entities принимает только raw.types.MessageEntity***, а не types.MessageEntity
     for entity in message.caption_entities or []:
         possible_entity_params = {
-            'offset': entity.offset,
-            'length': entity.length,
-            'user_id': entity.user.id if entity.user else 0,
-            'language': entity.language,
-            'url': entity.url,
-            'document_id': entity.custom_emoji_id,
+            "offset": entity.offset,
+            "length": entity.length,
+            "user_id": entity.user.id if entity.user else 0,
+            "language": entity.language,
+            "url": entity.url,
+            "document_id": entity.custom_emoji_id,
         }
         entity_params = {}
         for key in inspect.signature(entity.type.value).parameters.keys():
@@ -139,7 +140,7 @@ def get_input_media(
             has_spoiler=message.has_media_spoiler,
         )
 
-    raise ValueError(f'Message with this type {message.media} can`t be copied.')
+    raise ValueError(f"Message with this type {message.media} can`t be copied.")
 
 
 def cut_long_message(message: Message):
@@ -151,18 +152,22 @@ def cut_long_message(message: Message):
     footer = FooterController()
     footer.add_item(
         text=LINK_TEXT,
-        url=message.link
-        if not message.forward_from_chat
-        else get_fwd_message_link(message),
+        url=(
+            message.link
+            if not message.forward_from_chat
+            else get_fwd_message_link(message)
+        ),
         bold=True,
     )
     footer.include_to_message(message=message)
 
 
-def add_header(message: Message):
+def add_header(source: Source, message: Message):
     header = HeaderController(item_separator="\n")
     header.add_item(
-        text=SRC_TEXT_TMPL.format(message.chat.title or message.chat.id),
+        text=SRC_TEXT_TMPL.format(
+            source.title_alias or message.chat.title or message.chat.id
+        ),
         bold=True,
         url=message.link,
     )
@@ -180,6 +185,6 @@ def add_header(message: Message):
 
 def get_fwd_message_link(message: Message):
     return (
-        f'https://t.me/{message.forward_from_chat.username}'
-        f'/{message.forward_from_message_id}'
+        f"https://t.me/{message.forward_from_chat.username}"
+        f"/{message.forward_from_message_id}"
     )

@@ -12,47 +12,14 @@ from peewee import (
 )
 from playhouse.postgres_ext import BinaryJSONField, JSONField
 
-from config import DATABASE
+from common.db_json_fields import DBJsonFieldEncoder
+from db import psql_db
 from filter_types import FilterType
 
 
 class BaseModel(Model):
-    _is_actual_cache = False
-    _cache = None
-
     class Meta:
-        database = DATABASE
-
-    @classmethod
-    def get_cache(cls, **where):
-        cls._update_cache()
-
-        conditions = {}
-        if where:
-            for i, field_name in enumerate(cls._meta.sorted_field_names):
-                if field_name in where:
-                    conditions[i] = where[field_name]
-            if len(where) != len(conditions):
-                raise Exception(f'Одного из имен полей нет в модели {cls.__name__}')
-
-        for row in cls._cache:
-            if all(
-                True if row[i] == value else False for i, value in conditions.items()
-            ):
-                yield {
-                    field_name: row[i]
-                    for i, field_name in enumerate(cls._meta.sorted_field_names)
-                }
-
-    @classmethod
-    def _update_cache(cls):
-        if not cls._is_actual_cache:
-            cls._cache = tuple(cls.select().tuples())
-            cls._is_actual_cache = True
-
-    @classmethod
-    def clear_actual_cache(cls):
-        cls._is_actual_cache = False
+        database = psql_db
 
 
 class GlobalSettings(BaseModel):
@@ -61,7 +28,18 @@ class GlobalSettings(BaseModel):
 
     class Meta:
         primary_key = False
-        table_name = 'global_settings'
+        table_name = "global_settings"
+
+
+class User(BaseModel):
+    id = BigIntegerField(primary_key=True)
+    username = CharField()
+    is_admin = BooleanField(default=False)
+    added_at = DateTimeField(default=datetime.now)
+    last_interaction_at = DateTimeField(default=datetime.now)
+
+    def __str__(self):
+        return str(self.username)
 
 
 class Category(BaseModel):
@@ -72,32 +50,14 @@ class Category(BaseModel):
 class Source(BaseModel):
     id = BigIntegerField(primary_key=True)
     title = CharField()
-    category = ForeignKeyField(Category, backref='sources', on_delete='CASCADE')
+    title_alias = CharField()
+    category = ForeignKeyField(Category, backref="sources", on_delete="CASCADE")
 
     # Список регулярных выражений для очистки сообщений и их перепечатывания
     cleanup_list = JSONField(default=[])
 
     # Формировать новое сообщение (True) или пересылать сообщение (False)
-    is_rewrite = BooleanField(default=False)
-
-    _cache_monitored_channels = set()
-
-    @classmethod
-    def get_cache_monitored_channels(cls) -> set:
-        cls._update_cache()
-        return cls._cache_monitored_channels
-
-    @classmethod
-    def _update_cache(cls):
-        if not cls._is_actual_cache:
-            cls._cache = tuple(cls.select().tuples())
-            index = 0
-            for field_name in cls._meta.sorted_field_names:
-                if field_name == 'id':
-                    break
-                index += 1
-            cls._cache_monitored_channels = {row[index] for row in cls._cache}
-            cls._is_actual_cache = True
+    is_rewrite = BooleanField(default=True)
 
 
 class Filter(BaseModel):
@@ -105,59 +65,74 @@ class Filter(BaseModel):
     type = SmallIntegerField(
         choices=[(filter_type.name, filter_type.value) for filter_type in FilterType]
     )
-    source = ForeignKeyField(Source, null=True, backref='filters', on_delete='CASCADE')
+    source = ForeignKeyField(Source, null=True, backref="filters", on_delete="CASCADE")
 
 
-class Admin(BaseModel):
-    id = BigIntegerField(primary_key=True)
-    username = CharField()
+class AlertRule(BaseModel):
+    user = ForeignKeyField(User, backref="alerts", on_delete="CASCADE", index=True)
+    category = ForeignKeyField(
+        Category,
+        backref="alerts",
+        on_delete="CASCADE",
+        index=True,
+        null=True,
+    )
+    type = CharField(max_length=32)  # counter | regex
+    config = BinaryJSONField(dumps=DBJsonFieldEncoder.json_dumper)
 
-    _cache_admins_tg_ids = set()
+    class Meta:
+        table_name = "alert_rule"
 
-    @classmethod
-    def get_cache_admins_tg_ids(cls) -> set:
-        cls._update_cache()
-        return cls._cache_admins_tg_ids
 
-    @classmethod
-    def _update_cache(cls):
-        if not cls._is_actual_cache:
-            cls._cache = tuple(cls.select().tuples())
-            index = 0
-            for field_name in cls._meta.sorted_field_names:
-                if field_name == 'id':
-                    break
-                index += 1
-            cls._cache_admins_tg_ids = {row[index] for row in cls._cache}
-            cls._is_actual_cache = True
+class AlertHistory(BaseModel):
+    category = ForeignKeyField(
+        Category,
+        backref="alerts_history",
+        on_delete="CASCADE",
+        index=True,
+        null=True,
+    )
+    fired_at = DateTimeField(default=datetime.now)
+    data = BinaryJSONField(dumps=DBJsonFieldEncoder.json_dumper)
+    alert_rule = ForeignKeyField(
+        AlertRule,
+        backref="history",
+    )
 
-    def __str__(self):
-        return str(self.username)
+    class Meta:
+        table_name = "alert_history"
 
 
 class MessageHistory(BaseModel):
     id = BigAutoField(primary_key=True)
 
-    source = ForeignKeyField(
-        Source, backref='history', on_delete='CASCADE'
-    )  # source_id
+    source = ForeignKeyField(Source, backref="history", on_delete="CASCADE")
     source_message_id = BigIntegerField()
     source_media_group_id = CharField(default=None, null=True)
     source_forward_from_chat_id = BigIntegerField(default=None, null=True)
     source_forward_from_message_id = BigIntegerField(default=None, null=True)
 
     category = ForeignKeyField(
-        Category, backref='history', on_delete='CASCADE'
-    )  # category_id
+        Category,
+        backref="history",
+        on_delete="CASCADE",
+    )
     category_message_id = BigIntegerField(default=None, null=True)
     category_media_group_id = CharField(default=None, null=True)
     category_message_rewritten = BooleanField(default=None, null=True)
 
     repeat_history = ForeignKeyField(
-        'self', on_delete='SET NULL', null=True, default=None
+        "self",
+        on_delete="SET NULL",
+        null=True,
+        default=None,
     )
     filter = ForeignKeyField(
-        Filter, backref='history', on_delete='SET NULL', null=True, default=None
+        Filter,
+        backref="history",
+        on_delete="SET NULL",
+        null=True,
+        default=None,
     )
 
     created_at = DateTimeField(default=datetime.now)
@@ -167,4 +142,4 @@ class MessageHistory(BaseModel):
     data = BinaryJSONField()
 
     class Meta:
-        table_name = 'message_history'
+        table_name = "message_history"
