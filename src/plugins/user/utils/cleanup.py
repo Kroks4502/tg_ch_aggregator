@@ -51,96 +51,69 @@ def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
                 message.entities = entities
 
 
-def remove_text(  # noqa: C901
+def remove_text(
     text: str,
     entities: list,
     start: int,
     end: int,
 ) -> tuple[str, list, int]:
-    next_offset = end - start
-
     text_before_start = text[:start]
 
-    text_before_start, text_before_start_cut_len_l = left_strip(text_before_start)
-    next_offset += text_before_start_cut_len_l
+    text_before_start, tbs_strip_len_l = left_strip(text_before_start)
+    if tbs_strip_len_l:
+        entities = cut_entities(
+            entities=entities,
+            offset=0,
+            length=tbs_strip_len_l,
+        )
 
-    text_before_start, text_before_start_cut_len_r = right_strip(text_before_start)
-    next_offset += text_before_start_cut_len_r
+    text_before_start, tbs_strip_len_r = right_strip(text_before_start)
+    if tbs_strip_len_r:
+        entities = cut_entities(
+            entities=entities,
+            offset=len(text_before_start),
+            length=tbs_strip_len_r,
+        )
+
+    if cut_length := end - start:
+        entities = cut_entities(
+            entities=entities,
+            offset=start - tbs_strip_len_l - tbs_strip_len_r,
+            length=cut_length,
+        )
 
     text_after_end = text[end:]
 
-    text_after_end, text_after_end_cut_len_l = left_strip(text_after_end)
-    next_offset += text_after_end_cut_len_l
+    text_after_end, tae_strip_len_l = left_strip(text_after_end)
+    if tae_strip_len_l:
+        entities = cut_entities(
+            entities=entities,
+            offset=len(text_before_start),
+            length=tae_strip_len_l,
+        )
 
-    text_after_end, _ = right_strip(text_after_end)
+    text_after_end, tae_strip_len_r = right_strip(text_after_end)
+    if tae_strip_len_r:
+        entities = cut_entities(
+            entities=entities,
+            offset=len(text_before_start) + len(text_after_end),
+            length=tae_strip_len_r,
+        )
 
+    next_offset = end - start + tbs_strip_len_l + tbs_strip_len_r + tae_strip_len_l
     if text_before_start and text_after_end:
         text = f"{text_before_start}{TEXT_SEPARATOR}{text_after_end}"
         next_offset -= len(TEXT_SEPARATOR)
+        entities = push_entities(
+            entities=entities,
+            offset=len(text_before_start),
+            length=len(TEXT_SEPARATOR),
+            text_length=len(text),
+        )
     else:
         text = text_before_start or text_after_end
 
-    entities_new = []
-    for entity in entities:
-        if entity.offset < start - text_before_start_cut_len_r:
-            end_entity_idx = entity.offset + entity.length
-
-            entity.offset -= text_before_start_cut_len_l
-            if entity.offset < 0:
-                entity.offset = 0
-
-            if start <= end_entity_idx < end:
-                entity.length = len(text_before_start) - entity.offset
-            elif end_entity_idx > end:
-                entity.length -= (
-                    text_before_start_cut_len_l
-                    + text_before_start_cut_len_r
-                    + end
-                    - start
-                    + text_after_end_cut_len_l
-                    - (
-                        len(TEXT_SEPARATOR)
-                        if text_before_start and text_after_end
-                        else 0
-                    )
-                )
-            elif end_entity_idx == end:
-                entity.length -= text_before_start_cut_len_r + end - start
-            else:
-                entity.length -= text_before_start_cut_len_l
-
-            if entity.length <= 0:
-                continue
-
-            entities_new.append(entity)
-
-        elif entity.offset + entity.length > end + text_after_end_cut_len_l:
-            if (
-                entity.offset
-                - text_before_start_cut_len_l
-                - text_before_start_cut_len_r
-                - text_after_end_cut_len_l
-                - end
-                - start
-                <= 0
-            ):
-                len_cut_before_offset = entity.offset - len(text_before_start)
-                entity.offset -= len_cut_before_offset - (
-                    len(TEXT_SEPARATOR) if text_before_start and text_after_end else 0
-                )
-                entity.length -= next_offset - len_cut_before_offset
-            else:
-                entity.offset -= next_offset
-
-            if entity.offset + entity.length > len(text):
-                entity.length = len(text) - entity.offset
-
-            if entity.length <= 0:
-                continue
-
-            entities_new.append(entity)
-
-    return text, entities_new, next_offset
+    return text, entities, next_offset
 
 
 def left_strip(text: str) -> tuple[str, int]:
@@ -151,3 +124,44 @@ def left_strip(text: str) -> tuple[str, int]:
 def right_strip(text: str) -> tuple[str, int]:
     res = text.rstrip(STRIP_CHARS)
     return res, len(text) - len(res)
+
+
+def cut_entities(entities: list, offset: int, length: int):
+    entities_new = []
+    end = offset + length
+
+    for entity in entities:
+        if entity.offset < offset:
+            if entity.offset + entity.length > offset:
+                if entity.offset + entity.length > end:
+                    entity.length -= length
+                else:
+                    entity.length = offset - entity.offset
+        elif entity.offset + entity.length > end:
+            if entity.offset < end:
+                shift = end - entity.offset
+                entity.offset -= length - shift
+                entity.length -= shift
+            else:
+                entity.offset -= length
+        else:
+            continue
+
+        entities_new.append(entity)
+
+    return entities_new
+
+
+def push_entities(entities: list, offset: int, length: int, text_length: int):
+    max_length = text_length + length
+
+    for entity in entities:
+        if entity.offset >= offset:
+            entity.offset += length
+        elif entity.offset + entity.length > offset:
+            entity.length += length
+
+        if entity.offset + entity.length > max_length:
+            entity.length = max_length - entity.offset
+
+    return entities
