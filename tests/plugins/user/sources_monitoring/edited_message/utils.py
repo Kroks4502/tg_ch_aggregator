@@ -1,7 +1,10 @@
 from pytest_mock import MockerFixture
 
 from plugins.user.types import Operation
-from tests.utils import default_log_asserts, set_return_value
+from tests.plugins.user.sources_monitoring.utils import (
+    default_log_asserts,
+    set_return_value,
+)
 
 
 def default_edited_message_log_asserts(caplog):
@@ -9,7 +12,9 @@ def default_edited_message_log_asserts(caplog):
 
 
 def setup_filtered(mocker: MockerFixture, return_value=...):
-    mock = mocker.patch("plugins.user.sources_monitoring.edited_message.get_filter_id_or_none")
+    mock = mocker.patch(
+        "plugins.user.sources_monitoring.edited_message.get_filter_id_or_none"
+    )
     set_return_value(mock, return_value)
     return mock
 
@@ -21,6 +26,8 @@ def setup_source(mocker: MockerFixture, return_value=...):
 
 
 def setup_get_history_obj(mocker: MockerFixture, return_value=...):
-    mock = mocker.patch("plugins.user.sources_monitoring.edited_message.MessageHistory.get_or_none")
+    mock = mocker.patch(
+        "plugins.user.sources_monitoring.edited_message.MessageHistory.get_or_none"
+    )
     set_return_value(mock, return_value)
     return mock

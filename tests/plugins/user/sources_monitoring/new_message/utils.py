@@ -4,7 +4,10 @@ from pytest_mock import MockerFixture
 
 from models import MessageHistory
 from plugins.user.types import Operation
-from tests.utils import default_log_asserts, set_return_value
+from tests.plugins.user.sources_monitoring.utils import (
+    default_log_asserts,
+    set_return_value,
+)
 
 
 def default_new_message_log_asserts(caplog) -> None:
@@ -12,13 +15,17 @@ def default_new_message_log_asserts(caplog) -> None:
 
 
 def setup_repeated(mocker: MockerFixture, return_value=...) -> MagicMock:
-    mock = mocker.patch("plugins.user.sources_monitoring.new_message.get_repeated_history_id_or_none")
+    mock = mocker.patch(
+        "plugins.user.sources_monitoring.new_message.get_repeated_history_id_or_none"
+    )
     set_return_value(mock, return_value)
     return mock
 
 
 def setup_filtered(mocker: MockerFixture, return_value=...) -> MagicMock:
-    mock = mocker.patch("plugins.user.sources_monitoring.new_message.get_filter_id_or_none")
+    mock = mocker.patch(
+        "plugins.user.sources_monitoring.new_message.get_filter_id_or_none"
+    )
     set_return_value(mock, return_value)
     return mock
 
@@ -48,13 +55,17 @@ def history_new_message_asserts(
     assert history.source_media_group_id is input_message.media_group_id
 
     assert history.source_forward_from_chat_id is input_message.forward_from_chat.id
-    assert history.source_forward_from_message_id is input_message.forward_from_message_id
+    assert (
+        history.source_forward_from_message_id is input_message.forward_from_message_id
+    )
 
     assert history.category_id is input_source.category_id
     assert history.repeat_history_id is repeat_history_id
     assert history.filter_id is filter_id
     assert history.created_at is input_message.date
-    assert "source" in history.data[-1]
+
+    assert "first_message" in history.data
+    assert "source" in history.data["first_message"]
 
 
 def history_with_category_asserts(
@@ -65,4 +76,4 @@ def history_with_category_asserts(
     assert history.category_message_rewritten is input_source.is_rewrite
     assert history.category_message_id is mock_category_msg.id
     assert history.category_media_group_id is mock_category_msg.media_group_id
-    assert "category" in history.data[-1]
+    assert "category" in history.data["first_message"]

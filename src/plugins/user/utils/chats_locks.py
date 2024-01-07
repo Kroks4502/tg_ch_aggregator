@@ -28,7 +28,7 @@ class MessagesLocks:
 
     def add(self, value):
         logging.info(
-            'Добавлена блокировка %s для чата %s %s',
+            "Добавлена блокировка %s для чата %s %s",
             self.__name,
             self.__chat_id,
             value,
@@ -38,7 +38,7 @@ class MessagesLocks:
     def remove(self, value):
         try:
             logging.info(
-                'Снята блокировка %s для чата %s %s',
+                "Снята блокировка %s для чата %s %s",
                 self.__name,
                 self.__chat_id,
                 value,
@@ -46,7 +46,10 @@ class MessagesLocks:
             self.__chat.remove(value)
         except KeyError:
             logging.warning(
-                'Не удалось снять блокировку %s для чата %s со значением %s. Текущие блокировки: %s',
+                (
+                    "Не удалось снять блокировку %s для чата %s со значением %s."
+                    " Текущие блокировки: %s"
+                ),
                 self.__name,
                 self.__chat_id,
                 value,

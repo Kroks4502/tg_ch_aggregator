@@ -1,14 +1,12 @@
 import logging
 from datetime import datetime
 from typing import Dict, Tuple
-from unittest.mock import AsyncMock, Mock
 
 import pytest
-from pyrogram.enums import ChatType
 
-import config as app_config
+import settings
 
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)
 _test_failed_incremental: Dict[str, Dict[Tuple[int, ...], str]] = {}
 
 
@@ -16,16 +14,26 @@ def pytest_runtest_makereport(item, call):
     if "incremental" in item.keywords:
         if call.excinfo is not None:
             cls_name = str(item.cls)
-            parametrize_index = tuple(item.callspec.indices.values()) if hasattr(item, "callspec") else ()
+            parametrize_index = (
+                tuple(item.callspec.indices.values())
+                if hasattr(item, "callspec")
+                else ()
+            )
             test_name = item.originalname or item.name
-            _test_failed_incremental.setdefault(cls_name, {}).setdefault(parametrize_index, test_name)
+            _test_failed_incremental.setdefault(cls_name, {}).setdefault(
+                parametrize_index, test_name
+            )
 
 
 def pytest_runtest_setup(item):
     if "incremental" in item.keywords:
         cls_name = str(item.cls)
         if cls_name in _test_failed_incremental:
-            parametrize_index = tuple(item.callspec.indices.values()) if hasattr(item, "callspec") else ()
+            parametrize_index = (
+                tuple(item.callspec.indices.values())
+                if hasattr(item, "callspec")
+                else ()
+            )
             test_name = _test_failed_incremental[cls_name].get(parametrize_index, None)
             if test_name is not None:
                 pytest.xfail(f"previous test failed ({test_name})")
@@ -38,61 +46,5 @@ def pytest_configure(config):
         logger.propagate = False
 
     if not config.option.log_file:
-        timestamp = datetime.strftime(datetime.now(), '%Y-%m-%d_%H-%M-%S')
-        config.option.log_file = f'{app_config.LOGS_DIR}/pytest_{timestamp}.log'
-
-
-@pytest.fixture(autouse=True)
-def configure():
-    app_config.DUMP_MESSAGE_MODE = False
-
-
-@pytest.fixture()
-def client():
-    mock_client = Mock(name="client")
-    mock_client.read_chat_history = AsyncMock()
-    mock_client.read_chat_history.return_value = True
-    return mock_client
-
-
-@pytest.fixture()
-def chat():
-    return Mock(
-        id=0,
-        type=ChatType.CHANNEL,
-    )
-
-
-@pytest.fixture()
-def message(chat: Mock):
-    return Mock(
-        name="message",
-        id=0,
-        chat=chat,
-        media_group_id=None,
-    )
-
-
-@pytest.fixture()
-def media_message(chat: Mock):
-    return Mock(
-        name="media_message",
-        id=0,
-        chat=chat,
-        media_group_id=None,
-        text=None,
-    )
-
-
-@pytest.fixture()
-def media_group_message(chat: Mock):
-    message = Mock(
-        name="media_group_message",
-        id=0,
-        chat=chat,
-        media_group_id="0",
-        get_media_group=AsyncMock(),
-        text=None,
-    )
-    message.get_media_group.return_value = [message]
-    return message
+        timestamp = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M-%S")
+        config.option.log_file = f"{settings.LOGS_DIR}/pytest_{timestamp}.log"

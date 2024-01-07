@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 
 from plugins.user.sources_monitoring.common import blocking_messages
 from plugins.user.sources_monitoring.new_message import new_message
-from tests.new_message.utils import (
+from tests.plugins.user.sources_monitoring.new_message.utils import (
     default_new_message_log_asserts,
     history_new_message_asserts,
     history_with_category_asserts,
@@ -16,7 +16,7 @@ from tests.new_message.utils import (
     setup_repeated,
     setup_source,
 )
-from tests.utils import setup_json_loads
+from tests.plugins.user.sources_monitoring.utils import setup_json_loads
 
 
 @pytest.mark.asyncio
@@ -71,5 +71,9 @@ async def test_media_group_message(
 
     assert len(blocking_messages.get(key=media_group_message.chat.id)) == 0
 
-    assert 'Источник 0 отправил сообщение 0 в составе медиа группы 0, сообщения отправлены в категорию' in caplog.text
+    assert (
+        "Источник 0 отправил сообщение 0 в составе медиа группы 0, сообщения отправлены"
+        " в категорию"
+        in caplog.text
+    )
     default_new_message_log_asserts(caplog=caplog)
