@@ -12,8 +12,8 @@ from models import Source
 from plugins.user.exceptions import (
     MessageBlockedByIdError,
     MessageBlockedByMediaGroupError,
-    Operation,
 )
+from plugins.user.types import Operation
 from plugins.user.utils.chats_locks import ChatsLocks, MessagesLocks
 from plugins.user.utils.inspector import FilterInspector
 from plugins.user.utils.rewriter.footer import LINK_TEXT, FooterController

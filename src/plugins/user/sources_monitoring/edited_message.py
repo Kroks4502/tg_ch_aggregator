@@ -18,7 +18,6 @@ from plugins.user.exceptions import (
     MessageNotRewrittenError,
     MessageTooLongError,
     MessageUnknownError,
-    Operation,
 )
 from plugins.user.sources_monitoring.common import (
     add_header,
@@ -27,8 +26,10 @@ from plugins.user.sources_monitoring.common import (
     get_input_media,
     set_blocking,
 )
+from plugins.user.types import Operation
 from plugins.user.utils import custom_filters
 from plugins.user.utils.cleanup import cleanup_message
+from plugins.user.utils.dump import dump_message
 from pyrogram_fork.edit_media_message import EditMessageMedia
 
 EDIT = Operation.EDIT
@@ -37,12 +38,13 @@ EDIT = Operation.EDIT
 @Client.on_edited_message(
     custom_filters.monitored_channels & ~filters.service,
 )
-async def edit_regular_message(client: Client, message: Message):  # noqa: C901
+async def edited_message(client: Client, message: Message):  # noqa: C901
     logging.debug(
         "Источник %s изменил сообщение %s",
         message.chat.id,
         message.id,
     )
+    dump_message(message=message, operation=EDIT)
 
     blocked = None
     history_obj = None

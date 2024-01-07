@@ -1,17 +1,11 @@
 import logging
-from enum import Enum
 
 from pyrogram import errors as pyrogram_errors
 from pyrogram.types import Message
 
+from plugins.user.types import Operation
 from plugins.user.utils.chats_locks import MessagesLocks
 from settings import APP_START_DATETIME
-
-
-class Operation(Enum):
-    NEW = "отправил"
-    EDIT = "изменил"
-    DELETE = "удалил"
 
 
 class UserBaseError(Exception):

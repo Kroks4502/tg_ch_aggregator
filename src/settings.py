@@ -6,8 +6,16 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from plugins.user.types import Operation
+
 BASE_DIR = Path(__file__).parent
 SESSIONS_DIR = BASE_DIR.parent / "sessions"
+DUMP_MESSAGES_DIR = BASE_DIR.parent / "tests" / "dump_messages"
+DUMP_MESSAGES_DIRS_BY_OPERATION = {
+    Operation.NEW: DUMP_MESSAGES_DIR / "new_messages",
+    Operation.EDIT: DUMP_MESSAGES_DIR / "edited_messages",
+    Operation.DELETE: DUMP_MESSAGES_DIR / "deleted_messages",
+}
 
 LOGS_DIR = BASE_DIR.parent / "logs"
 LOG_FORMAT = "%(asctime)s : %(name)s : %(levelname)s : %(message)s"
@@ -18,6 +26,7 @@ API_ID = os.getenv("api_id")
 API_HASH = os.getenv("api_hash")
 BOT_TOKEN = os.getenv("bot_token")
 DEVELOP_MODE = os.getenv("develop_mode")
+DUMP_MESSAGE_MODE = os.getenv("dump_message_mode", False)
 
 TELEGRAM_MAX_CAPTION_LENGTH = 1024
 TELEGRAM_MAX_TEXT_LENGTH = 4096
@@ -31,6 +40,11 @@ POSTGRESQL_USER = os.getenv("postgresql_user")
 POSTGRESQL_PASSWORD = os.getenv("postgresql_password")
 POSTGRESQL_HOST = os.getenv("postgresql_host")
 POSTGRESQL_PORT = os.getenv("postgresql_port")
+
+
+if DUMP_MESSAGE_MODE:
+    for directory in DUMP_MESSAGES_DIRS_BY_OPERATION.values():
+        directory.mkdir(parents=True, exist_ok=True)
 
 
 def configure_logging():
