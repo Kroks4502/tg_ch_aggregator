@@ -91,7 +91,7 @@ class CallbackQueryRouter:
                 )
 
                 await self._send_final_text(
-                    message=callback_query.message,
+                    event=callback_query,
                     reply=menu.need_send_new_message or reply,
                     markup=(
                         None
@@ -202,7 +202,7 @@ class CallbackQueryRouter:
                     )
 
                 await self._send_final_text(
-                    message=answer_message or message,
+                    event=answer_message or message,
                     reply=not answer_message,
                     markup=menu.reply_markup,
                     text=text,
@@ -258,7 +258,7 @@ class CallbackQueryRouter:
                 text = str(error)
 
             await self._send_final_text(
-                message=message,
+                event=message,
                 reply=True,
                 text=text,
                 markup=menu.reply_markup,
@@ -325,7 +325,7 @@ class CallbackQueryRouter:
                     text = str(error)
 
                 await self._send_final_text(
-                    message=message,
+                    event=message,
                     reply=True,
                     text=text,
                     markup=menu.reply_markup,
@@ -364,22 +364,34 @@ class CallbackQueryRouter:
                 callback_query,
             )
 
-    @staticmethod
     async def _send_final_text(
-        message: "pyrogram.types.Message",
+        self,
+        event: ["pyrogram.types.Message", "pyrogram.types.CallbackQuery"],
         reply: bool,
         text: str,
         markup: Optional["pyrogram.types.InlineKeyboardMarkup"],
     ):
         if text:
             if reply:
-                await message.reply(
+                await self.client.send_message(
+                    chat_id=event.from_user.id,
                     text=text,
                     reply_markup=markup,
                     disable_web_page_preview=True,
                 )
             else:
-                await message.edit_text(
+                message = (
+                    event
+                    if isinstance(event, pyrogram.types.Message)
+                    else event.message
+                )
+
+                if message is None:
+                    raise ValueError("_send_final_text: not message for edit")
+
+                await self.client.edit_message_text(
+                    chat_id=message.from_user.id,
+                    message_id=message.id,
                     text=text,
                     reply_markup=markup,
                     disable_web_page_preview=True,
