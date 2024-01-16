@@ -390,7 +390,7 @@ class CallbackQueryRouter:
                     raise ValueError("_send_final_text: not message for edit")
 
                 await self.client.edit_message_text(
-                    chat_id=message.from_user.id,
+                    chat_id=message.chat.id,
                     message_id=message.id,
                     text=text,
                     reply_markup=markup,
