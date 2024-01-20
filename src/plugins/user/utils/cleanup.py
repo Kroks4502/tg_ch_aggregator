@@ -4,6 +4,7 @@ import re
 from pyrogram.types import Message
 
 from models import GlobalSettings, Source
+from plugins.user.utils.text_length import tg_len
 
 TEXT_SEPARATOR = "\n\n"
 STRIP_CHARS = " \n"
@@ -71,7 +72,7 @@ def remove_text(
     if tbs_strip_len_r:
         entities = cut_entities(
             entities=entities,
-            offset=len(text_before_start),
+            offset=tg_len(text_before_start),
             length=tbs_strip_len_r,
         )
 
@@ -88,7 +89,7 @@ def remove_text(
     if tae_strip_len_l:
         entities = cut_entities(
             entities=entities,
-            offset=len(text_before_start),
+            offset=tg_len(text_before_start),
             length=tae_strip_len_l,
         )
 
@@ -96,19 +97,19 @@ def remove_text(
     if tae_strip_len_r:
         entities = cut_entities(
             entities=entities,
-            offset=len(text_before_start) + len(text_after_end),
+            offset=tg_len(text_before_start) + tg_len(text_after_end),
             length=tae_strip_len_r,
         )
 
     next_offset = end - start + tbs_strip_len_l + tbs_strip_len_r + tae_strip_len_l
     if text_before_start and text_after_end:
         text = f"{text_before_start}{TEXT_SEPARATOR}{text_after_end}"
-        next_offset -= len(TEXT_SEPARATOR)
+        next_offset -= tg_len(TEXT_SEPARATOR)
         entities = push_entities(
             entities=entities,
-            offset=len(text_before_start),
-            length=len(TEXT_SEPARATOR),
-            text_length=len(text),
+            offset=tg_len(text_before_start),
+            length=tg_len(TEXT_SEPARATOR),
+            text_length=tg_len(text),
         )
     else:
         text = text_before_start or text_after_end
@@ -118,12 +119,12 @@ def remove_text(
 
 def left_strip(text: str) -> tuple[str, int]:
     res = text.lstrip(STRIP_CHARS)
-    return res, len(text) - len(res)
+    return res, tg_len(text) - tg_len(res)
 
 
 def right_strip(text: str) -> tuple[str, int]:
     res = text.rstrip(STRIP_CHARS)
-    return res, len(text) - len(res)
+    return res, tg_len(text) - tg_len(res)
 
 
 def cut_entities(entities: list, offset: int, length: int):
