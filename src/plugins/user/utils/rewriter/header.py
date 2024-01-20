@@ -4,6 +4,7 @@ from plugins.user.utils.rewriter.item import AbstractItemController
 
 SRC_TEXT_TMPL = "💬 {}"
 FWD_TEXT_TMPL = "fwd: {}"
+FWD_USR_TEXT_TMPL = "fwd_usr: {}"
 
 
 class HeaderController(AbstractItemController):

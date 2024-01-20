@@ -19,6 +19,7 @@ from plugins.user.utils.inspector import FilterInspector
 from plugins.user.utils.rewriter.footer import LINK_TEXT, FooterController
 from plugins.user.utils.rewriter.header import (
     FWD_TEXT_TMPL,
+    FWD_USR_TEXT_TMPL,
     SRC_TEXT_TMPL,
     HeaderController,
 )
@@ -179,19 +180,38 @@ def add_header(source: Source, message: Message):
             ),
             url=get_fwd_message_link(message),
         )
+    elif message.forward_sender_name:
+        # message.forward_sender_name - переслано от пользователя,
+        # который в настройках конфиденциальности
+        # скрыл указание id при пересылке его сообщений
+        header.add_item(
+            text=FWD_USR_TEXT_TMPL.format(
+                message.forward_sender_name or message.forward_from.full_name
+            ),
+        )
+    elif message.forward_from:
+        # message.forward_from - переслано от пользователя без настроек
+        header.add_item(
+            text=FWD_USR_TEXT_TMPL.format(message.forward_from.full_name),
+            url=(
+                f"https://t.me/{message.forward_from.username}"
+                if message.forward_from.username
+                else None
+            ),
+        )
 
     header.include_to_message(message=message, end_text="\n\n")
 
 
 def get_fwd_message_link(message: Message):
-    username = message.forward_from_chat.username
-    if not username:
+    chat_ref = message.forward_from_chat.username
+    if not chat_ref:
         for un in message.forward_from_chat.usernames or ():
             if un.active:
-                username = un.username
+                chat_ref = un.username
                 break
 
-    if not username:
-        username = message.forward_from_chat.id
+    if not chat_ref:
+        chat_ref = f"c/{str(message.forward_from_chat.id)[4:]}"
 
-    return f"https://t.me/{username}/{message.forward_from_message_id}"
+    return f"https://t.me/{chat_ref}/{message.forward_from_message_id}"
