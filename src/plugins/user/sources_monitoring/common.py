@@ -184,7 +184,14 @@ def add_header(source: Source, message: Message):
 
 
 def get_fwd_message_link(message: Message):
-    return (
-        f"https://t.me/{message.forward_from_chat.username}"
-        f"/{message.forward_from_message_id}"
-    )
+    username = message.forward_from_chat.username
+    if not username:
+        for un in message.forward_from_chat.usernames or ():
+            if un.active:
+                username = un.username
+                break
+
+    if not username:
+        username = message.forward_from_chat.id
+
+    return f"https://t.me/{username}/{message.forward_from_message_id}"
