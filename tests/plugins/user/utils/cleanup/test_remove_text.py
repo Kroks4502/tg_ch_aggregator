@@ -26,6 +26,15 @@ from plugins.user.utils.cleanup import remove_text
             [],
             [],
         ),
+        (
+            0,
+            0,
+            0,
+            "🐻🐼🐨🐯🐻",
+            "🐻🐼🐨🐯🐻",
+            [],
+            [],
+        ),
         # empty remove with entities
         (
             0,
@@ -44,6 +53,25 @@ from plugins.user.utils.cleanup import remove_text
                 Mock(name="entity_2", offset=0, length=5),
                 Mock(name="entity_3", offset=1, length=3),
                 Mock(name="entity_4", offset=4, length=1),
+            ],
+        ),
+        (
+            0,
+            0,
+            0,
+            "🐻🐼🐨🐯🐻",
+            "🐻🐼🐨🐯🐻",
+            [
+                Mock(name="entity_1", offset=0, length=1),
+                Mock(name="entity_2", offset=0, length=10),
+                Mock(name="entity_3", offset=1, length=6),
+                Mock(name="entity_4", offset=9, length=2),
+            ],
+            [
+                Mock(name="entity_1", offset=0, length=1),
+                Mock(name="entity_2", offset=0, length=10),
+                Mock(name="entity_3", offset=1, length=6),
+                Mock(name="entity_4", offset=9, length=2),
             ],
         ),
         # empty remove with entities & spaces
@@ -76,6 +104,35 @@ from plugins.user.utils.cleanup import remove_text
                 Mock(name="entity_8", offset=4, length=1),
             ],
         ),
+        (
+            0,
+            0,
+            1,
+            " 🐻🐼🐨🐯🐻 ",
+            "🐻🐼🐨🐯🐻",
+            [
+                Mock(name="entity_to_be_deleted", offset=0, length=1),
+                Mock(name="entity_1", offset=0, length=3),
+                Mock(name="entity_2", offset=0, length=11),
+                Mock(name="entity_3", offset=0, length=12),
+                Mock(name="entity_4", offset=1, length=2),
+                Mock(name="entity_5", offset=1, length=10),
+                Mock(name="entity_6", offset=1, length=11),
+                Mock(name="entity_7", offset=9, length=2),
+                Mock(name="entity_8", offset=9, length=3),
+                Mock(name="entity_to_be_deleted", offset=11, length=1),
+            ],
+            [
+                Mock(name="entity_1", offset=0, length=2),
+                Mock(name="entity_2", offset=0, length=10),
+                Mock(name="entity_3", offset=0, length=10),
+                Mock(name="entity_4", offset=0, length=2),
+                Mock(name="entity_5", offset=0, length=10),
+                Mock(name="entity_6", offset=0, length=10),
+                Mock(name="entity_7", offset=8, length=2),
+                Mock(name="entity_8", offset=8, length=2),
+            ],
+        ),
         # remove all
         (
             0,
@@ -88,6 +145,20 @@ from plugins.user.utils.cleanup import remove_text
                 Mock(name="entity_to_be_deleted", offset=0, length=5),
                 Mock(name="entity_to_be_deleted", offset=1, length=3),
                 Mock(name="entity_to_be_deleted", offset=4, length=1),
+            ],
+            [],
+        ),
+        (
+            0,
+            5,
+            5,
+            "🐻🐼🐨🐯🐻",
+            "",
+            [
+                Mock(name="entity_to_be_deleted", offset=0, length=2),
+                Mock(name="entity_to_be_deleted", offset=0, length=10),
+                Mock(name="entity_to_be_deleted", offset=2, length=6),
+                Mock(name="entity_to_be_deleted", offset=8, length=2),
             ],
             [],
         ),
@@ -114,6 +185,30 @@ from plugins.user.utils.cleanup import remove_text
                 Mock(name="entity_3", offset=0, length=1),
                 Mock(name="entity_4", offset=1, length=1),
                 Mock(name="entity_5", offset=2, length=1),
+            ],
+        ),
+        (
+            0,
+            2,
+            2,
+            "🐻🐼🐨🐯🐻",
+            "🐨🐯🐻",
+            [
+                Mock(name="entity_to_be_deleted", offset=0, length=2),
+                Mock(name="entity_to_be_deleted", offset=0, length=4),
+                Mock(name="entity_1", offset=0, length=10),
+                Mock(name="entity_to_be_deleted", offset=2, length=2),
+                Mock(name="entity_2", offset=2, length=4),
+                Mock(name="entity_3", offset=4, length=2),
+                Mock(name="entity_4", offset=6, length=2),
+                Mock(name="entity_5", offset=8, length=2),
+            ],
+            [
+                Mock(name="entity_1", offset=0, length=6),
+                Mock(name="entity_2", offset=0, length=2),
+                Mock(name="entity_3", offset=0, length=2),
+                Mock(name="entity_4", offset=2, length=2),
+                Mock(name="entity_5", offset=4, length=2),
             ],
         ),
         # remove from middle of text
@@ -143,6 +238,34 @@ from plugins.user.utils.cleanup import remove_text
                 Mock(name="entity_5", offset=3, length=1),
                 Mock(name="entity_6", offset=3, length=1),
                 Mock(name="entity_7", offset=3, length=1),
+            ],
+        ),
+        (
+            1,
+            4,
+            1,
+            "🐻🐼🐨🐯🐻",
+            "🐻\n\n🐻",
+            [
+                Mock(name="entity_1", offset=0, length=2),
+                Mock(name="entity_2", offset=0, length=4),
+                Mock(name="entity_3", offset=0, length=8),
+                Mock(name="entity_4", offset=0, length=10),
+                Mock(name="entity_to_be_deleted", offset=2, length=2),
+                Mock(name="entity_to_be_deleted", offset=2, length=6),
+                Mock(name="entity_5", offset=2, length=8),
+                Mock(name="entity_to_be_deleted", offset=6, length=2),
+                Mock(name="entity_6", offset=6, length=4),
+                Mock(name="entity_7", offset=8, length=2),
+            ],
+            [
+                Mock(name="entity_1", offset=0, length=2),
+                Mock(name="entity_2", offset=0, length=2),
+                Mock(name="entity_3", offset=0, length=2),
+                Mock(name="entity_4", offset=0, length=6),
+                Mock(name="entity_5", offset=4, length=2),
+                Mock(name="entity_6", offset=4, length=2),
+                Mock(name="entity_7", offset=4, length=2),
             ],
         ),
         # remove from middle of text with line break
@@ -176,6 +299,36 @@ from plugins.user.utils.cleanup import remove_text
                 Mock(name="entity_8", offset=3, length=1),
             ],
         ),
+        (
+            3,
+            6,
+            3,
+            "🐻\n\n🐼🐨🐯🐻",
+            "🐻\n\n🐻",
+            [
+                Mock(name="entity_1", offset=0, length=2),
+                Mock(name="entity_2", offset=0, length=3),
+                Mock(name="entity_3", offset=0, length=4),
+                Mock(name="entity_4", offset=0, length=6),
+                Mock(name="entity_5", offset=0, length=12),
+                Mock(name="entity_to_be_deleted", offset=2, length=1),
+                Mock(name="entity_to_be_deleted", offset=2, length=8),
+                Mock(name="entity_6", offset=2, length=10),
+                Mock(name="entity_to_be_deleted", offset=8, length=2),
+                Mock(name="entity_7", offset=8, length=4),
+                Mock(name="entity_8", offset=10, length=2),
+            ],
+            [
+                Mock(name="entity_1", offset=0, length=2),
+                Mock(name="entity_2", offset=0, length=2),
+                Mock(name="entity_3", offset=0, length=2),
+                Mock(name="entity_4", offset=0, length=2),
+                Mock(name="entity_5", offset=0, length=6),
+                Mock(name="entity_6", offset=4, length=2),
+                Mock(name="entity_7", offset=4, length=2),
+                Mock(name="entity_8", offset=4, length=2),
+            ],
+        ),
         # remove from end of text
         (
             3,
@@ -197,6 +350,28 @@ from plugins.user.utils.cleanup import remove_text
                 Mock(name="entity_2", offset=0, length=3),
                 Mock(name="entity_3", offset=0, length=3),
                 Mock(name="entity_4", offset=2, length=1),
+            ],
+        ),
+        (
+            3,
+            5,
+            2,
+            "🐻🐼🐨🐯🐻",
+            "🐻🐼🐨",
+            [
+                Mock(name="entity_1", offset=0, length=6),
+                Mock(name="entity_2", offset=0, length=8),
+                Mock(name="entity_3", offset=0, length=10),
+                Mock(name="entity_4", offset=4, length=4),
+                Mock(name="entity_to_be_deleted", offset=6, length=4),
+                Mock(name="entity_to_be_deleted", offset=6, length=2),
+                Mock(name="entity_to_be_deleted", offset=8, length=2),
+            ],
+            [
+                Mock(name="entity_1", offset=0, length=6),
+                Mock(name="entity_2", offset=0, length=6),
+                Mock(name="entity_3", offset=0, length=6),
+                Mock(name="entity_4", offset=4, length=2),
             ],
         ),
         # remove from end of text with trailing space
@@ -224,6 +399,32 @@ from plugins.user.utils.cleanup import remove_text
                 Mock(name="entity_4", offset=0, length=3),
                 Mock(name="entity_5", offset=2, length=1),
                 Mock(name="entity_6", offset=2, length=1),
+            ],
+        ),
+        (
+            3,
+            5,
+            3,
+            "🐻🐼🐨🐯🐻 ",
+            "🐻🐼🐨",
+            [
+                Mock(name="entity_1", offset=0, length=2),
+                Mock(name="entity_2", offset=0, length=6),
+                Mock(name="entity_3", offset=0, length=8),
+                Mock(name="entity_4", offset=0, length=11),
+                Mock(name="entity_5", offset=4, length=4),
+                Mock(name="entity_6", offset=4, length=7),
+                Mock(name="entity_to_be_deleted", offset=6, length=2),
+                Mock(name="entity_to_be_deleted", offset=6, length=4),
+                Mock(name="entity_to_be_deleted", offset=6, length=5),
+            ],
+            [
+                Mock(name="entity_1", offset=0, length=2),
+                Mock(name="entity_2", offset=0, length=6),
+                Mock(name="entity_3", offset=0, length=6),
+                Mock(name="entity_4", offset=0, length=6),
+                Mock(name="entity_5", offset=4, length=2),
+                Mock(name="entity_6", offset=4, length=2),
             ],
         ),
         # end with space
@@ -255,6 +456,36 @@ from plugins.user.utils.cleanup import remove_text
                 Mock(name="entity_5", offset=0, length=3),
                 Mock(name="entity_6", offset=2, length=1),
                 Mock(name="entity_7", offset=2, length=1),
+            ],
+        ),
+        (
+            4,
+            6,
+            4,
+            " 🐻🐼🐨🐯🐻 ",
+            "🐻🐼🐨",
+            [
+                Mock(name="entity_to_be_deleted", offset=0, length=1),
+                Mock(name="entity_1", offset=0, length=3),
+                Mock(name="entity_2", offset=0, length=5),
+                Mock(name="entity_3", offset=0, length=7),
+                Mock(name="entity_4", offset=0, length=12),
+                Mock(name="entity_5", offset=1, length=6),
+                Mock(name="entity_6", offset=5, length=4),
+                Mock(name="entity_7", offset=5, length=6),
+                Mock(name="entity_to_be_deleted", offset=7, length=2),
+                Mock(name="entity_to_be_deleted", offset=7, length=4),
+                Mock(name="entity_to_be_deleted", offset=7, length=5),
+                Mock(name="entity_to_be_deleted", offset=11, length=1),
+            ],
+            [
+                Mock(name="entity_1", offset=0, length=2),
+                Mock(name="entity_2", offset=0, length=4),
+                Mock(name="entity_3", offset=0, length=6),
+                Mock(name="entity_4", offset=0, length=6),
+                Mock(name="entity_5", offset=0, length=6),
+                Mock(name="entity_6", offset=4, length=2),
+                Mock(name="entity_7", offset=4, length=2),
             ],
         ),
         # end with line break
@@ -293,6 +524,43 @@ from plugins.user.utils.cleanup import remove_text
                 Mock(name="entity_9", offset=2, length=1),
                 Mock(name="entity_10", offset=2, length=1),
                 Mock(name="entity_11", offset=2, length=1),
+            ],
+        ),
+        (
+            5,
+            7,
+            5,
+            "🐻🐼🐨\n\n🐯🐻 ",
+            "🐻🐼🐨",
+            [
+                Mock(name="entity_1", offset=0, length=2),
+                Mock(name="entity_2", offset=0, length=6),
+                Mock(name="entity_3", offset=0, length=7),
+                Mock(name="entity_4", offset=0, length=12),
+                Mock(name="entity_5", offset=2, length=2),
+                Mock(name="entity_6", offset=2, length=4),
+                Mock(name="entity_7", offset=2, length=5),
+                Mock(name="entity_8", offset=2, length=6),
+                Mock(name="entity_9", offset=4, length=2),
+                Mock(name="entity_10", offset=4, length=3),
+                Mock(name="entity_11", offset=4, length=4),
+                Mock(name="entity_to_be_deleted", offset=6, length=1),
+                Mock(name="entity_to_be_deleted", offset=6, length=2),
+                Mock(name="entity_to_be_deleted", offset=6, length=7),
+                Mock(name="entity_to_be_deleted", offset=12, length=1),
+            ],
+            [
+                Mock(name="entity_1", offset=0, length=2),
+                Mock(name="entity_2", offset=0, length=6),
+                Mock(name="entity_3", offset=0, length=6),
+                Mock(name="entity_4", offset=0, length=6),
+                Mock(name="entity_5", offset=2, length=2),
+                Mock(name="entity_6", offset=2, length=4),
+                Mock(name="entity_7", offset=2, length=4),
+                Mock(name="entity_8", offset=2, length=4),
+                Mock(name="entity_9", offset=4, length=2),
+                Mock(name="entity_10", offset=4, length=2),
+                Mock(name="entity_11", offset=4, length=2),
             ],
         ),
         #
@@ -371,14 +639,14 @@ def test_remove_text_positive(
 
     assert act_text == exp_text
 
-    assert len(act_entities) == len(exp_entities)
-
-    for idx in range(len(exp_entities)):
+    for idx in range(len(act_entities)):
         act_entity = act_entities[idx]
         exp_entity = exp_entities[idx]
 
         assert act_entity._extract_mock_name() == exp_entity._extract_mock_name()
         assert act_entity.offset == exp_entity.offset
         assert act_entity.length == exp_entity.length
+
+    assert len(act_entities) == len(exp_entities)
 
     assert act_next_offset == exp_next_offset

@@ -59,6 +59,14 @@ def remove_text(
     end: int,
 ) -> tuple[str, list, int]:
     text_before_start = text[:start]
+    text_after_end = text[end:]
+
+    if cut_length := tg_len(text) - tg_len(text_before_start) - tg_len(text_after_end):
+        entities = cut_entities(
+            entities=entities,
+            offset=tg_len(text_before_start),
+            length=cut_length,
+        )
 
     text_before_start, tbs_strip_len_l = left_strip(text_before_start)
     if tbs_strip_len_l:
@@ -75,15 +83,6 @@ def remove_text(
             offset=tg_len(text_before_start),
             length=tbs_strip_len_r,
         )
-
-    if cut_length := end - start:
-        entities = cut_entities(
-            entities=entities,
-            offset=start - tbs_strip_len_l - tbs_strip_len_r,
-            length=cut_length,
-        )
-
-    text_after_end = text[end:]
 
     text_after_end, tae_strip_len_l = left_strip(text_after_end)
     if tae_strip_len_l:
