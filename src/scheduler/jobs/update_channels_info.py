@@ -26,6 +26,10 @@ async def update_channels_info_job():
 
     for db_obj in (*Source.select(), *Category.select()):
         tg_chat = user_client_chats.get(db_obj.id)
+
+        if not tg_chat:
+            tg_chat = await user_client.get_chat(db_obj.id)
+
         if not tg_chat:
             await send_not_found_chat_message_to_admins(db_obj)
             continue
