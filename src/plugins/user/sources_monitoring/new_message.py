@@ -1,14 +1,14 @@
 import json
 import logging
 
+import telethon
 from peewee import DoesNotExist
-from pyrogram import Client
-from pyrogram import errors as pyrogram_errors
-from pyrogram import filters
-from pyrogram.enums import MessageMediaType
-from pyrogram.types import Message
+from telethon import events
+from telethon.tl import patched, types
 
 from alerts.regex_rule import check_message_by_regex_alert_rule
+from clients import user_client
+from common.types import MessageEventType
 from models import MessageHistory, Source
 from plugins.user.exceptions import (
     MessageBadRequestError,
@@ -17,7 +17,6 @@ from plugins.user.exceptions import (
     MessageFilteredError,
     MessageForwardsRestrictedError,
     MessageIdInvalidError,
-    MessageMediaWithoutCaptionError,
     MessageRepeatedError,
     MessageTooLongError,
     MessageUnknownError,
@@ -26,68 +25,96 @@ from plugins.user.sources_monitoring.common import (
     add_header,
     cut_long_message,
     get_filter_id_or_none,
-    get_input_media,
     set_blocking,
 )
 from plugins.user.types import Operation
-from plugins.user.utils import custom_filters
 from plugins.user.utils.cleanup import cleanup_message
 from plugins.user.utils.dump import dump_message
 from plugins.user.utils.senders import send_error_to_admins
-from pyrogram_fork.send_media_group import SendMediaGroup
 
 NEW = Operation.NEW
+NEW_GROUP = Operation.NEW_GROUP
+RECEIVING_MSG_TPL = "Источник %s %s %s"
 
 
-@Client.on_message(
-    custom_filters.monitored_channels & ~filters.service,
-)
-async def new_message(client: Client, message: Message):  # noqa: C901
-    logging.debug(
-        "Источник %s отправил сообщение %s",
-        message.chat.id,
-        message.id,
+def is_not_a_group(event: patched.Message):
+    return True if event.grouped_id is None else None
+
+
+# @Client.on_message(custom_filters.monitored_channels & ~filters.service)
+@user_client.on(events.NewMessage(func=is_not_a_group))
+async def new_message(event: MessageEventType):
+    logging.debug(RECEIVING_MSG_TPL, event.chat_id, NEW, event.id)
+    dump_message(event=event, operation=NEW)
+    await processing_new_messages(
+        chat_id=event.chat_id,
+        event_id=event.id,
+        source_messages=[event.message],
     )
-    dump_message(message=message, operation=NEW)
 
+
+@user_client.on(events.Album())
+async def new_group_messages(event: events.Album.Event):
+    logging.debug(RECEIVING_MSG_TPL, event.chat_id, NEW_GROUP, event.grouped_id)
+    dump_message(event=event, operation=NEW)
+    await processing_new_messages(
+        chat_id=event.chat_id,
+        event_id=event.grouped_id,
+        source_messages=event.messages,
+    )
+
+
+async def processing_new_messages(
+    chat_id: int,
+    event_id: int,
+    source_messages: list[patched.Message],
+) -> None:  # noqa: C901 todo
+    """
+    Обработка новых сообщений.
+
+    :param chat_id: ID чата.
+    :param event_id: ID сообщения или группы сообщений.
+    :param source_messages: Экземпляры сообщений источника.
+    """
     blocked = None
-    source_messages = None
     source = None
     history = dict()
     exc = None
     try:
         blocked = set_blocking(
+            chat_id=chat_id,
+            block_id=event_id,
             operation=NEW,
-            message=message,
-            block_value=message.media_group_id or message.id,
         )
 
-        if message.media_group_id:
-            source_messages = await message.get_media_group()  # Первый await !
-        else:
-            source_messages = [message]
-
-        source = Source.get(message.chat.id)
+        source = Source.get(chat_id)
 
         repeated = False
         filtered = False
         for msg in source_messages:
-            repeat_history_id = get_repeated_history_id_or_none(
-                message=msg,
-            )
+            if msg.fwd_from:
+                repeat_history_id = get_repeated_history_id_or_none(
+                    chat_id=msg.fwd_from.from_id.chat_id,
+                    message_id=msg.fwd_from.saved_from_msg_id,
+                )
+            else:
+                repeat_history_id = get_repeated_history_id_or_none(
+                    chat_id=msg.chat.id,
+                    message_id=msg.id,
+                )
             repeated = True if repeat_history_id else repeated
 
-            filter_id = get_filter_id_or_none(message=msg, source_id=source.id)
+            filter_id = get_filter_id_or_none(source_id=source.id, message=msg)
             filtered = True if filter_id else filtered
 
             history[msg.id] = MessageHistory(
                 source_id=source.id,
                 source_message_id=msg.id,
-                source_media_group_id=msg.media_group_id,
+                source_media_group_id=msg.grouped_id,
                 source_forward_from_chat_id=(
-                    msg.forward_from_chat.id if msg.forward_from_message_id else None
+                    msg.fwd_from.from_id if msg.fwd_from else None
                 ),
-                source_forward_from_message_id=msg.forward_from_message_id,
+                source_forward_from_message_id=msg.fwd_from.saved_from_msg_id,
                 category_id=source.category_id,
                 repeat_history_id=repeat_history_id,
                 filter_id=filter_id,
@@ -100,40 +127,38 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             )
 
         if repeated:
-            raise MessageRepeatedError(operation=NEW, message=message)
+            raise MessageRepeatedError(chat_id, event_id, NEW)
 
         if filtered:
-            raise MessageFilteredError(operation=NEW, message=message)
+            raise MessageFilteredError(chat_id, event_id, NEW)
 
-        if not message.media_group_id:
+        if len(source_messages) == 1:
             category_messages = [
                 await new_one_message(
-                    message=message,
+                    message=source_messages[0],
                     source=source,
                 )
             ]
 
             logging.info(
                 "Источник %s отправил сообщение %s, оно отправлено в категорию %s",
-                message.chat.id,
-                message.id,
+                chat_id,
+                event_id,
                 source.category_id,
             )
-        else:  # Медиа группа
+        else:
             category_messages = await new_media_group_messages(
-                client=client,
                 messages=source_messages,
                 source=source,
             )
 
             logging.info(
                 (
-                    "Источник %s отправил сообщение %s в составе медиа группы %s, "
-                    "сообщения отправлены в категорию %s"
+                    "Источник %s отправил группу сообщений %s, они отправлены в"
+                    " категорию %s"
                 ),
-                message.chat.id,
-                message.id,
-                message.media_group_id,
+                chat_id,
+                event_id,
                 source.category_id,
             )
 
@@ -141,7 +166,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
             history_obj = history[src_msg.id]
             history_obj.category_message_rewritten = source.is_rewrite
             history_obj.category_message_id = cat_msg.id
-            history_obj.category_media_group_id = cat_msg.media_group_id
+            history_obj.category_media_group_id = cat_msg.grouped_id
             history_obj.data["first_message"]["category"] = json.loads(
                 cat_msg.__str__()
             )
@@ -153,73 +178,80 @@ async def new_message(client: Client, message: Message):  # noqa: C901
 
     except MessageBaseError as e:
         exc = e
-    except pyrogram_errors.MessageIdInvalid as error:
-        exc = MessageIdInvalidError(operation=NEW, message=message, error=error)
-    except pyrogram_errors.ChatForwardsRestricted:
-        exc = MessageForwardsRestrictedError(operation=NEW, message=message)
+    except telethon.errors.MessageIdInvalidError as error:
+        exc = MessageIdInvalidError(
+            chat_id=chat_id,
+            event_id=event_id,
+            operation=NEW,
+            error=error,
+            messages=source_messages,
+        )
+    except telethon.errors.ChatForwardsRestrictedError:
+        exc = MessageForwardsRestrictedError(
+            chat_id=chat_id,
+            event_id=event_id,
+            operation=NEW,
+        )
         if source and not source.is_rewrite:
             await send_error_to_admins(
-                f"⚠ Источник {message.chat.title} запрещает пересылку сообщений. "
-                "Установите режим перепечатывания сообщений."
+                f"⚠ Источник {source_messages[0].chat.title} запрещает пересылку"
+                " сообщений. Установите режим перепечатывания сообщений."
             )
     except (
-        pyrogram_errors.MediaCaptionTooLong,
-        pyrogram_errors.MessageTooLong,
+        telethon.errors.MediaCaptionTooLongError,
+        telethon.errors.MessageTooLongError,
     ) as error:
-        exc = MessageTooLongError(operation=NEW, message=message, error=error)
-    except pyrogram_errors.BadRequest as error:
-        exc = MessageBadRequestError(operation=NEW, message=message, error=error)
+        exc = MessageTooLongError(
+            chat_id=chat_id,
+            event_id=event_id,
+            operation=NEW,
+            error=error,
+            messages=source_messages,
+        )
+    except telethon.errors.BadRequestError as error:
+        exc = MessageBadRequestError(
+            chat_id=chat_id,
+            event_id=event_id,
+            operation=NEW,
+            error=error,
+            messages=source_messages,
+        )
     except Exception as error:
-        exc = MessageUnknownError(operation=NEW, message=message, error=error)
+        exc = MessageUnknownError(
+            chat_id=chat_id,
+            event_id=event_id,
+            operation=NEW,
+            error=error,
+            messages=source_messages,
+        )
+    else:
+        await user_client.send_read_acknowledge(
+            entity=chat_id,
+            message=source_messages,
+        )
     finally:
         if blocked:
-            blocked.remove(value=message.media_group_id or message.id)
+            blocked.remove(value=event_id)
 
-        if exc and (history_obj := history.get(message.id)):
+        if exc and (history_obj := history.get(min(msg.id for msg in source_messages))):
             history_obj.data["first_message"]["exception"] = exc.to_dict()
 
         for history_obj in history.values():
             history_obj.save()
 
-        if source_messages:
-            await client.read_chat_history(
-                chat_id=message.chat.id,
-                max_id=max(msg.id for msg in source_messages),
-            )
 
-
-def get_repeated_history_id_or_none(message: Message) -> int | None:
+def get_repeated_history_id_or_none(chat_id: int, message_id: int) -> int | None:
     """Получить id из истории сообщения."""
-    if message.forward_from_chat:  # Сообщение переслано в источник из другого чата
-        # Сообщение уже может быть в истории по этому чату, если он является источником
-        source_chat_id = message.forward_from_chat.id
-        source_message_id = message.forward_from_message_id
-
-        # Проверяем не пересылалось ли уже в других источниках это сообщение
-        forward_from_chat_id = message.forward_from_chat.id
-        forward_from_message_id = message.forward_from_message_id
-    else:  # Сообщение не является пересланным
-        # Проверяем наличие этого сообщения в истории
-        source_chat_id = message.chat.id
-        source_message_id = message.id
-
-        # Проверяем не получили ли мы это сообщение ранее как пересланное из другого источника
-        forward_from_chat_id = message.chat.id
-        forward_from_message_id = message.id
-
     mh: type[MessageHistory] = MessageHistory.alias()
     try:
         history_obj = (
             mh.select(mh.id)
             .where(
                 (
-                    (
-                        (mh.source_id == source_chat_id)
-                        & (mh.source_message_id == source_message_id)
-                    )
+                    ((mh.source_id == chat_id) & (mh.source_message_id == message_id))
                     | (
-                        (mh.source_forward_from_chat_id == forward_from_chat_id)
-                        & (mh.source_forward_from_message_id == forward_from_message_id)
+                        (mh.source_forward_from_chat_id == chat_id)
+                        & (mh.source_forward_from_message_id == message_id)
                     )
                     # В том числе как уже пересланное из другого источника
                 )
@@ -237,10 +269,10 @@ def get_repeated_history_id_or_none(message: Message) -> int | None:
 
 
 async def new_one_message(
-    message: Message,
+    message: patched.Message,
     source: Source,
     disable_notification: bool = False,
-) -> Message:
+) -> patched.Message:
     """
     :return: Новое сообщение в категории, которой принадлежит источник.
     """
@@ -276,7 +308,7 @@ async def new_one_message(
         )
 
 
-def get_reply_to(message: Message):
+def get_reply_to(message: patched.Message):
     if not (message.reply_to_message and message.reply_to_message.chat):
         return dict(
             reply_to_chat_id=None,
@@ -312,11 +344,10 @@ def get_reply_to(message: Message):
 
 
 async def new_media_group_messages(
-    client: Client,
-    messages: list[Message],
+    messages: list[patched.Message],
     source: Source,
     disable_notification: bool = False,
-) -> list[Message]:
+) -> list[patched.Message]:
     """
     :return: Список новых сообщений в категории, которой принадлежит источник.
     """
@@ -347,7 +378,7 @@ async def new_media_group_messages(
     )
 
 
-def is_media_message_with_caption(operation: Operation, message: Message):
+def is_media_message_with_caption(operation: Operation, message: patched.Message):
     """
     Сообщение является медиа с возможностью подписи.
 

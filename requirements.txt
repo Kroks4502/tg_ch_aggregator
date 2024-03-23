@@ -1,9 +1,7 @@
 peewee==3.16.2
-# Pyrogram>=2.0.106
-git+https://github.com/Kroks4502/pyrogram.git
 python-dotenv==1.0.0
 APScheduler==3.10.1
-TgCrypto==1.2.5
 async_lru==2.0.2
 psycopg2-binary==2.9.6
 yoyo-migrations==8.2.0
+Telethon>=1.33.1

@@ -1,18 +1,10 @@
 import inspect
 
-from pyrogram.types import (
-    InputMediaAudio,
-    InputMediaDocument,
-    InputMediaPhoto,
-    InputMediaVideo,
-    Message,
-)
+from telethon import types
+from telethon.tl import patched
 
 from models import Source
-from plugins.user.exceptions import (
-    MessageBlockedByIdError,
-    MessageBlockedByMediaGroupError,
-)
+from plugins.user.exceptions import MessageBlockedByIdError
 from plugins.user.types import Operation
 from plugins.user.utils.chats_locks import ChatsLocks, MessagesLocks
 from plugins.user.utils.inspector import FilterInspector
@@ -30,47 +22,54 @@ blocking_messages = ChatsLocks("all")
 
 
 def set_blocking(
-    operation: Operation, message: Message, block_value: int
+    chat_id: int,
+    block_id: int,
+    operation: Operation,
 ) -> MessagesLocks:
     """
-    Установить блокировку для сущности.
+    Установить блокировку сообщения или группы сообщений.
 
-    :param operation: Производимая операция (для исключения).
-    :param message: Сообщение источника (для исключения).
-    :param block_value: ID для блокировки (message.id или message.media_group_id).
-    :raise MessageBlockedByMediaGroupError: Сообщение заблокировано в составе медиагруппы.
+    :param chat_id: ID чата.
+    :param block_id: ID сообщения или группы сообщений.
+    :param operation: Тип операции.
+
     :raise MessageBlockedByIdError: Сообщение заблокировано по ID
-    :return:
+
+    :return: Объект управления состоянием блокировки.
     """
-    blocked = blocking_messages.get(key=message.chat.id)
-    if blocked.contains(key=message.media_group_id):
-        raise MessageBlockedByMediaGroupError(
-            operation=operation, message=message, blocked=blocked
-        )
-    if blocked.contains(key=message.id):
+    blocked = blocking_messages.get(key=chat_id)
+    if blocked.contains(key=block_id):
         raise MessageBlockedByIdError(
-            operation=operation, message=message, blocked=blocked
+            chat_id=chat_id,
+            event_id=block_id,
+            operation=operation,
+            blocked=blocked,
         )
-    blocked.add(value=block_value)
+    blocked.add(value=block_id)
     return blocked
 
 
-def get_filter_id_or_none(message: Message, source_id: int) -> int | None:
+def get_filter_id_or_none(
+    source_id: int,
+    message: patched.Message,
+) -> int | None:
     """Получить ID фильтра, который не прошёл текст сообщения."""
-    inspector = FilterInspector(message=message, source_id=source_id)
+    inspector = FilterInspector(
+        source_id=source_id,
+        text=message.message,
+    )
 
-    if filter_obj := inspector.check_message_type():
+    if filter_obj := inspector.check_message_type(message):
         return filter_obj.id
 
-    if message.text or message.caption:
+    if message.message:
         if filter_obj := inspector.check_white_text():
             return filter_obj.id
         if filter_obj := inspector.check_text():
             return filter_obj.id
 
-    entities = message.entities or message.caption_entities
-    if entities:
-        for entity in entities:
+    if message.entities:
+        for entity in message.entities:
             if filter_obj := inspector.check_entities(entity):
                 return filter_obj.id
 

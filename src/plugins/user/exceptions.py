@@ -1,7 +1,8 @@
 import logging
+from string import Formatter
 
-from pyrogram import errors as pyrogram_errors
-from pyrogram.types import Message
+import telethon
+from telethon.tl.patched import Message
 
 from plugins.user.types import Operation
 from plugins.user.utils.chats_locks import MessagesLocks
@@ -13,37 +14,58 @@ class UserBaseError(Exception):
 
 
 class MessageBaseError(UserBaseError):
-    stack_info = False
-    exc_info = None
+    logging_stack_info = False
+    logging_exc_info = None
     logging_level = logging.INFO
-    start_tmpl = "Источник {source_id} {operation} сообщение {message_id}"
-    end_tmpl = ""
-    include_message = False
 
-    def __init__(self, operation: Operation, message: Message, **kwargs):
-        self.message = message
+    message_tmpl = "{chat_id} {operation} {event_id}"
+    additional_message_tmpl = None
+
+    def __init__(
+        self,
+        chat_id: int,
+        event_id: int,
+        operation: Operation,
+        **kwargs,
+    ):
+        self.chat_id = chat_id
+        self.event_id = event_id
         self.operation = operation
-        self.text = self.generate_exc_text(**kwargs)
         self.kwargs = kwargs
+        self.text = self.generate_message()
         logging.log(
             level=self.logging_level,
             msg=f"{self.__class__.__name__} : {self.text}",
-            exc_info=self.exc_info,
-            stack_info=self.stack_info,
+            exc_info=self.logging_exc_info,
+            stack_info=self.logging_stack_info,
         )
 
-    def generate_exc_text(self, **kwargs):
-        start_text = self.start_tmpl.format(
-            source_id=self.message.chat.id,
-            operation=self.operation.value,
-            message_id=self.message.id,
-        )
+    def generate_message(self):
+        text_items = [
+            self.message_tmpl.format(
+                chat_id=self.chat_id,
+                operation=self.operation.value,
+                event_id=self.event_id,
+            )
+        ]
 
-        text_items = [start_text]
-        if end_text := self.end_tmpl.format(**kwargs):
-            text_items.append(end_text)
-        if self.include_message:
-            text_items.append(f"message={self.message}")
+        if self.additional_message_tmpl:
+            text_items.append(
+                self.additional_message_tmpl.format(
+                    **{
+                        key: self.kwargs.pop(key, "<undefined>")
+                        for _, key, _, _ in Formatter().parse(
+                            self.additional_message_tmpl
+                        )
+                        if key
+                    }
+                )
+            )
+
+        if self.kwargs:
+            text_items.append(
+                ", ".join((f"{key}={value}" for key, value in self.kwargs.items()))
+            )
 
         return f"{', '.join(text_items)}."
 
@@ -53,43 +75,31 @@ class MessageBaseError(UserBaseError):
             level=logging.getLevelName(self.logging_level),
             text=self.text,
             operation=self.operation.name,
-            kwargs=str(self.kwargs),
         )
 
     def __str__(self):
-        return self.text
-
-
-class MessageBlockedByMediaGroupError(MessageBaseError):
-    """Сообщение было ранее заблокировано по message.media_group_id."""
-
-    end_tmpl = "но медиа группа {media_group_id} уже заблокирована {blocked}"
-
-    def __init__(self, operation: Operation, message: Message, blocked: MessagesLocks):
-        super().__init__(
-            operation=operation,
-            message=message,
-            media_group_id=message.media_group_id,
-            blocked=blocked,
-        )
+        return f"{self.__class__.__name__} : {self.text}"
 
 
 class MessageBlockedByIdError(MessageBaseError):
     """Сообщение было ранее заблокировано по message.id."""
 
-    end_tmpl = "но оно уже заблокировано {blocked}"
-
-    def __init__(self, operation: Operation, message: Message, blocked: MessagesLocks):
-        super().__init__(operation=operation, message=message, blocked=blocked)
+    additional_message_tmpl = "оно заблокировано {blocked}"
 
 
 class MessageNotFoundOnHistoryError(MessageBaseError):
     """Сообщения нет в истории."""
 
     logging_level = logging.WARNING
-    end_tmpl = "его нет в истории date={date}, edit_date={edit_date}"
+    additional_message_tmpl = "его нет в истории date={date}, edit_date={edit_date}"
 
-    def __init__(self, operation: Operation, message: Message):
+    def __init__(
+        self,
+        chat_id: int,
+        event_id: int,
+        operation: Operation,
+        message: Message,
+    ):
         if (
             message.date
             and message.edit_date
@@ -101,27 +111,30 @@ class MessageNotFoundOnHistoryError(MessageBaseError):
         ):
             self.logging_level = logging.INFO
 
-        if not message.date and operation != Operation.DELETE:
-            self.include_message = True
-
-        super().__init__(
+        kwargs = dict(
+            chat_id=chat_id,
+            event_id=event_id,
             operation=operation,
-            message=message,
             date=message.date,
             edit_date=message.edit_date,
         )
+
+        if not message.date and operation != Operation.DELETE:
+            kwargs["message"] = message
+
+        super().__init__(**kwargs)
 
 
 class MessageNotOnCategoryError(MessageBaseError):
     """Сообщение не публиковалось в категории."""
 
-    end_tmpl = "оно не публиковалось в категории"
+    additional_message_tmpl = "оно не публиковалось в категории"
 
 
 class MessageNotRewrittenError(MessageBaseError):
     """Сообщение нельзя отредактировать."""
 
-    end_tmpl = (
+    additional_message_tmpl = (
         "оно не может быть изменено в категории, "
         "потому что было переслано и не перепечатывалось"
     )
@@ -130,103 +143,81 @@ class MessageNotRewrittenError(MessageBaseError):
 class MessageNotModifiedError(MessageBaseError):
     """Сообщение не удалось перепечатать."""
 
-    end_tmpl = "перепечатать сообщение в категории не удалось {error}"
+    additional_message_tmpl = "перепечатать сообщение в категории не удалось {error}"
 
     def __init__(
         self,
+        chat_id: int,
+        event_id: int,
         operation: Operation,
         message: Message,
-        error: pyrogram_errors.MessageNotModified,
+        error: telethon.errors.MessageNotModifiedError,
     ):
-        super().__init__(operation=operation, message=message, error=error)
+        super().__init__(
+            chat_id=chat_id,
+            event_id=event_id,
+            operation=operation,
+            message=message,
+            error=error,
+        )
 
 
 class MessageRepeatedError(MessageBaseError):
     """Сообщение уже опубликовано в категории."""
 
-    end_tmpl = "оно уже опубликовано в категории"
+    additional_message_tmpl = "оно уже опубликовано в категории"
 
 
 class MessageFilteredError(MessageBaseError):
     """Сообщение не прошло фильтрацию."""
 
-    end_tmpl = "оно было отфильтровано"
+    additional_message_tmpl = "оно было отфильтровано"
 
 
 class MessageMediaWithoutCaptionError(MessageBaseError):
     """Сообщение не может содержать подпись."""
 
-    end_tmpl = "но оно не может содержать подпись"
+    additional_message_tmpl = "но оно не может содержать подпись"
 
 
 class MessageIdInvalidError(MessageBaseError):
     """Случай когда почти одновременно приходит сообщение о редактировании и удалении сообщения из источника."""
 
     logging_level = logging.WARNING
-    end_tmpl = "оно привело к ошибке {error}"
-
-    def __init__(
-        self,
-        operation: Operation,
-        message: Message,
-        error: pyrogram_errors.MessageIdInvalid,
-    ):
-        super().__init__(operation=operation, message=message, error=error)
+    additional_message_tmpl = "оно привело к ошибке {error}"
 
 
 class MessageForwardsRestrictedError(MessageBaseError):
     """Сообщение запрещено пересылать."""
 
     logging_level = logging.WARNING
-    end_tmpl = "но запрещает пересылку сообщений"
+    additional_message_tmpl = "но запрещает пересылку сообщений"
 
 
 class MessageTooLongError(MessageBaseError):
     """Сообщение содержит слишком длинный текст."""
 
     logging_level = logging.ERROR
-    end_tmpl = "но при перепечатывании оно превышает лимит знаков {error}"
-
-    def __init__(
-        self,
-        operation: Operation,
-        message: Message,
-        error: pyrogram_errors.MediaCaptionTooLong | pyrogram_errors.MessageTooLong,
-    ):
-        super().__init__(operation=operation, message=message, error=error)
+    additional_message_tmpl = "при перепечатывании оно превышает лимит знаков {error}"
 
 
 class MessageBadRequestError(MessageBaseError):
     """Сообщение привело к необработанной ошибке при запросе."""
 
     logging_level = logging.ERROR
-    end_tmpl = "оно привело к необработанной ошибке при запросе {error}"
-
-    def __init__(
-        self,
-        operation: Operation,
-        message: Message,
-        error: pyrogram_errors.BadRequest,
-    ):
-        super().__init__(operation=operation, message=message, error=error)
+    additional_message_tmpl = "оно привело к необработанной ошибке при запросе {error}"
 
 
 class MessageUnknownError(MessageBaseError):
     """Сообщение привело к неизвестной ошибке."""
 
     logging_level = logging.ERROR
-    end_tmpl = "оно привело к неизвестной ошибке {error}"
-
-    def __init__(
-        self,
-        operation: Operation,
-        message: Message,
-        error: Exception,
-    ):
-        super().__init__(operation=operation, message=message, error=error)
+    additional_message_tmpl = "оно привело к неизвестной ошибке {error}"
 
 
 class MessageCleanedFullyError(MessageBaseError):
     """Сообщение при очистке осталось без текста."""
 
-    end_tmpl = "при очистке оно осталось без текста и не будет опубликовано в категории"
+    additional_message_tmpl = (
+        "при очистке оно осталось без текста и не будет опубликовано в категории"
+    )

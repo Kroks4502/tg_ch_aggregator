@@ -1,25 +1,27 @@
 import logging
 import re
-from typing import Iterable
+from typing import Any, Iterable
 
-from pyrogram.enums import MessageEntityType
-from pyrogram.types import Message, MessageEntity
+from telethon.tl import types
 
-from filter_types import FilterMessageType, FilterType
+from filter_types import FilterEntityType, FilterMessageType, FilterType
 from models import Filter
 
 
 class FilterInspector:
-    def __init__(self, message: Message, source_id: int):
-        self._message = message
-        self._text = message.text or message.caption
-        self._source_id = source_id
+    def __init__(
+        self,
+        source_id: int,
+        text: str | None,
+    ):
+        self.source_id = source_id
+        self.text = text
 
-    def check_message_type(self) -> Filter | None:
+    def check_message_type(self, message: Any) -> Filter | None:
         for filter_obj in self._get_filters(FilterType.MESSAGE_TYPE):
             try:
                 if getattr(
-                    self._message,
+                    message,
                     getattr(FilterMessageType, filter_obj.pattern).value[1],
                 ):
                     return filter_obj
@@ -28,59 +30,58 @@ class FilterInspector:
 
     def check_white_text(self) -> Filter | None:
         for filter_obj in self._get_filters(FilterType.ONLY_WHITE_TEXT):
-            if not self._search(filter_obj.pattern, self._text):
+            if not self._search(filter_obj.pattern, self.text):
                 return filter_obj
         return  # noqa: R502
 
     def check_text(self) -> Filter | None:
         for filter_obj in self._get_filters(FilterType.TEXT):
-            if self._search(filter_obj.pattern, self._text):
+            if self._search(filter_obj.pattern, self.text):
                 return filter_obj
         return  # noqa: R502
 
-    def check_entities(self, entity: MessageEntity) -> Filter | None:
+    def check_entities(self, entity: types.TypeMessageEntity) -> Filter | None:
         if result := self._check_entity_type(entity):
             return result
 
-        if entity.type == MessageEntityType.HASHTAG:
+        if isinstance(entity, types.MessageEntityHashtag):
             return self._check_hashtag(entity)
-        if entity.type == MessageEntityType.TEXT_LINK:
+        if isinstance(entity, types.MessageEntityTextUrl):
             return self._check_text_link(entity)
-        if entity.type == MessageEntityType.URL:
+        if isinstance(entity, types.MessageEntityUrl):
             return self._check_url(entity)
         return  # noqa: R502
 
-    def _check_entity_type(self, entity: MessageEntity) -> Filter | None:
+    def _check_entity_type(self, entity: types.TypeMessageEntity) -> Filter | None:
         for filter_obj in self._get_filters(FilterType.ENTITY_TYPE):
             try:
-                if entity.type == getattr(
-                    MessageEntityType, filter_obj.pattern.upper()
-                ):
+                fet = getattr(FilterEntityType, filter_obj.pattern.upper())
+                if isinstance(entity, fet.value[1]):
                     return filter_obj
             except AttributeError as e:
                 logging.error(e, exc_info=True)
         return  # noqa: R502
 
-    def _check_hashtag(self, entity: MessageEntity) -> Filter | None:
+    def _check_hashtag(self, entity: types.TypeMessageEntity) -> Filter | None:
         for filter_obj in self._get_filters(FilterType.HASHTAG):
             if self._search(
                 filter_obj.pattern,
-                self._text[entity.offset : entity.offset + entity.length],
+                self.text[entity.offset : entity.offset + entity.length],
             ):
                 return filter_obj
         return  # noqa: R502
 
-    def _check_text_link(self, entity: MessageEntity) -> Filter | None:
+    def _check_text_link(self, entity: types.TypeMessageEntity) -> Filter | None:
         for filter_obj in self._get_filters(FilterType.URL):
             if self._search(filter_obj.pattern, entity.url):
                 return filter_obj
         return  # noqa: R502
 
-    def _check_url(self, entity: MessageEntity) -> Filter | None:
+    def _check_url(self, entity: types.TypeMessageEntity) -> Filter | None:
         for filter_obj in self._get_filters(FilterType.URL):
             if self._search(
                 filter_obj.pattern,
-                self._text[entity.offset : entity.offset + entity.length],
+                self.text[entity.offset : entity.offset + entity.length],
             ):
                 return filter_obj
         return  # noqa: R502
@@ -88,7 +89,7 @@ class FilterInspector:
     def _get_filters(self, f_type: FilterType) -> Iterable[Filter]:
         return Filter.select().where(
             (Filter.type == f_type.value)
-            & ((Filter.source == self._source_id) | (Filter.source.is_null()))
+            & ((Filter.source == self.source_id) | (Filter.source.is_null()))
         )
 
     @staticmethod

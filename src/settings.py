@@ -1,6 +1,7 @@
 import datetime as dt
 import logging
 import os
+import platform
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -8,11 +9,16 @@ from dotenv import load_dotenv
 
 from plugins.user.types import Operation
 
+APP_VERSION = f"Migrate to telethon 0.0.0"
+DEVICE_MODEL = f"{platform.python_implementation()} {platform.python_version()}"
+SYSTEM_VERSION = f"{platform.system()} {platform.release()}"
+
 BASE_DIR = Path(__file__).parent
-SESSIONS_DIR = BASE_DIR.parent / "sessions"
+SESSIONS_DIR = BASE_DIR.parent / "sessions_telethon"
 DUMP_MESSAGES_DIR = BASE_DIR.parent / "tests" / "dump_messages"
 DUMP_MESSAGES_DIRS_BY_OPERATION = {
-    Operation.NEW: DUMP_MESSAGES_DIR / "new_messages",
+    Operation.NEW: DUMP_MESSAGES_DIR / "new_message",
+    Operation.NEW_GROUP: DUMP_MESSAGES_DIR / "new_group_messages",
     Operation.EDIT: DUMP_MESSAGES_DIR / "edited_messages",
     Operation.DELETE: DUMP_MESSAGES_DIR / "deleted_messages",
 }
@@ -65,5 +71,7 @@ def configure_logging():
     if DEVELOP_MODE:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger("peewee").setLevel(logging.DEBUG)
-        logging.getLogger("pyrogram").setLevel(logging.INFO)
+        logging.getLogger("telethon.client.updates").setLevel(logging.DEBUG)
+        logging.getLogger("telethon.network").setLevel(logging.DEBUG)
+        # logging.getLogger("pyrogram").setLevel(logging.INFO)
         logging.getLogger("apscheduler").setLevel(logging.INFO)

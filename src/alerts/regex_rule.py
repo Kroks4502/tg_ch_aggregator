@@ -1,7 +1,7 @@
 import json
 import re
 
-from pyrogram.types import Message
+from telethon.tl.custom import Message
 
 from alerts.configs import AlertRegexHistory, MatchData
 from common.call_handlers import call_callback_query_handler
@@ -14,10 +14,8 @@ async def check_message_by_regex_alert_rule(
     category_id: int,
     message: Message,
 ):
-    if not (message.text or message.caption):
+    if not message.text:
         return
-
-    text = str(message.text or message.caption)
 
     for rule_obj in AlertRule.select().where(
         ((AlertRule.category_id == category_id) | (AlertRule.category_id.is_null()))
@@ -25,7 +23,7 @@ async def check_message_by_regex_alert_rule(
     ):
         match = None
         pattern = rule_obj.config["regex"]
-        for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+        for match in re.finditer(pattern, message.text, flags=re.IGNORECASE):
             break
 
         if not match:
