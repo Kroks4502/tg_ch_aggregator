@@ -68,7 +68,11 @@ class ButtonAdder(ButtonAdderBase):
         self._add_row_button(
             button=SOURCES_BTN,
             model=Source,
-            where=Source.category_id == category_id if category_id else None,
+            where=(
+                ((Source.category_id == category_id) & (Source.is_deleted == False))
+                if category_id
+                else (Source.is_deleted == False)
+            ),
             back_step=back_step,
         )
 

@@ -18,7 +18,7 @@ async def get_user_formatted_link(chat_id: int) -> str:
             f'{chat.last_name + " " if chat.last_name else ""}'
         )
         if full_name:
-            return f'{full_name + " " if full_name else "" }…{str(chat_id)[-5:]}'
+            return f'{full_name + " " if full_name else ""}…{str(chat_id)[-5:]}'
     except RPCError as e:
         logging.warning(e, exc_info=True)
     return str(chat_id)

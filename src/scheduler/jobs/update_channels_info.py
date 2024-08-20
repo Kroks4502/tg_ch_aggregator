@@ -24,7 +24,10 @@ async def update_channels_info_job():
         dialog.chat.id: dialog.chat async for dialog in user_client.get_dialogs()
     }
 
-    for db_obj in (*Source.select(), *Category.select()):
+    for db_obj in (
+        *Source.select().where(Source.is_deleted == False),
+        *Category.select(),
+    ):
         tg_chat = user_client_chats.get(db_obj.id)
 
         if not tg_chat:

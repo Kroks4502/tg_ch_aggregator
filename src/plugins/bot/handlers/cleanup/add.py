@@ -19,7 +19,10 @@ async def add_cleanup_regex_waiting_input(
 
     source_id = menu.path.get_value("s")
     if source_id:
-        source_obj: Source = Source.get(source_id)
+        source_obj: Source = Source.get(
+            id=source_id,
+            is_deleted=False,
+        )
         source_obj.cleanup_list.append(pattern)
         source_obj.save()
     else:

@@ -7,3 +7,4 @@ TgCrypto==1.2.5
 async_lru==2.0.2
 psycopg2-binary==2.9.6
 yoyo-migrations==8.2.0
+gevent==24.2.1

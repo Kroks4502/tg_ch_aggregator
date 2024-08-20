@@ -59,6 +59,8 @@ class Source(BaseModel):
     # Формировать новое сообщение (True) или пересылать сообщение (False)
     is_rewrite = BooleanField(default=True)
 
+    is_deleted = BooleanField(default=False)
+
 
 class Filter(BaseModel):
     pattern = CharField()

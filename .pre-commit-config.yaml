@@ -9,8 +9,8 @@ repos:
     - id: trailing-whitespace
       args: [--markdown-linebreak-ext=md]
     - id: check-merge-conflict
-    - id: mixed-line-ending
-      args: [--fix=crlf]
+#    - id: mixed-line-ending
+#      args: [--fix=crlf]
 #    - id: no-commit-to-branch
 #      args: [--branch, master]
 

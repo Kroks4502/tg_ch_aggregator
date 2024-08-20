@@ -8,7 +8,10 @@ from plugins.bot.menu import Menu
 async def list_cleanup(menu: Menu):
     source_id = menu.path.get_value("s")
     if source_id and menu.is_admin_user():
-        source_obj: Source = Source.get(source_id)
+        source_obj: Source = Source.get(
+            id=source_id,
+            is_deleted=False,
+        )
         cleanup_list = source_obj.cleanup_list
     else:
         cleanup_list = GlobalSettings.get(key="cleanup_list").value
