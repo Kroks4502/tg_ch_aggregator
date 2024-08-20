@@ -14,7 +14,10 @@ async def is_monitored_channels(_, __, message):
     if message.chat:
         return (
             Source.select()
-            .where(Source.id == message.chat.id, Source.is_deleted == False)
+            .where(
+                Source.id == message.chat.id,
+                Source.is_deleted == False,
+            )
             .exists()
         )
     # Может быть получен message без чата ¯\_(ツ)_/¯

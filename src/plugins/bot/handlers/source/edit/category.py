@@ -50,7 +50,10 @@ async def edit_source_category(menu: Menu):
 @router.page(path=r"/s/-\d+/:edit/nc/-\d+/", send_to_admins=True, back_step=2)
 async def set_source_category(menu: Menu):
     source_id = menu.path.get_value("s")
-    source_obj = Source.get(id=source_id, is_deleted=False)
+    source_obj = Source.get(
+        id=source_id,
+        is_deleted=False,
+    )
 
     new_category_id = menu.path.get_value("nc")
 
