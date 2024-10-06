@@ -18,7 +18,10 @@ from utils.menu import ButtonData
 @router.page(path=r"/s/-\d+/:edit/nc/")
 async def edit_source_category(menu: Menu):
     source_id = menu.path.get_value("s")
-    source_obj: Source = Source.get(source_id)
+    source_obj: Source = Source.get(
+        id=source_id,
+        is_deleted=False,
+    )
 
     query = (
         Category.select(
@@ -47,7 +50,10 @@ async def edit_source_category(menu: Menu):
 @router.page(path=r"/s/-\d+/:edit/nc/-\d+/", send_to_admins=True, back_step=2)
 async def set_source_category(menu: Menu):
     source_id = menu.path.get_value("s")
-    source_obj = Source.get(source_id)
+    source_obj = Source.get(
+        id=source_id,
+        is_deleted=False,
+    )
 
     new_category_id = menu.path.get_value("nc")
 

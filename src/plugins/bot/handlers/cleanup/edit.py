@@ -22,7 +22,9 @@ async def edit_cleanup_regex_wait_input(
     cleanup_id = menu.path.get_value("cl")
     source_id = menu.path.get_value("s")
     if source_id:
-        source_obj: Source = Source.get(source_id) if source_id else None
+        source_obj: Source = (
+            Source.get(id=source_id, is_deleted=False) if source_id else None
+        )
         cleanup_list = source_obj.cleanup_list
         pattern_old = cleanup_list[cleanup_id]
         cleanup_list[cleanup_id] = pattern_new
@@ -51,7 +53,7 @@ async def edit_cleanup_regex(menu: Menu):
     source_id = menu.path.get_value("s")
 
     if source_id:
-        source_obj: Source = Source.get(source_id)
+        source_obj: Source = Source.get(id=source_id, is_deleted=False)
         pattern = source_obj.cleanup_list[cleanup_id]
     else:
         global_settings_obj = GlobalSettings.get(key="cleanup_list")

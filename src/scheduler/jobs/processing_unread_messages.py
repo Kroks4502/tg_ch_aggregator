@@ -19,7 +19,10 @@ async def get_unread_messages() -> list[Message]:
     Получить непрочитанные сообщения UserBot.
     Возвращается только по одному сообщению каждой медиа-группы.
     """
-    sources_ids = {source.id for source in Source.select(Source.id)}
+    sources_ids = {
+        source.id
+        for source in Source.select(Source.id).where(Source.is_deleted == False)
+    }
 
     unread_messages = []
     async for dialog in user_client.get_dialogs():

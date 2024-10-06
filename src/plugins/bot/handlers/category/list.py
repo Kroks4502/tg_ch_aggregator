@@ -18,7 +18,11 @@ async def list_category(menu: Menu):
             Category.title,
             peewee.fn.Count(Source.id).alias("amount"),
         )
-        .join(Source, peewee.JOIN.LEFT_OUTER)
+        .join(
+            Source,
+            peewee.JOIN.LEFT_OUTER,
+            on=((Source.category == Category.id) & (Source.is_deleted == False)),
+        )
         .group_by(Category.id)
         .order_by(Category.title)
     )  # Запрашиваем список категорий

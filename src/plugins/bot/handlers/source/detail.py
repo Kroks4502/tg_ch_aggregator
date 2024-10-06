@@ -10,7 +10,10 @@ DETAIL_SOURCE_PATH = "/s/{source_id}/"
 @router.page(path=DETAIL_SOURCE_PATH.format(source_id=r"-\d+"))
 async def detail_source(menu: Menu):
     source_id = menu.path.get_value("s")
-    source_obj: Source = Source.get(source_id)
+    source_obj: Source = Source.get(
+        id=source_id,
+        is_deleted=False,
+    )
 
     if menu.is_admin_user():
         menu.add_button.row_edit_delete()

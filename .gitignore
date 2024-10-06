@@ -134,3 +134,15 @@ dmypy.json
 /sessions/
 /logs/
 /tests/dump_messages/
+
+# Folders created by the development environment
+.idea
+.DS_Store
+.AppleDouble
+.LSOverride
+
+*.sublime-project
+*.sublime-workspace
+
+.vscode/
+*.code-workspace

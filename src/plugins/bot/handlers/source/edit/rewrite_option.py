@@ -13,7 +13,10 @@ from plugins.bot.menu import Menu
 @router.page(path=r"/s/-\d+/:edit/:(on|off)_rewrite/", send_to_admins=True)
 async def set_rewrite(menu: Menu, callback_query: CallbackQuery):
     source_id = menu.path.get_value("s")
-    source_obj: Source = Source.get(source_id)
+    source_obj: Source = Source.get(
+        id=source_id,
+        is_deleted=False,
+    )
 
     if callback_query.data.endswith("on_rewrite/"):
         source_obj.is_rewrite = True

@@ -19,6 +19,7 @@ async def list_source(menu: Menu):
             peewee.fn.Count(Filter.id).alias("count"),
         )
         .join(Filter, peewee.JOIN.LEFT_OUTER)
+        .where(Source.is_deleted == False)
         .group_by(Source.id)
         .order_by(Source.title)
     )  # Запрашиваем список источников

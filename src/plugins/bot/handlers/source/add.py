@@ -89,6 +89,20 @@ async def _join_to_chat(source_link: str) -> Chat:
 
 def _create_source(chat: Chat, category_id: int) -> Source:
     try:
-        return Source.create(id=chat.id, title=chat.title, category=category_id)
+        source_obj = Source.get_or_none(id=chat.id)
+
+        if not source_obj:
+            return Source.create(
+                id=chat.id,
+                title=chat.title,
+                category=category_id,
+            )
+
+        source_obj.category = category_id
+        source_obj.title = chat.title
+        source_obj.is_deleted = False
+        source_obj.save()
+
+        return source_obj
     except peewee.IntegrityError:
         raise ValueError(ERROR_EXISTED_SOURCE)

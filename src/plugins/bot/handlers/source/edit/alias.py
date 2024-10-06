@@ -20,7 +20,10 @@ async def edit_alias_waiting_input(
     validators.text_length_less_than(message, MAX_LENGTH_SOURCE_ALIAS)
 
     source_id = menu.path.get_value("s")
-    source_obj = Source.get(source_id)
+    source_obj = Source.get(
+        id=source_id,
+        is_deleted=False,
+    )
 
     if message.text == source_obj.title:
         source_obj.title_alias = None

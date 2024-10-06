@@ -14,7 +14,10 @@ async def cleanup_regex_deletion_confirmation(menu: Menu):
 
     source_id = menu.path.get_value("s")
     if source_id:
-        source_obj: Source = Source.get(source_id)
+        source_obj: Source = Source.get(
+            id=source_id,
+            is_deleted=False,
+        )
         pattern = source_obj.cleanup_list[cleanup_id]
     else:
         cleanup_list = GlobalSettings.get(key="cleanup_list").value
@@ -35,7 +38,7 @@ async def delete_cleanup_regex(menu: Menu):
     source_id = menu.path.get_value("s")
 
     if source_id:
-        source_obj: Source = Source.get(source_id)
+        source_obj: Source = Source.get(id=source_id, is_deleted=False)
         pattern = source_obj.cleanup_list.pop(cleanup_id)
         source_obj.save()
     else:

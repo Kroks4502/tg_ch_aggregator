@@ -9,7 +9,10 @@ from plugins.bot.menu import Menu
 @router.page(path=r"/s/-\d+/:edit/")
 async def edit_source(menu: Menu):
     source_id = menu.path.get_value("s")
-    source_obj: Source = Source.get(source_id)
+    source_obj: Source = Source.get(
+        id=source_id,
+        is_deleted=False,
+    )
 
     menu.add_row_button("Категорию", "nc")
     menu.add_row_button("Псевдоним", "alias")
