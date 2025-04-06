@@ -22,11 +22,11 @@ LOG_FORMAT = "%(asctime)s : %(name)s : %(levelname)s : %(message)s"
 
 load_dotenv(BASE_DIR.parent / ".env")
 
-API_ID = os.getenv("api_id")
-API_HASH = os.getenv("api_hash")
-BOT_TOKEN = os.getenv("bot_token")
-DEVELOP_MODE = os.getenv("develop_mode")
-DUMP_MESSAGE_MODE = os.getenv("dump_message_mode", False)
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+DEVELOP_MODE = os.getenv("DEVELOP_MODE")
+DUMP_MESSAGE_MODE = os.getenv("DUMP_MESSAGE_MODE", False)
 
 TELEGRAM_MAX_CAPTION_LENGTH = 1024
 TELEGRAM_MAX_TEXT_LENGTH = 4096
@@ -35,11 +35,11 @@ USER_BOT_NAME = "UserBot"
 
 APP_START_DATETIME = dt.datetime.now()
 
-POSTGRESQL_DATABASE = os.getenv("postgresql_database")
-POSTGRESQL_USER = os.getenv("postgresql_user")
-POSTGRESQL_PASSWORD = os.getenv("postgresql_password")
-POSTGRESQL_HOST = os.getenv("postgresql_host")
-POSTGRESQL_PORT = os.getenv("postgresql_port")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
 
 if DUMP_MESSAGE_MODE:

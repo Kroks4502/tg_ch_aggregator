@@ -5,11 +5,11 @@ from playhouse.postgres_ext import PostgresqlExtDatabase
 from psycopg2 import extensions
 
 from settings import (
-    POSTGRESQL_DATABASE,
-    POSTGRESQL_HOST,
-    POSTGRESQL_PASSWORD,
-    POSTGRESQL_PORT,
-    POSTGRESQL_USER,
+    POSTGRES_DB,
+    POSTGRES_HOST,
+    POSTGRES_PASSWORD,
+    POSTGRES_PORT,
+    POSTGRES_USER,
 )
 
 
@@ -37,9 +37,9 @@ def connect():
 
 
 psql_db = PostgresqlExtDatabase(
-    POSTGRESQL_DATABASE,
-    user=POSTGRESQL_USER,
-    password=POSTGRESQL_PASSWORD,
-    host=POSTGRESQL_HOST,
-    port=POSTGRESQL_PORT,
+    POSTGRES_DB,
+    user=POSTGRES_USER,
+    password=POSTGRES_PASSWORD,
+    host=POSTGRES_HOST,
+    port=POSTGRES_PORT,
 )
