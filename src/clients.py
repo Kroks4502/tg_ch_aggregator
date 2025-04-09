@@ -1,6 +1,6 @@
 from pyrogram import Client
 
-from settings import API_HASH, API_ID, BOT_TOKEN, SESSIONS_DIR
+from settings import API_HASH, API_ID, BOT_TOKEN, SESSIONS_DIR, IS_ONLY_BOT
 
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -10,7 +10,7 @@ user_client = Client(
     API_HASH,
     plugins=dict(
         root="plugins.user",
-    ),
+    ) if not IS_ONLY_BOT else {},
     workdir=SESSIONS_DIR,
 )
 

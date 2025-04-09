@@ -41,6 +41,7 @@ POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
+IS_ONLY_BOT = True if DEVELOP_MODE == "bot" else False
 
 if DUMP_MESSAGE_MODE:
     for directory in DUMP_MESSAGES_DIRS_BY_OPERATION.values():
