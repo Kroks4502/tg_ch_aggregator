@@ -299,15 +299,15 @@ def get_reply_to(message: Message):
             return dict(
                 reply_to_chat_id=history_msg.category_id,
                 reply_to_message_id=history_msg.category_message_id,
-                quote_text=message.quote_text,
-                quote_entities=message.quote_entities,
+                quote_text=message.quote.text,
+                quote_entities=message.quote.entities,
             )
 
     return dict(
         reply_to_chat_id=message.reply_to_message.chat.id,
         reply_to_message_id=message.reply_to_message_id,
-        quote_text=message.quote_text,
-        quote_entities=message.quote_entities,
+        quote_text=message.quote.text,
+        quote_entities=message.quote.entities,
     )
 
 
