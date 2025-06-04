@@ -1,5 +1,6 @@
 import logging
 
+from pyrogram.errors import ChannelPrivate
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from clients import bot_client, user_client
@@ -31,7 +32,11 @@ async def update_channels_info_job():
         tg_chat = user_client_chats.get(db_obj.id)
 
         if not tg_chat:
-            tg_chat = await user_client.get_chat(db_obj.id)
+            try:
+                tg_chat = await user_client.get_chat(db_obj.id)
+            except ChannelPrivate as e:
+                logging.warning("Не удалось получить информацию о канале %s: %s", db_obj.id, e)
+                tg_chat = None
 
         if not tg_chat:
             await send_not_found_chat_message_to_admins(db_obj)
