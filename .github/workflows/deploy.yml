@@ -138,4 +138,4 @@ jobs:
             **Branch:** [${{ github.ref_name }}](https://github.com/${{ github.repository }}/tree/${{ github.ref_name }})
             **Commit:** [${{ steps.commit.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
 
-            <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Action Log</a>
+            [View Action Log](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
