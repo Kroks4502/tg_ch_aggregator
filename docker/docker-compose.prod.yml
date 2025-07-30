@@ -25,12 +25,12 @@ services:
     command: >
       sh -c "
         echo 'Waiting for database...' &&
-        while ! pg_isready -h postgres -U \"\${POSTGRES_USER}\" -d \"\${POSTGRES_DB}\"; do
+        while ! pg_isready -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do
           sleep 2;
         done &&
         echo 'Database is ready!' &&
-        yoyo apply --database \"postgresql://\${POSTGRES_USER}:\${POSTGRES_PASSWORD}@postgres/\${POSTGRES_DB}\" &&
-        cd /app/src && 
+        yoyo apply --database \"postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}\" &&
+        cd src && 
         python main.py
       "
     volumes:
