@@ -69,6 +69,12 @@ jobs:
             cd /opt/tg_ch_aggregator/docker
             chmod +x *.sh
 
+      - name: Debug metadata outputs
+        run: |
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "Tag: ${{ steps.meta.outputs.tags[0] }}"
+          echo "Labels: ${{ steps.meta.outputs.labels }}"
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         with:
