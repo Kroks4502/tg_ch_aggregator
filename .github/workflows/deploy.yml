@@ -29,17 +29,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Sanitize branch name
-        id: branch
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "branch_name=latest" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref_name }}" = "test/docker-deploy" ]; then
-            echo "branch_name=test-docker-deploy" >> $GITHUB_OUTPUT
-          else
-            echo "branch_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -47,8 +36,8 @@ jobs:
           images: ${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref_name == 'main' }}
-            type=raw,value=${{ steps.branch.outputs.branch_name }},enable=${{ github.ref_name != 'main' }}
-            type=sha,prefix=${{ steps.branch.outputs.branch_name }}-
+            type=raw,value=${{ github.ref_name }},enable=${{ github.ref_name != 'main' }}
+            type=sha,prefix=${{ github.ref_name }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
