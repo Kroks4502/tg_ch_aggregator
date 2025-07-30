@@ -57,25 +57,6 @@ services:
       timeout: 10s
       retries: 3
 
-  create_sessions:
-    image: ${BACKEND_IMAGE}
-    command: python create_tg_sessions.py
-    volumes:
-      - ./sessions:/app/sessions:cached
-    environment:
-      PYTHONPATH: /app/src
-      PYTHONUNBUFFERED: 1
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
-      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-    stdin_open: true
-    tty: true
-
 volumes:
   postgres_data:
     driver: local
