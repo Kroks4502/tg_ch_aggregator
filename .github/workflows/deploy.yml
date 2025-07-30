@@ -49,7 +49,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Copy scripts to server
+      - name: Copy docker docs & scripts to server
         uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -58,16 +58,6 @@ jobs:
           source: "docker/*.sh,docker/*.yml,docker/*.md"
           target: "/opt/tg_ch_aggregator/docker/"
           strip_components: 1
-
-      - name: Make scripts executable
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
-          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
-          script: |
-            cd /opt/tg_ch_aggregator/docker
-            chmod +x *.sh
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.2.2
@@ -96,8 +86,6 @@ jobs:
 
             # Stop existing containers
             docker-compose -f docker/docker-compose.prod.yml down || true
-
-            rm -rf /opt/tg_ch_aggregator/*
             
             # Pull latest image
             docker pull $BACKEND_IMAGE
