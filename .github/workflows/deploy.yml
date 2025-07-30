@@ -87,7 +87,7 @@ jobs:
             docker-compose -f docker/docker-compose.prod.yml down || true
             
             # Pull latest image
-            docker pull ${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+            docker pull ${{ steps.meta.outputs.image }}
             
             # Start services with docker-compose using environment variables
             POSTGRES_DB=${{ secrets.APP_POSTGRES_DB }} \
@@ -98,7 +98,7 @@ jobs:
             TELEGRAM_API_ID=${{ secrets.APP_TELEGRAM_API_ID }} \
             TELEGRAM_API_HASH=${{ secrets.APP_TELEGRAM_API_HASH }} \
             TELEGRAM_BOT_TOKEN=${{ secrets.APP_TELEGRAM_BOT_TOKEN }} \
-            BACKEND_IMAGE=${{ env.IMAGE_NAME }}:${{ github.ref_name }} \
+            BACKEND_IMAGE=${{ steps.meta.outputs.image }} \
             docker-compose -f docker/docker-compose.prod.yml up -d
 
   notify:
