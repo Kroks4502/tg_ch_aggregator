@@ -49,6 +49,26 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Copy scripts to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
+          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
+          source: "docker/*.sh,docker/*.yml,docker/*.md"
+          target: "/opt/tg_ch_aggregator/docker/"
+          strip_components: 1
+
+      - name: Make scripts executable
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
+          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
+          script: |
+            cd /opt/tg_ch_aggregator/docker
+            chmod +x *.sh
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -80,26 +100,6 @@ jobs:
             TELEGRAM_BOT_TOKEN=${{ secrets.APP_TELEGRAM_BOT_TOKEN }} \
             BACKEND_IMAGE=${{ env.IMAGE_NAME }}:${{ github.ref_name }} \
             docker-compose -f docker/docker-compose.prod.yml up -d
-
-      - name: Copy scripts to server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
-          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
-          source: "docker/*.sh,docker/*.md"
-          target: "/opt/tg_ch_aggregator/docker/"
-          strip_components: 1
-
-      - name: Make scripts executable
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
-          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
-          script: |
-            cd /opt/tg_ch_aggregator/docker
-            chmod +x *.sh
 
   notify:
     runs-on: ubuntu-latest
