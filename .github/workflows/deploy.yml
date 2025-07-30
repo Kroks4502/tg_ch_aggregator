@@ -49,8 +49,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Create necessary directories
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
+          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
+          script: |
+            mkdir -p /opt/tg_ch_aggregator/docker
+            mkdir -p /opt/tg_ch_aggregator/logs
+            mkdir -p /opt/tg_ch_aggregator/sessions
+            mkdir -p /opt/tg_ch_aggregator/postgres_data
+
       - name: Copy scripts to server
-        uses: appleboy/scp-action@v0.1.4
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
@@ -60,7 +72,7 @@ jobs:
           strip_components: 1
 
       - name: Make scripts executable
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
@@ -69,48 +81,38 @@ jobs:
             cd /opt/tg_ch_aggregator/docker
             chmod +x *.sh
 
-      - name: Debug metadata outputs
-        run: |
-          echo "Tags: ${{ steps.meta.outputs.tags }}"
-          FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' | head -n1)
-          echo "First Tag: $FIRST_TAG"
-          echo "Labels: ${{ steps.meta.outputs.labels }}"
-
       - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
+        env:
+          POSTGRES_DB: ${{ secrets.APP_POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.APP_POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.APP_POSTGRES_PASSWORD }}
+          POSTGRES_HOST: ${{ secrets.APP_POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.APP_POSTGRES_PORT }}
+          TELEGRAM_API_ID: ${{ secrets.APP_TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.APP_TELEGRAM_API_HASH }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.APP_TELEGRAM_BOT_TOKEN }}
+          BACKEND_IMAGE: ${{ env.IMAGE_NAME }}:${{ github.sha }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
           key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
+          envs: |
+            POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_HOST,POSTGRES_PORT,
+            TELEGRAM_API_ID,TELEGRAM_API_HASH,TELEGRAM_BOT_TOKEN
           script: |
-            # Create necessary directories
-            mkdir -p /opt/tg_ch_aggregator/docker
-            mkdir -p /opt/tg_ch_aggregator/logs
-            mkdir -p /opt/tg_ch_aggregator/sessions
-            mkdir -p /opt/tg_ch_aggregator/postgres_data
-            
+            # Setup environment variables
+            export BACKEND_IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' | head -n1)
+
             # Stop existing containers
             cd /opt/tg_ch_aggregator
             docker-compose -f docker/docker-compose.prod.yml down || true
             
-            # Get first tag
-            FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' | head -n1)
-            
             # Pull latest image
-            docker pull $FIRST_TAG
+            docker pull $BACKEND_IMAGE
             
             # Start services with docker-compose using environment variables
-            docker-compose -f docker/docker-compose.prod.yml \
-            -e POSTGRES_DB=${{ secrets.APP_POSTGRES_DB }} \
-            -e POSTGRES_USER=${{ secrets.APP_POSTGRES_USER }} \
-            -e POSTGRES_PASSWORD=${{ secrets.APP_POSTGRES_PASSWORD }} \
-            -e POSTGRES_HOST=${{ secrets.APP_POSTGRES_HOST }} \
-            -e POSTGRES_PORT=${{ secrets.APP_POSTGRES_PORT }} \
-            -e TELEGRAM_API_ID=${{ secrets.APP_TELEGRAM_API_ID }} \
-            -e TELEGRAM_API_HASH=${{ secrets.APP_TELEGRAM_API_HASH }} \
-            -e TELEGRAM_BOT_TOKEN=${{ secrets.APP_TELEGRAM_BOT_TOKEN }} \
-            -e BACKEND_IMAGE=$FIRST_TAG \
-            up -d
+            docker-compose -f docker/docker-compose.prod.yml up -d
 
   notify:
     runs-on: ubuntu-latest
