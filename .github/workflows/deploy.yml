@@ -133,7 +133,7 @@ jobs:
           format: markdown
           disable_web_page_preview: true
           message: |
-            ${{ needs.build-and-deploy.result == 'success' && '🚀 Deploy successful!' || '💥 Deploy failed!' }}
+            ${{ needs.build-and-deploy.result == 'success' && '✅ Deploy successful!' || '❌ Deploy failed!' }}
             
             **Repository:** [${{ github.repository }}](https://github.com/${{ github.repository }})
             **Branch:** [${{ github.ref_name }}](https://github.com/${{ github.repository }}/tree/${{ github.ref_name }})
