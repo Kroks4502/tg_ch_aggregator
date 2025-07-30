@@ -1,0 +1,81 @@
+name: tg_ch_aggregator
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:cached
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  backend:
+    image: ${BACKEND_IMAGE}
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        while ! pg_isready -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do
+          sleep 2;
+        done &&
+        echo 'Database is ready!' &&
+        yoyo apply --database postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB} &&
+        cd src && 
+        python main.py
+      "
+    volumes:
+      - ./logs:/app/logs:cached
+      - ./sessions:/app/sessions:cached
+    environment:
+      PYTHONPATH: /app/src
+      PYTHONUNBUFFERED: 1
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "python"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  create_sessions:
+    image: ${BACKEND_IMAGE}
+    command: python create_tg_sessions.py
+    volumes:
+      - ./sessions:/app/sessions:cached
+    environment:
+      PYTHONPATH: /app/src
+      PYTHONUNBUFFERED: 1
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
+    driver: local

@@ -4,8 +4,6 @@ import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 from plugins.user.types import Operation
 
 BASE_DIR = Path(__file__).parent
@@ -20,11 +18,9 @@ DUMP_MESSAGES_DIRS_BY_OPERATION = {
 LOGS_DIR = BASE_DIR.parent / "logs"
 LOG_FORMAT = "%(asctime)s : %(name)s : %(levelname)s : %(message)s"
 
-load_dotenv(BASE_DIR.parent / ".env")
-
-API_ID = os.getenv("API_ID")
-API_HASH = os.getenv("API_HASH")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+API_ID = os.getenv("TELEGRAM_API_ID")
+API_HASH = os.getenv("TELEGRAM_API_HASH")
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 DEVELOP_MODE = os.getenv("DEVELOP_MODE")
 DUMP_MESSAGE_MODE = os.getenv("DUMP_MESSAGE_MODE", False)
 
@@ -46,6 +42,26 @@ IS_ONLY_BOT = True if DEVELOP_MODE == "bot" else False
 if DUMP_MESSAGE_MODE:
     for directory in DUMP_MESSAGES_DIRS_BY_OPERATION.values():
         directory.mkdir(parents=True, exist_ok=True)
+
+# Check that all required environment variables are set
+required_env_vars = [
+    ("API_ID", API_ID),
+    ("API_HASH", API_HASH),
+    ("BOT_TOKEN", BOT_TOKEN),
+    ("POSTGRES_DB", POSTGRES_DB),
+    ("POSTGRES_USER", POSTGRES_USER),
+    ("POSTGRES_PASSWORD", POSTGRES_PASSWORD),
+    ("POSTGRES_HOST", POSTGRES_HOST),
+    ("POSTGRES_PORT", POSTGRES_PORT),
+]
+
+missing_vars = [name for name, value in required_env_vars if not value]
+
+if missing_vars:
+    raise ValueError(
+        f"Missing required environment variables: {', '.join(missing_vars)}. "
+        "Please check your .env file."
+    )
 
 
 def configure_logging():
