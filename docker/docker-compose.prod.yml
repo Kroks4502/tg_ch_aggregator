@@ -1,0 +1,93 @@
+name: tg_ch_aggregator
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    ports:
+      - "127.0.0.1:5432:5432"
+    expose:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:cached
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ${BACKEND_IMAGE}
+    command: >
+      sh -c "
+        echo '🔄 Waiting for database...' &&
+        while ! pg_isready -h ${POSTGRES_HOST} -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do
+          sleep 2;
+        done &&
+        echo '✅ Database is ready!' &&
+        echo 'Applying database migrations...' &&
+        yoyo apply --database \"postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}\" &&
+        echo '🔄 Waiting for Telegram sessions...' &&
+        while [ ! -f /app/sessions/user.session ] || [ ! -f /app/sessions/bot.session ]; do
+          sleep 2;
+        done &&
+        echo '✅ Telegram sessions are ready!' &&
+        cd src && 
+        echo '🔄 Starting application...' &&
+        python main.py
+      "
+    environment:
+      PYTHONPATH: /app/src
+      PYTHONUNBUFFERED: 1
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      create_sessions:
+        condition: service_completed_successfully
+    volumes:
+      - sessions_data:/app/sessions
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "python"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  create_sessions:
+    image: ${BACKEND_IMAGE}
+    command: python create_tg_sessions.py
+    environment:
+      PYTHONPATH: /app/src
+      PYTHONUNBUFFERED: 1
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+    volumes:
+      - sessions_data:/app/sessions
+    stdin_open: true
+    tty: true
+    # For entering the container and entering the authorization parameters:
+    # docker attach tg_ch_aggregator-create_sessions-1
+
+volumes:
+  postgres_data:
+    driver: local
+  sessions_data:
+    driver: local

@@ -1,0 +1,119 @@
+name: Deploy Telegram Channel Aggregator
+
+on:
+  push:
+    branches:
+     - main
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Copy docker docs & scripts to server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
+          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
+          source: "docker/*.sh,docker/*.yml,docker/*.md"
+          target: "/opt/tg_ch_aggregator/docker/"
+          strip_components: 1
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.2.2
+        env:
+          POSTGRES_DB: ${{ secrets.APP_POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.APP_POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.APP_POSTGRES_PASSWORD }}
+          POSTGRES_HOST: ${{ secrets.APP_POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.APP_POSTGRES_PORT }}
+          TELEGRAM_API_ID: ${{ secrets.APP_TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.APP_TELEGRAM_API_HASH }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.APP_TELEGRAM_BOT_TOKEN }}
+          BACKEND_IMAGE: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
+          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
+          envs: |
+            POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_HOST,POSTGRES_PORT,
+            TELEGRAM_API_ID,TELEGRAM_API_HASH,TELEGRAM_BOT_TOKEN
+          script: |
+            # Setup environment variables
+            export BACKEND_IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' | head -n1)
+
+            cd /opt/tg_ch_aggregator
+
+            # Stop existing containers
+            docker-compose -f docker/docker-compose.prod.yml down || true
+            
+            # Pull latest image
+            docker pull $BACKEND_IMAGE
+            
+            # Start services with docker-compose using environment variables
+            docker-compose -f docker/docker-compose.prod.yml up -d
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+    if: always()
+    steps:
+      - name: Get short commit hash
+        id: commit
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+      
+      - name: Send Telegram notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.GIT_ACTIONS_NOTIFICATIONS_TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.GIT_ACTIONS_NOTIFICATIONS_TELEGRAM_TOKEN }}
+          format: markdown
+          disable_web_page_preview: true
+          message: |
+            ${{ needs.build-and-deploy.result == 'success' && '✅ Deploy successful!' || '❌ Deploy failed!' }}
+            
+            **Repository:** [${{ github.repository }}](https://github.com/${{ github.repository }})
+            **Branch:** [${{ github.ref_name }}](https://github.com/${{ github.repository }}/tree/${{ github.ref_name }})
+            **Commit:** [${{ steps.commit.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+
+            [View Action Log](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
