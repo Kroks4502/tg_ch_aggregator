@@ -40,7 +40,6 @@ jobs:
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
-        id: build
         with:
           context: .
           file: ./docker/Dockerfile
@@ -88,7 +87,7 @@ jobs:
             docker-compose -f docker/docker-compose.prod.yml down || true
             
             # Pull latest image
-            docker pull ${{ steps.build.outputs.metadata.image.name }}
+            docker pull ${{ steps.meta.outputs.tags[0] }}
             
             # Start services with docker-compose using environment variables
             docker-compose -f docker/docker-compose.prod.yml \
@@ -100,7 +99,7 @@ jobs:
             -e TELEGRAM_API_ID=${{ secrets.APP_TELEGRAM_API_ID }} \
             -e TELEGRAM_API_HASH=${{ secrets.APP_TELEGRAM_API_HASH }} \
             -e TELEGRAM_BOT_TOKEN=${{ secrets.APP_TELEGRAM_BOT_TOKEN }} \
-            -e BACKEND_IMAGE=${{ steps.build.outputs.metadata.image.name }} \
+            -e BACKEND_IMAGE=${{ steps.meta.outputs.tags[0] }} \
             up -d
 
   notify:
