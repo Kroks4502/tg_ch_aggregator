@@ -106,6 +106,18 @@ jobs:
 
             # Stop existing containers
             cd /opt/tg_ch_aggregator
+
+
+            # Create env file
+            echo "POSTGRES_DB=${POSTGRES_DB}" > .env
+            echo "POSTGRES_USER=${POSTGRES_USER}" >> .env
+            echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env
+            echo "POSTGRES_HOST=${POSTGRES_HOST}" >> .env
+            echo "POSTGRES_PORT=${POSTGRES_PORT}" >> .env
+            echo "TELEGRAM_API_ID=${TELEGRAM_API_ID}" >> .env
+            echo "TELEGRAM_API_HASH=${TELEGRAM_API_HASH}" >> .env
+            echo "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}" >> .env
+            echo "BACKEND_IMAGE=${BACKEND_IMAGE}" >> .env
             docker-compose -f docker/docker-compose.prod.yml down || true
             
             # Pull latest image
