@@ -1,6 +1,6 @@
 # Telegram Channel Aggregator
 
-[![Deploy Telegram Channel Aggregator](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/deploy_prod.yml/badge.svg)](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/deploy_prod.yml)
+[![Deploy Telegram Channel Aggregator](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/deploy.yml/badge.svg)](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/deploy.yml)
 [![codestyle](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/codestyle.yml/badge.svg)](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/codestyle.yml)
 
 [![Python][Python-badge]][Python-url]
@@ -23,9 +23,11 @@ Create your own news feeds from Telegram channels!
 
 ### Prerequisites
 
+- Docker 24.0.0 or higher
+- Docker Compose 2.25.0 or higher
+- PostgreSQL 14 or higher
 - Python 3.10 or higher
 - Pyrogram 2.0
-- PostgreSQL database
 - Telegram API credentials
 
 ### Telegram App Setup
@@ -34,7 +36,7 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
 1. **Get Telegram Bot Token**: Create a new bot using [@BotFather](https://t.me/BotFather) on Telegram to obtain your `BOT_TOKEN`.
 2. **Creating your Telegram Application**: Follow the instructions on [Telegram Core](https://core.telegram.org/api/obtaining_api_id) to get your `API_ID` and `API_HASH`.
 
-### Setup
+### Quick Start Development
 
 1. **Clone the Repository**
 
@@ -45,12 +47,12 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
 
 2. **Configure Environment Variables**
 
-   Create a [.env](.env.example) file in the root directory with the following content:
+   Create a [.env](.env.template) file in the root directory with the following content:
 
    ```env
-   API_ID=
-   API_HASH=
-   BOT_TOKEN=
+   TELEGRAM_API_ID=
+   TELEGRAM_API_HASH=
+   TELEGRAM_BOT_TOKEN=
    
    POSTGRES_DB=tgbot
    POSTGRES_USER=tgbot
@@ -66,13 +68,63 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
    - Enter two-step verification password (if it's enabled)
 
    ```shell
-   docker-compose run create_sessions
+   ./docker/docker-dev-run.sh create_sessions
    ```
 
 4. **Start the main application**
 
    ```shell
-   docker compose up -d
+   ./docker/docker-dev-run.sh start
+   ```
+
+### Deployment
+
+1. **Fork the repository**
+
+2. **Configure Secrets**
+
+   Create secrets in the repository settings "Settings" -> "Secrets and variables" -> "Actions" -> "New repository secret":
+
+   Telegram API credentials:
+   - `APP_TELEGRAM_API_ID`
+   - `APP_TELEGRAM_API_HASH`
+   - `APP_TELEGRAM_BOT_TOKEN`
+
+   PostgreSQL credentials:
+   - `APP_POSTGRES_DB`
+   - `APP_POSTGRES_USER`
+   - `APP_POSTGRES_PASSWORD`
+   - `APP_POSTGRES_HOST`
+   - `APP_POSTGRES_PORT`
+
+   Deployment credentials:
+   - `DEPLOY_HOST`
+   - `DEPLOY_HOST_SSH_USER`
+   - `DEPLOY_HOST_SSH_KEY`
+
+3. **Deploy**
+
+   Run the workflow "[Deploy Telegram Channel Aggregator](.github/workflows/deploy.yml)"
+
+4. **Create Telegram sessions in Docker container (this will be interactive)**
+
+   The workflow "[Deploy Telegram Channel Aggregator](.github/workflows/deploy.yml)" will start the container `create_sessions` and wait for the authorization parameters if don't have session files.
+
+   Check last logs:
+   ```shell
+   docker logs --tail 20 tg_ch_aggregator-create_sessions-1
+   ```
+
+   Attach to the container to enter the authorization parameters:
+   ```shell
+   docker attach tg_ch_aggregator-create_sessions-1
+   ```
+
+5. **Check the deployment**
+
+   ```shell
+   docker ps
+   docker logs
    ```
 
 ## Contributing

@@ -1,4 +1,4 @@
-name: Deploy TG Ch Aggregator
+name: Deploy Telegram Channel Aggregator
 
 on:
   push:
