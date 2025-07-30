@@ -35,10 +35,9 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch,enable=${{ !github.ref_name == 'main' }}
-            type=ref,event=pr
-            type=sha,prefix=${{ github.ref_name }}-
             type=raw,value=latest,enable=${{ github.ref_name == 'main' }}
+            type=raw,value=${{ github.ref_name }},enable=${{ github.ref_name != 'main' }}
+            type=sha,prefix=${{ github.ref_name }}-
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -108,17 +107,23 @@ jobs:
     needs: build-and-deploy
     if: always()
     steps:
+      - name: Get short commit hash
+        id: commit
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+      
       - name: Send Telegram notification
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.GIT_ACTIONS_NOTIFICATIONS_TELEGRAM_CHAT_ID }}
           token: ${{ secrets.GIT_ACTIONS_NOTIFICATIONS_TELEGRAM_TOKEN }}
           message: |
-            🚀 Deploy completed!
+            ${{ needs.build-and-deploy.result == 'success' && '🚀 Deploy successful!' || '💥 Deploy failed!' }}
             
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
-            Status: ${{ needs.build-and-deploy.result }}
-            
-            ${{ needs.build-and-deploy.result == 'success' && '✅ Deploy successful!' || '❌ Deploy failed!' }}
+            📦 **Repository:** ${{ github.repository }}
+            🌿 **Branch:** `${{ github.ref_name }}`
+            🔗 **Commit:** [${{ steps.commit.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+            📋 **Workflow:** ${{ github.workflow }}
+            👤 **Triggered by:** ${{ github.actor }}
+            📊 **Action Log:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
