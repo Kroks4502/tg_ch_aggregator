@@ -49,18 +49,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Create necessary directories
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
-          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
-          script: |
-            mkdir -p /opt/tg_ch_aggregator/docker
-            mkdir -p /opt/tg_ch_aggregator/logs
-            mkdir -p /opt/tg_ch_aggregator/sessions
-            mkdir -p /opt/tg_ch_aggregator/postgres_data
-
       - name: Copy scripts to server
         uses: appleboy/scp-action@v1.0.0
         with:
@@ -104,21 +92,12 @@ jobs:
             # Setup environment variables
             export BACKEND_IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' | head -n1)
 
-            # Stop existing containers
             cd /opt/tg_ch_aggregator
 
-
-            # Create env file
-            echo "POSTGRES_DB=${POSTGRES_DB}" > .env
-            echo "POSTGRES_USER=${POSTGRES_USER}" >> .env
-            echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env
-            echo "POSTGRES_HOST=${POSTGRES_HOST}" >> .env
-            echo "POSTGRES_PORT=${POSTGRES_PORT}" >> .env
-            echo "TELEGRAM_API_ID=${TELEGRAM_API_ID}" >> .env
-            echo "TELEGRAM_API_HASH=${TELEGRAM_API_HASH}" >> .env
-            echo "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}" >> .env
-            echo "BACKEND_IMAGE=${BACKEND_IMAGE}" >> .env
+            # Stop existing containers
             docker-compose -f docker/docker-compose.prod.yml down || true
+
+            rm -rf /opt/tg_ch_aggregator/*
             
             # Pull latest image
             docker pull $BACKEND_IMAGE
