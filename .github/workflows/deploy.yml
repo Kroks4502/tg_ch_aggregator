@@ -85,20 +85,10 @@ jobs:
             
             # Stop existing containers
             cd /opt/tg_ch_aggregator
-            docker-compose -f docker/docker-compose.prod.yml \
-            -e POSTGRES_DB=${{ secrets.APP_POSTGRES_DB }} \
-            -e POSTGRES_USER=${{ secrets.APP_POSTGRES_USER }} \
-            -e POSTGRES_PASSWORD=${{ secrets.APP_POSTGRES_PASSWORD }} \
-            -e POSTGRES_HOST=${{ secrets.APP_POSTGRES_HOST }} \
-            -e POSTGRES_PORT=${{ secrets.APP_POSTGRES_PORT }} \
-            -e TELEGRAM_API_ID=${{ secrets.APP_TELEGRAM_API_ID }} \
-            -e TELEGRAM_API_HASH=${{ secrets.APP_TELEGRAM_API_HASH }} \
-            -e TELEGRAM_BOT_TOKEN=${{ secrets.APP_TELEGRAM_BOT_TOKEN }} \
-            -e BACKEND_IMAGE=${{ steps.build.outputs.metadata.image }} \
-            down || true
+            docker-compose -f docker/docker-compose.prod.yml down || true
             
             # Pull latest image
-            docker pull ${{ steps.build.outputs.metadata.image }}
+            docker pull ${{ steps.build.outputs.metadata.image.name }}
             
             # Start services with docker-compose using environment variables
             docker-compose -f docker/docker-compose.prod.yml \
@@ -110,7 +100,7 @@ jobs:
             -e TELEGRAM_API_ID=${{ secrets.APP_TELEGRAM_API_ID }} \
             -e TELEGRAM_API_HASH=${{ secrets.APP_TELEGRAM_API_HASH }} \
             -e TELEGRAM_BOT_TOKEN=${{ secrets.APP_TELEGRAM_BOT_TOKEN }} \
-            -e BACKEND_IMAGE=${{ steps.build.outputs.metadata.image }} \
+            -e BACKEND_IMAGE=${{ steps.build.outputs.metadata.image.name }} \
             up -d
 
   notify:
