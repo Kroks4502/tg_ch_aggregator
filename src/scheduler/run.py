@@ -11,7 +11,7 @@ from scheduler.jobs.set_user_bot_as_admin import set_user_bot_as_admin_job
 from scheduler.jobs.update_admins_info import update_users_info_job
 from scheduler.jobs.update_channels_info import update_channels_info_job
 
-scheduler = AsyncIOScheduler()
+scheduler = AsyncIOScheduler(event_loop=asyncio.new_event_loop())
 
 
 async def startup_job():
@@ -74,7 +74,6 @@ async def startup_job():
 
 def run_scheduler():
     scheduler.add_job(func=startup_job, id=startup_job.__name__)
-    scheduler.configure(event_loop=asyncio.new_event_loop())
     scheduler.start()
 
 
