@@ -90,18 +90,9 @@ jobs:
             
             # Start services with docker-compose using environment variables
             docker-compose -f docker/docker-compose.prod.yml up -d
-
-      - name: Wait for containers to be healthy
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
-          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
-          script: |
-            cd /opt/tg_ch_aggregator
             
-            # Wait for containers to be healthy (max 5 minutes)
-            timeout=300
+            # Wait for containers to be healthy (max 1 minutes)
+            timeout=60
             elapsed=0
             interval=10
             
@@ -110,7 +101,7 @@ jobs:
             while [ $elapsed -lt $timeout ]; do
               # Check if all containers are running and healthy
               unhealthy_containers=$(docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}" | grep -v "Up (healthy)" | grep -v "NAME" | wc -l)
-              
+
               if [ $unhealthy_containers -eq 0 ]; then
                 echo "✅ All containers are healthy!"
                 docker-compose -f docker/docker-compose.prod.yml ps
