@@ -1,11 +1,10 @@
-peewee==3.16.2
+peewee==3.18.2
 # Pyrogram>=2.0.106
 # git+https://github.com/Kroks4502/pyrogram.git
-pyrofork==2.3.63
-python-dotenv==1.0.0
-APScheduler==3.10.1
+pyrofork==2.3.68
+APScheduler==3.11.0
 TgCrypto==1.2.5
-async_lru==2.0.2
-psycopg2-binary==2.9.6
-yoyo-migrations==8.2.0
-gevent==24.2.1
+async_lru==2.0.5
+psycopg2-binary==2.9.10
+yoyo-migrations==9.0.0
+gevent==25.5.1
