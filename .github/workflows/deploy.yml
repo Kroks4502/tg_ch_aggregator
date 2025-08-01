@@ -91,6 +91,18 @@ jobs:
             # Start services with docker-compose using environment variables
             docker-compose -f docker/docker-compose.prod.yml up -d
 
+      - name: Cleanup old Docker images
+        uses: appleboy/ssh-action@v1.2.2
+        if: success()
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
+          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
+          script: |
+            # Clean up dangling images and unused containers
+            docker image prune -f
+            docker container prune -f
+
   notify:
     runs-on: ubuntu-latest
     needs: build-and-deploy

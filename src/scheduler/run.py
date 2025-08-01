@@ -1,3 +1,4 @@
+import asyncio
 from asyncio import sleep
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -64,5 +65,11 @@ async def startup_job():
 
 
 def run_scheduler():
+    scheduler.configure(event_loop=asyncio.new_event_loop())
     scheduler.add_job(func=startup_job, id=startup_job.__name__)
     scheduler.start()
+
+
+def stop_scheduler():
+    if scheduler.running:
+        scheduler.shutdown(wait=True)

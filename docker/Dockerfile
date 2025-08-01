@@ -1,5 +1,5 @@
 # Build stage
-FROM python:3.10-slim as builder
+FROM python:3.13-slim as builder
 
 # Set environment variables for build
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -22,7 +22,7 @@ COPY requirements.txt requirements-dev.txt ./
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
 
 # Final stage
-FROM python:3.10-slim
+FROM python:3.13-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -37,6 +37,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     curl \
+    procps \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -54,6 +55,10 @@ RUN pip install --no-cache /wheels/* && \
 # Copy application code
 COPY --chown=app:app . .
 
+# Copy and make entrypoint script executable
+COPY --chown=app:app docker/scripts/backend_entrypoint.sh /app/docker/scripts/backend_entrypoint.sh
+RUN chmod +x /app/docker/scripts/backend_entrypoint.sh
+
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/logs /app/sessions && \
     chown -R app:app /app
@@ -63,7 +68,7 @@ USER app
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD pgrep -f "python.*main.py" || exit 1
+    CMD pgrep -x "python" || exit 1
 
 # Default command
 CMD ["python", "src/main.py"]

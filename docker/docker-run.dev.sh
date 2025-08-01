@@ -54,10 +54,16 @@ stop() {
 }
 
 restart() {
-    print_info "Restarting tg_ch_aggregator..."
-    docker-compose -f docker-compose.dev.yml --env-file ../.env down
-    docker-compose -f docker-compose.dev.yml --env-file ../.env up -d
-    print_info "Services restarted!"
+    if [ -z "$1" ]; then
+        print_info "Restarting all tg_ch_aggregator services..."
+        docker-compose -f docker-compose.dev.yml --env-file ../.env down
+        docker-compose -f docker-compose.dev.yml --env-file ../.env up -d
+        print_info "All services restarted!"
+    else
+        print_info "Restarting service: $1"
+        docker-compose -f docker-compose.dev.yml --env-file ../.env restart "$1"
+        print_info "Service $1 restarted!"
+    fi
 }
 
 logs() {
@@ -80,7 +86,13 @@ build() {
 }
 
 clean() {
-    print_warning "Cleaning Docker containers and images..."
+    print_warning "All containers, images, and volumes will be cleaned."
+    echo -n "Continue? [y/N]:"
+    read -r answer
+    if [ "$answer" != "y" ] && [ "$answer" != "Y" ]; then
+        print_info "Operation cancelled"
+        exit 1
+    fi
     docker-compose -f docker-compose.dev.yml --env-file ../.env down --rmi all --volumes --remove-orphans
     print_info "Cleaning completed!"
 }
@@ -96,7 +108,7 @@ help() {
     echo "Commands:"
     echo "  start           - Start services"
     echo "  stop            - Stop services"
-    echo "  restart         - Restart services"
+    echo "  restart [service] - Restart services (optional specify service)"
     echo "  logs [service]  - Show logs (optional specify service)"
     echo "  create_sessions - Create Telegram sessions"
     echo "  build           - Build Docker images"
@@ -106,6 +118,9 @@ help() {
     echo ""
     echo "Examples:"
     echo "  $0 start"
+    echo "  $0 restart"
+    echo "  $0 restart backend"
+    echo "  $0 restart postgres"
     echo "  $0 logs backend"
     echo "  $0 create_sessions"
 }
@@ -118,7 +133,7 @@ case "${1:-help}" in
         stop
         ;;
     restart)
-        restart
+        restart "$2"
         ;;
     logs)
         logs "$2"

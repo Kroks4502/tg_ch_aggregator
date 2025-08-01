@@ -36,6 +36,10 @@ def connect():
         logging.warning("Connection already opened.")
 
 
+def close_connection():
+    psql_db.close()
+
+
 psql_db = PostgresqlExtDatabase(
     POSTGRES_DB,
     user=POSTGRES_USER,
