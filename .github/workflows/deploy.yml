@@ -1,4 +1,4 @@
-name: Deploy Telegram Channel Aggregator
+name: Deploy
 
 on:
   push:
@@ -95,7 +95,7 @@ jobs:
             timeout=60
             elapsed=0
             interval=5
-            
+
             while [ $elapsed -lt $timeout ]; do
               # Check if all containers are running and healthy
               unhealthy_containers=$(docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}" | grep -v "Up .*(healthy)" | grep -v "NAME" | wc -l)

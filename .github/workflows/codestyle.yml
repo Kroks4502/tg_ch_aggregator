@@ -1,4 +1,4 @@
-name: codestyle
+name: Check codestyle
 
 on:
   push:
