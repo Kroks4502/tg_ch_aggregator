@@ -91,6 +91,43 @@ jobs:
             # Start services with docker-compose using environment variables
             docker-compose -f docker/docker-compose.prod.yml up -d
 
+      - name: Wait for containers to be healthy
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_HOST_SSH_USER }}
+          key: ${{ secrets.DEPLOY_HOST_SSH_KEY }}
+          script: |
+            cd /opt/tg_ch_aggregator
+            
+            # Wait for containers to be healthy (max 5 minutes)
+            timeout=300
+            elapsed=0
+            interval=10
+            
+            echo "Waiting for containers to be healthy..."
+            
+            while [ $elapsed -lt $timeout ]; do
+              # Check if all containers are running and healthy
+              unhealthy_containers=$(docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}" | grep -v "Up (healthy)" | grep -v "NAME" | wc -l)
+              
+              if [ $unhealthy_containers -eq 0 ]; then
+                echo "✅ All containers are healthy!"
+                docker-compose -f docker/docker-compose.prod.yml ps
+                exit 0
+              fi
+              
+              echo "⏳ Waiting for containers to be healthy... ($elapsed/$timeout seconds)"
+              docker-compose -f docker/docker-compose.prod.yml ps
+              sleep $interval
+              elapsed=$((elapsed + interval))
+            done
+            
+            echo "❌ Timeout waiting for containers to be healthy"
+            docker-compose -f docker/docker-compose.prod.yml ps
+            docker-compose -f docker/docker-compose.prod.yml logs
+            exit 1
+
       - name: Cleanup old Docker images
         uses: appleboy/ssh-action@v1.2.2
         if: success()
