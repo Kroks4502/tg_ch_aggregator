@@ -6,7 +6,7 @@ from pyrogram import compose
 
 import db
 from clients import bot_client, user_client
-from scheduler.run import run_scheduler, stop_scheduler
+from scheduler.run import run_scheduler_async, stop_scheduler
 from settings import IS_ONLY_BOT, configure_logging
 
 
@@ -20,7 +20,7 @@ def signal_handler(_signum, _frame):
     sys.exit(0)
 
 
-def main():
+async def async_main():
     configure_logging()
 
     # Регистрируем обработчики сигналов
@@ -31,9 +31,13 @@ def main():
     db.patch_psycopg2()
 
     if not IS_ONLY_BOT:
-        run_scheduler()
+        await run_scheduler_async()
 
-    compose([bot_client, user_client])
+    await compose([bot_client, user_client])
+
+
+def main():
+    asyncio.run(async_main())
 
 
 if __name__ == "__main__":

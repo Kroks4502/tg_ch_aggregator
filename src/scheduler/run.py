@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from asyncio import sleep
 
@@ -11,7 +10,7 @@ from scheduler.jobs.set_user_bot_as_admin import set_user_bot_as_admin_job
 from scheduler.jobs.update_admins_info import update_users_info_job
 from scheduler.jobs.update_channels_info import update_channels_info_job
 
-scheduler = AsyncIOScheduler(event_loop=asyncio.new_event_loop())
+scheduler = AsyncIOScheduler()
 
 
 async def startup_job():
@@ -73,7 +72,7 @@ async def startup_job():
     add_all_evaluation_counter_rule_job()
 
 
-def run_scheduler():
+async def run_scheduler_async():
     scheduler.add_job(func=startup_job, id=startup_job.__name__)
     scheduler.start()
 
