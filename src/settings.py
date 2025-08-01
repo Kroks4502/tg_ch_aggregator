@@ -67,20 +67,14 @@ if missing_vars:
 def configure_logging():
     """Конфигурирование логирования."""
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    rotating_handler = RotatingFileHandler(
-        LOGS_DIR / "app.log",
-        maxBytes=10**6,
-        backupCount=5,
-        encoding="UTF-8",
-    )
     logging.basicConfig(
         format=LOG_FORMAT,
-        level=logging.WARNING,
-        handlers=(rotating_handler, logging.StreamHandler()),
+        level=logging.INFO,
+        handlers=(logging.StreamHandler(),),
     )
 
     # if DEVELOP_MODE:
     # logging.getLogger().setLevel(logging.DEBUG)
     # logging.getLogger("peewee").setLevel(logging.DEBUG)
     # logging.getLogger("pyrogram").setLevel(logging.INFO)
-    logging.getLogger("apscheduler").setLevel(logging.INFO)
+    logging.getLogger("apscheduler").setLevel(logging.DEBUG)

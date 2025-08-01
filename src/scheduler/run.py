@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from asyncio import sleep
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -20,6 +21,13 @@ async def startup_job():
         or not bot_client.is_connected
         or not bot_client.is_initialized
     ):
+        logging.info("Waiting for clients to be initialized...")
+        logging.info(
+            f"User client: {user_client.is_connected} {user_client.is_initialized}"
+        )
+        logging.info(
+            f"Bot client: {bot_client.is_connected} {bot_client.is_initialized}"
+        )
         await sleep(1)
 
     scheduler.add_job(
@@ -65,8 +73,8 @@ async def startup_job():
 
 
 def run_scheduler():
-    scheduler.configure(event_loop=asyncio.new_event_loop())
     scheduler.add_job(func=startup_job, id=startup_job.__name__)
+    scheduler.configure(event_loop=asyncio.new_event_loop())
     scheduler.start()
 
 
