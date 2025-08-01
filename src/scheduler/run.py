@@ -15,6 +15,7 @@ scheduler = AsyncIOScheduler(event_loop=asyncio.new_event_loop())
 
 
 async def startup_job():
+    logging.info(">>>> Startup job started")
     while (
         not user_client.is_connected
         or not user_client.is_initialized

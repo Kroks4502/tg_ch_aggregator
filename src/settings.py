@@ -1,7 +1,6 @@
 import datetime as dt
 import logging
 import os
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from plugins.user.types import Operation
