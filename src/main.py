@@ -3,7 +3,7 @@ from pyrogram import compose
 import db
 from clients import bot_client, user_client
 from scheduler.run import run_scheduler
-from settings import configure_logging, IS_ONLY_BOT
+from settings import IS_ONLY_BOT, configure_logging
 
 
 def main():
