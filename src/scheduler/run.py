@@ -49,14 +49,14 @@ async def startup_job():
         func=update_users_info_job,
         trigger="interval",
         minutes=180,
-        id=f"{update_users_info_job.__name__}_interval_60min",
+        id=f"{update_users_info_job.__name__}_interval_180min",
         max_instances=1,
     )
     scheduler.add_job(
         func=update_channels_info_job,
         trigger="interval",
         minutes=180,
-        id=f"{update_channels_info_job.__name__}_interval_60min",
+        id=f"{update_channels_info_job.__name__}_interval_180min",
         max_instances=1,
     )
 
