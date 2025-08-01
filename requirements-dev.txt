@@ -7,3 +7,4 @@ flake8-return>=1.2.0
 pytest==8.4.1
 pytest-asyncio==1.1.0
 pytest_mock==3.14.1
+isort>=6.0.1

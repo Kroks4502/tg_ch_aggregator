@@ -35,8 +35,10 @@ def connect():
     if not con_result:
         logging.warning("Connection already opened.")
 
+
 def close_connection():
     psql_db.close()
+
 
 psql_db = PostgresqlExtDatabase(
     POSTGRES_DB,
