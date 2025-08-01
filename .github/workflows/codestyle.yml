@@ -1,6 +1,9 @@
 name: codestyle
 
 on:
+  push:
+    branches:
+      - "**"
   pull_request:
     branches:
       - main
