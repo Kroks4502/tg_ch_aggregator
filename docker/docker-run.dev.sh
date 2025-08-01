@@ -87,7 +87,7 @@ build() {
 
 clean() {
     print_warning "All containers, images, and volumes will be cleaned."
-    echo -n "Continue? [y/N] "
+    echo -n "Continue? [y/N]:"
     read -r answer
     if [ "$answer" != "y" ] && [ "$answer" != "Y" ]; then
         print_info "Operation cancelled"

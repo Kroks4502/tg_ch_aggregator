@@ -28,17 +28,8 @@ services:
       dockerfile: docker/Dockerfile
     env_file:
       - ../.env
-    command: >
-      sh -c "
-        echo 'Waiting for database...' &&
-        while ! pg_isready -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do
-          sleep 2;
-        done &&
-        echo 'Database is ready!' &&
-        yoyo apply --database postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB} &&
-        cd src && 
-        python main.py
-      "
+    entrypoint: ["/app/docker/scripts/backend_entrypoint.sh"]
+    command: python main.py
     volumes:
       - ../src:/app/src:cached
       - ../logs:/app/logs:cached
@@ -52,7 +43,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pgrep", "-f", "python"]
+      test: ["CMD", "pgrep", "-x", "python"]
       interval: 30s
       timeout: 10s
       retries: 3

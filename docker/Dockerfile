@@ -37,6 +37,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     curl \
+    procps \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -54,6 +55,10 @@ RUN pip install --no-cache /wheels/* && \
 # Copy application code
 COPY --chown=app:app . .
 
+# Copy and make entrypoint script executable
+COPY --chown=app:app docker/scripts/backend_entrypoint.sh /app/docker/scripts/backend_entrypoint.sh
+RUN chmod +x /app/docker/scripts/backend_entrypoint.sh
+
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/logs /app/sessions && \
     chown -R app:app /app
@@ -63,7 +68,7 @@ USER app
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD pgrep -f "python.*main.py" || exit 1
+    CMD pgrep -x "python" || exit 1
 
 # Default command
 CMD ["python", "src/main.py"]
