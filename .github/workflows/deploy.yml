@@ -98,7 +98,7 @@ jobs:
 
             while [ $elapsed -lt $timeout ]; do
               # Check if all containers are running and healthy
-              unhealthy_containers=$(docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}" | grep -v "Up .*(healthy)" | grep -v "NAME" | wc -l)
+              unhealthy_containers=$(docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}" | grep -v "Up .*(healthy)" | grep -v "STATUS" | wc -l)
               if [ $unhealthy_containers -eq 0 ]; then
                 echo "✅ All containers are healthy!"
                 docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}"
