@@ -96,12 +96,12 @@ jobs:
             elapsed=0
             interval=10
             
-            echo "Waiting for containers to be healthy..."
+            echo "⏳ Waiting for containers to be healthy..."
             
             while [ $elapsed -lt $timeout ]; do
               # Check if all containers are running and healthy
               unhealthy_containers=$(docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}" | grep -v "Up (healthy)" | grep -v "NAME" | wc -l)
-
+              echo unhealthy_containers: $unhealthy_containers
               if [ $unhealthy_containers -eq 0 ]; then
                 echo "✅ All containers are healthy!"
                 docker-compose -f docker/docker-compose.prod.yml ps
