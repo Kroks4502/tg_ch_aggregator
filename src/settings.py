@@ -79,8 +79,8 @@ def configure_logging():
         handlers=(rotating_handler, logging.StreamHandler()),
     )
 
-    if DEVELOP_MODE:
-        logging.getLogger().setLevel(logging.DEBUG)
-        logging.getLogger("peewee").setLevel(logging.DEBUG)
-        logging.getLogger("pyrogram").setLevel(logging.INFO)
-        logging.getLogger("apscheduler").setLevel(logging.INFO)
+    # if DEVELOP_MODE:
+    # logging.getLogger().setLevel(logging.DEBUG)
+    # logging.getLogger("peewee").setLevel(logging.DEBUG)
+    # logging.getLogger("pyrogram").setLevel(logging.INFO)
+    logging.getLogger("apscheduler").setLevel(logging.INFO)
