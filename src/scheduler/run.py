@@ -23,11 +23,11 @@ async def startup_job():
 
     scheduler.add_job(
         func=set_user_bot_as_admin_job,
-        id=set_user_bot_as_admin_job.__name__,
+        id=f"{set_user_bot_as_admin_job.__name__}_startup",
     )
     scheduler.add_job(
         func=processing_unread_messages_job,
-        id=processing_unread_messages_job.__name__,
+        id=f"{processing_unread_messages_job.__name__}_startup",
     )
     scheduler.add_job(
         func=update_users_info_job,
@@ -39,17 +39,24 @@ async def startup_job():
     )
 
     scheduler.add_job(
+        func=processing_unread_messages_job,
+        trigger="interval",
+        minutes=15,
+        id=f"{processing_unread_messages_job.__name__}_interval_15min",
+        max_instances=1,
+    )
+    scheduler.add_job(
         func=update_users_info_job,
         trigger="interval",
-        minutes=60,
-        id=update_users_info_job.__name__,
+        minutes=180,
+        id=f"{update_users_info_job.__name__}_interval_60min",
         max_instances=1,
     )
     scheduler.add_job(
         func=update_channels_info_job,
         trigger="interval",
-        minutes=60,
-        id=update_channels_info_job.__name__,
+        minutes=180,
+        id=f"{update_channels_info_job.__name__}_interval_60min",
         max_instances=1,
     )
 
