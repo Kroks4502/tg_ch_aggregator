@@ -10,6 +10,8 @@ from plugins.bot.handlers.category.detail import CATEGORY_CALLBACK_DATA
 from plugins.bot.handlers.source.detail import DETAIL_SOURCE_PATH
 from settings import USER_BOT_NAME
 
+logger = logging.getLogger(__name__)
+
 GO_TO_CATEGORY = "Перейти к категории"
 GO_TO_SOURCE = "Перейти к источнику"
 
@@ -21,6 +23,7 @@ ERROR_NOT_FOUND_SOURCE = f"Источник {ERROR_NOT_FOUND_CHANNEL}"
 
 
 async def update_channels_info_job():
+    logger.debug("Starting job...")
     user_client_chats = {
         dialog.chat.id: dialog.chat async for dialog in user_client.get_dialogs()
     }
@@ -29,13 +32,18 @@ async def update_channels_info_job():
         *Source.select().where(Source.is_deleted == False),
         *Category.select(),
     ):
+        logger.debug(f"Updating info about {db_obj.id}...")
         tg_chat = user_client_chats.get(db_obj.id)
 
         if not tg_chat:
             try:
                 tg_chat = await user_client.get_chat(db_obj.id)
             except ChannelPrivate as e:
-                logging.warning("Не удалось получить информацию о канале %s: %s", db_obj.id, e)
+                logging.warning(
+                    "Не удалось получить информацию о канале %s: %s",
+                    db_obj.id,
+                    e,
+                )
                 tg_chat = None
 
         if not tg_chat:
@@ -45,9 +53,12 @@ async def update_channels_info_job():
         if tg_chat.title != db_obj.title:
             db_obj.title = tg_chat.title
             db_obj.save()
+            logger.info(f"Title for {db_obj.id} updated")
+    logger.debug("Job completed")
 
 
 async def send_not_found_chat_message_to_admins(db_obj: Source | Category):
+    logger.debug(f"Sending message to admins about not found chat {db_obj.id}...")
     if isinstance(db_obj, Source):
         text = ERROR_NOT_FOUND_SOURCE.format(
             channel_title=db_obj.title,
@@ -63,7 +74,7 @@ async def send_not_found_chat_message_to_admins(db_obj: Source | Category):
         button_text = GO_TO_CATEGORY
         callback_data = CATEGORY_CALLBACK_DATA.format(category_id=db_obj.id) + "?new"
 
-    logging.warning(text)
+    logger.warning(text)
     await send_message_to_admins(
         client=bot_client,
         text=text,
@@ -78,3 +89,4 @@ async def send_not_found_chat_message_to_admins(db_obj: Source | Category):
             ]
         ),
     )
+    logger.info(f"Message to admins about not found chat {db_obj.id} sent")
