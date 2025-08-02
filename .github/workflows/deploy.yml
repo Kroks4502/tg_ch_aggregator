@@ -1,9 +1,10 @@
-name: Deploy Telegram Channel Aggregator
+name: Deploy
 
 on:
   push:
     branches:
      - main
+     - deploy/*
   workflow_dispatch:
 
 env:
@@ -90,6 +91,31 @@ jobs:
             
             # Start services with docker-compose using environment variables
             docker-compose -f docker/docker-compose.prod.yml up -d
+            
+            # Wait for containers to be healthy (max 1 minutes)
+            timeout=60
+            elapsed=0
+            interval=5
+
+            while [ $elapsed -lt $timeout ]; do
+              # Check if all containers are running and healthy
+              unhealthy_containers=$(docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}" | grep -v "Up .*(healthy)" | grep -v "STATUS" | wc -l)
+              if [ $unhealthy_containers -eq 0 ]; then
+                docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}"
+                echo "✅ All containers are healthy!"
+                exit 0
+              fi
+              
+              docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}"
+              echo "⏳ Waiting for containers to be healthy... ($elapsed/$timeout seconds)"
+              sleep $interval
+              elapsed=$((elapsed + interval))
+            done
+            
+            echo "❌ Timeout waiting for containers to be healthy"
+            docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}"
+            docker-compose -f docker/docker-compose.prod.yml logs
+            exit 1
 
       - name: Cleanup old Docker images
         uses: appleboy/ssh-action@v1.2.2

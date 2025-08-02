@@ -31,18 +31,24 @@ done
 echo '✅ Database is ready!'
 
 echo '🔄 Applying database migrations...'
-yoyo apply --database \"postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}\"
+yoyo apply --database "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}"
+if [ "$?" -ne 0 ]; then
+    echo '❌ Database migrations failed!'
+    exit 1
+fi
 echo '✅ Database migrations applied!'
 
 echo '🔄 Waiting for Telegram sessions...'
 while [ ! -f /app/sessions/user.session ] || [ ! -f /app/sessions/bot.session ]; do
-    sleep 2;
+    echo 'Input authorization parameters into container "create_sessions" use the following command:'
+    echo 'docker logs --tail 20 tg_ch_aggregator-create_sessions-1 && docker attach tg_ch_aggregator-create_sessions-1'
+    sleep 5;
 done
 echo '✅ Telegram sessions are ready!'
 
 cd src
-echo '🔄 Starting application...'
 
+echo '🔄 Starting application...'
 eval "$@" &
 PYTHON_PID=$!
 

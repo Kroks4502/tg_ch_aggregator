@@ -1,7 +1,6 @@
 import datetime as dt
 import logging
 import os
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from plugins.user.types import Operation
@@ -43,8 +42,8 @@ if DUMP_MESSAGE_MODE:
     for directory in DUMP_MESSAGES_DIRS_BY_OPERATION.values():
         directory.mkdir(parents=True, exist_ok=True)
 
-# Check that all required environment variables are set
-required_env_vars = [
+
+REQUIRED_ENV_VARS = [
     ("API_ID", API_ID),
     ("API_HASH", API_HASH),
     ("BOT_TOKEN", BOT_TOKEN),
@@ -55,32 +54,30 @@ required_env_vars = [
     ("POSTGRES_PORT", POSTGRES_PORT),
 ]
 
-missing_vars = [name for name, value in required_env_vars if not value]
 
-if missing_vars:
-    raise ValueError(
-        f"Missing required environment variables: {', '.join(missing_vars)}. "
-        "Please check your .env file."
-    )
+def check_required_env_vars():
+    """Check that all required environment variables are set."""
+
+    missing_vars = [name for name, value in REQUIRED_ENV_VARS if not value]
+    if missing_vars:
+        raise ValueError(
+            f"Missing required environment variables: {', '.join(missing_vars)}. "
+            "Please check your .env file."
+        )
 
 
 def configure_logging():
     """Конфигурирование логирования."""
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    rotating_handler = RotatingFileHandler(
-        LOGS_DIR / "app.log",
-        maxBytes=10**6,
-        backupCount=5,
-        encoding="UTF-8",
-    )
     logging.basicConfig(
         format=LOG_FORMAT,
         level=logging.WARNING,
-        handlers=(rotating_handler, logging.StreamHandler()),
+        handlers=(logging.StreamHandler(),),
     )
+    logging.getLogger("apscheduler").setLevel(logging.INFO)
 
     if DEVELOP_MODE:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger("peewee").setLevel(logging.DEBUG)
         logging.getLogger("pyrogram").setLevel(logging.INFO)
-        logging.getLogger("apscheduler").setLevel(logging.INFO)
+        logging.getLogger("apscheduler").setLevel(logging.DEBUG)
