@@ -50,15 +50,30 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
    Create a [.env](.env.template) file in the root directory with the following content:
 
    ```env
+   # Telegram API credentials
    TELEGRAM_API_ID=
    TELEGRAM_API_HASH=
    TELEGRAM_BOT_TOKEN=
    
+   # PostgreSQL credentials
    POSTGRES_DB=tgbot
    POSTGRES_USER=tgbot
    POSTGRES_PASSWORD=tgbot
    POSTGRES_HOST=postgres
    POSTGRES_PORT=5432
+
+   # Development mode for expand logs
+   # Set to 1 for only expand logs
+   # Set to "bot" for start bot only (without user client)
+   # Empty value for production
+   DEVELOP_MODE=
+
+   # Integration tests credentials
+   # Bot should be added to channels as administrator
+   # Recommended not to use the same bot as the main bot, because it can cause throttling
+   TEST_TELEGRAM_BOT_TOKEN=
+   TEST_TELEGRAM_SOURCE_CHANNEL_ID=
+   TEST_TELEGRAM_AGGREGATOR_CHANNEL_ID=
    ```
 
 3. **Create Telegram sessions (this will be interactive)**
