@@ -124,7 +124,7 @@ class MenuAbstract(abc.ABC):
 
         :param data: Данные для преобразования в кнопки.
         :param postfix: Постфикс для добавления в конец пути.
-        :return: Кнопки из данных.
+        :return: None
         """
         row_buttons = []
 
