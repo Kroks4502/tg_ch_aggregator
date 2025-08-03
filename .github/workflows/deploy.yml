@@ -12,6 +12,7 @@ env:
 
 jobs:
   build-and-deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -129,8 +130,8 @@ jobs:
             docker image prune -f
             docker container prune -f
 
-  integration-tests:
-    name: Run Integration Tests
+  tests-after-deploy:
+    name: Tests after deploy
     runs-on: ubuntu-latest
     needs: build-and-deploy
     steps:
@@ -169,8 +170,9 @@ jobs:
           pytest tests/integration/ -v --tb=short
 
   notify:
+    name: Notify
     runs-on: ubuntu-latest
-    needs: [build-and-deploy, integration-tests]
+    needs: [build-and-deploy, tests-after-deploy]
     if: always()
     steps:
       - name: Get short commit hash
@@ -187,8 +189,8 @@ jobs:
           format: markdown
           disable_web_page_preview: true
           message: |
-            ${{ needs.build-and-deploy.result == 'success' && '✅ Deploy successful!' || '❌ Deploy failed!' }}
-            ${{ needs.integration-tests.result == 'success' && '✅ Integration tests successful!' || '❌ Integration tests failed!' }}
+            ${{ needs.build-and-deploy.result == 'success' && '✅ Deploy successful' || '❌ Deploy failed' }}
+            ${{ needs.tests-after-deploy.result == 'success' && '✅ Tests successful' || '❌ Tests failed' }}
 
             **Repository:** [${{ github.repository }}](https://github.com/${{ github.repository }})
             **Branch:** [${{ github.ref_name }}](https://github.com/${{ github.repository }}/tree/${{ github.ref_name }})
