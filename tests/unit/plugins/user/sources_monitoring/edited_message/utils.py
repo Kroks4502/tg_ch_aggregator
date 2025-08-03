@@ -1,10 +1,20 @@
 from pytest_mock import MockerFixture
 
 from plugins.user.types import Operation
-from tests.plugins.user.sources_monitoring.utils import (
+
+from ..utils import (
     default_log_asserts,
     set_return_value,
+    setup_json_loads,
 )
+
+ALL = [
+    "default_edited_message_log_asserts",
+    "setup_filtered",
+    "setup_get_history_obj",
+    "setup_source",
+    setup_json_loads,
+]
 
 
 def default_edited_message_log_asserts(caplog):

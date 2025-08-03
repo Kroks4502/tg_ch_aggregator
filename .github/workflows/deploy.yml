@@ -129,9 +129,48 @@ jobs:
             docker image prune -f
             docker container prune -f
 
-  notify:
+  integration-tests:
+    name: Run Integration Tests
     runs-on: ubuntu-latest
     needs: build-and-deploy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ -v --tb=short
+      
+      - name: Run integration tests
+        env:
+          TEST_TELEGRAM_BOT_TOKEN: ${{ secrets.TEST_TELEGRAM_BOT_TOKEN }}
+          TEST_TELEGRAM_SOURCE_CHANNEL_ID: ${{ secrets.TEST_TELEGRAM_SOURCE_CHANNEL_ID }}
+          TEST_TELEGRAM_AGGREGATOR_CHANNEL_ID: ${{ secrets.TEST_TELEGRAM_AGGREGATOR_CHANNEL_ID }}
+        run: |
+          pytest tests/integration/ -v --tb=short
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [build-and-deploy, integration-tests]
     if: always()
     steps:
       - name: Get short commit hash
@@ -149,7 +188,8 @@ jobs:
           disable_web_page_preview: true
           message: |
             ${{ needs.build-and-deploy.result == 'success' && '✅ Deploy successful!' || '❌ Deploy failed!' }}
-            
+            ${{ needs.integration-tests.result == 'success' && '✅ Integration tests successful!' || '❌ Integration tests failed!' }}
+
             **Repository:** [${{ github.repository }}](https://github.com/${{ github.repository }})
             **Branch:** [${{ github.ref_name }}](https://github.com/${{ github.repository }}/tree/${{ github.ref_name }})
             **Commit:** [${{ steps.commit.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})

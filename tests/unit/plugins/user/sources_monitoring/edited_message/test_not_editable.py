@@ -6,11 +6,12 @@ from _pytest.logging import LogCaptureFixture
 from pytest_mock import MockerFixture
 
 from plugins.user.sources_monitoring import edited_message
-from tests.plugins.user.sources_monitoring.edited_message.utils import (
+
+from .utils import (
     default_edited_message_log_asserts,
     setup_get_history_obj,
+    setup_json_loads,
 )
-from tests.plugins.user.sources_monitoring.utils import setup_json_loads
 
 
 @pytest.mark.asyncio
@@ -32,7 +33,6 @@ async def test_not_editable_message(
 
     assert (
         "Источник 0 изменил сообщение 0, оно не может быть изменено в категории, потому"
-        " что было переслано и не перепечатывалось"
-        in caplog.text
+        " что было переслано и не перепечатывалось" in caplog.text
     )
     default_edited_message_log_asserts(caplog=caplog)

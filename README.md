@@ -102,6 +102,11 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
    - `DEPLOY_HOST_SSH_USER`
    - `DEPLOY_HOST_SSH_KEY`
 
+   Integration tests credentials:
+   - `TEST_TELEGRAM_BOT_TOKEN` - bot token for integration tests (should be added to channels as administrator). Recommended not to use the same bot as the main bot, because it can cause throttling.
+   - `TEST_TELEGRAM_SOURCE_CHANNEL_ID`
+   - `TEST_TELEGRAM_AGGREGATOR_CHANNEL_ID`
+
 3. **Deploy**
 
    Run the workflow "[Deploy Telegram Channel Aggregator](.github/workflows/deploy.yml)"

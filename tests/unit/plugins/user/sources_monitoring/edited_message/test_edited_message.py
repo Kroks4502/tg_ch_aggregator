@@ -7,13 +7,14 @@ from _pytest.logging import LogCaptureFixture
 from pytest_mock import MockerFixture
 
 from plugins.user.sources_monitoring import edited_message
-from tests.plugins.user.sources_monitoring.edited_message.utils import (
+
+from .utils import (
     default_edited_message_log_asserts,
     setup_filtered,
     setup_get_history_obj,
+    setup_json_loads,
     setup_source,
 )
-from tests.plugins.user.sources_monitoring.utils import setup_json_loads
 
 
 @pytest.mark.asyncio
