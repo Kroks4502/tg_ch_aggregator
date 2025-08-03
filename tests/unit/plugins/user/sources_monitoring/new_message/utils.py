@@ -4,10 +4,23 @@ from pytest_mock import MockerFixture
 
 from models import MessageHistory
 from plugins.user.types import Operation
-from tests.plugins.user.sources_monitoring.utils import (
+
+from ..utils import (
     default_log_asserts,
     set_return_value,
+    setup_json_loads,
 )
+
+ALL = [
+    "default_new_message_log_asserts",
+    "setup_repeated",
+    "setup_filtered",
+    "setup_source",
+    "setup_history_save",
+    "history_new_message_asserts",
+    "history_with_category_asserts",
+    setup_json_loads,
+]
 
 
 def default_new_message_log_asserts(caplog) -> None:

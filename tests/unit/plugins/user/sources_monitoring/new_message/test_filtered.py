@@ -8,15 +8,16 @@ from pytest_mock import MockerFixture
 from plugins.user.sources_monitoring.common import blocking_messages
 from plugins.user.sources_monitoring.new_message import new_message
 from plugins.user.types import Operation
-from tests.plugins.user.sources_monitoring.new_message.utils import (
+
+from .utils import (
     default_new_message_log_asserts,
     history_new_message_asserts,
     setup_filtered,
     setup_history_save,
+    setup_json_loads,
     setup_repeated,
     setup_source,
 )
-from tests.plugins.user.sources_monitoring.utils import setup_json_loads
 
 
 @pytest.mark.asyncio
