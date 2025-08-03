@@ -22,8 +22,8 @@ async def test_plain_text(
 ) -> None:
     offset = await last_update_id(bot)
     fingerprint = create_fingerprint()
-    await bot.send_message(source_channel, fingerprint)
 
+    await bot.send_message(source_channel, fingerprint)
     forwarded = await wait_for_message(
         bot,
         aggregator_channel,
@@ -43,8 +43,8 @@ async def test_edit_message_forward(
 ) -> None:
     offset = await last_update_id(bot)
     fingerprint = create_fingerprint()
-    new_message = await bot.send_message(source_channel, fingerprint)
 
+    new_message = await bot.send_message(source_channel, fingerprint)
     forwarded = await wait_for_message(
         bot,
         aggregator_channel,
@@ -67,6 +67,7 @@ async def test_edit_message_forward(
         offset,
         lambda m: m.text is not None and fingerprint in m.text,
     )
+
     assert edited_msg.text is not None
     assert fingerprint in edited_msg.text
 
@@ -79,8 +80,8 @@ async def test_delete_message_forward(
 ) -> None:
     offset = await last_update_id(bot)
     fingerprint = create_fingerprint()
-    new_message = await bot.send_message(source_channel, fingerprint)
 
+    new_message = await bot.send_message(source_channel, fingerprint)
     forwarded = await wait_for_message(
         bot,
         aggregator_channel,
