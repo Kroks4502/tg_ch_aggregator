@@ -18,17 +18,17 @@ async def test_aggregator_message_header(
 ) -> None:
     offset = await last_update_id(bot)
     text = create_fingerprint()
+
     message = await bot.send_message(source_channel, text)
-
-    header = await aggregator_header_title(bot, source_channel)
-    link = aggregator_message_link(message)
-
     forwarded = await wait_for_message(
         bot,
         aggregator_channel,
         offset,
         lambda m: m.text is not None and text in m.text,
     )
+
+    header = await aggregator_header_title(bot, source_channel)
+    link = aggregator_message_link(message)
 
     assert forwarded.text == f"{header}\n{text}"
 
