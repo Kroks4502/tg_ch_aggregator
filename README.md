@@ -54,13 +54,15 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
    TELEGRAM_API_ID=
    TELEGRAM_API_HASH=
    TELEGRAM_BOT_TOKEN=
-   
    # PostgreSQL credentials
    POSTGRES_DB=tgbot
    POSTGRES_USER=tgbot
    POSTGRES_PASSWORD=tgbot
    POSTGRES_HOST=postgres
    POSTGRES_PORT=5432
+
+   # OpenAI API key
+   OPENAI_API_KEY=
 
    # Development mode for expand logs
    # Set to 1 for only expand logs
@@ -101,16 +103,19 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
    Create secrets in the repository settings "Settings" -> "Secrets and variables" -> "Actions" -> "New repository secret":
 
    Telegram API credentials:
-   - `APP_TELEGRAM_API_ID`
-   - `APP_TELEGRAM_API_HASH`
-   - `APP_TELEGRAM_BOT_TOKEN`
+    - `APP_TELEGRAM_API_ID`
+    - `APP_TELEGRAM_API_HASH`
+    - `APP_TELEGRAM_BOT_TOKEN`
 
    PostgreSQL credentials:
-   - `APP_POSTGRES_DB`
-   - `APP_POSTGRES_USER`
-   - `APP_POSTGRES_PASSWORD`
-   - `APP_POSTGRES_HOST`
-   - `APP_POSTGRES_PORT`
+    - `APP_POSTGRES_DB`
+    - `APP_POSTGRES_USER`
+    - `APP_POSTGRES_PASSWORD`
+    - `APP_POSTGRES_HOST`
+    - `APP_POSTGRES_PORT`
+
+   OpenAI API credentials:
+    - `APP_OPENAI_API_KEY`
 
    Deployment credentials:
    - `DEPLOY_HOST`

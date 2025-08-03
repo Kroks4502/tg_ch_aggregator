@@ -8,3 +8,4 @@ async_lru==2.0.5
 psycopg2-binary==2.9.10
 yoyo-migrations==9.0.0
 gevent==25.5.1
+openai>=1.98.0
