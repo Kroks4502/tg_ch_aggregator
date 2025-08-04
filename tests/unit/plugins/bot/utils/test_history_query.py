@@ -1,9 +1,16 @@
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 
 import pytest
-from datetime import datetime, timedelta
-from playhouse.sqlite_ext import SqliteExtDatabase, JSONField
-from peewee import Model, AutoField, IntegerField, ForeignKeyField, TextField, DateTimeField
+from peewee import (
+    AutoField,
+    DateTimeField,
+    ForeignKeyField,
+    IntegerField,
+    Model,
+    TextField,
+)
+from playhouse.sqlite_ext import JSONField, SqliteExtDatabase
 
 import src.plugins.bot.utils.history_query as history_query
 
