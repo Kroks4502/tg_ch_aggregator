@@ -1,5 +1,5 @@
 import logging
-from typing import Callable
+from typing import Callable, Any, Awaitable
 
 from pyrogram import Client
 from pyrogram.handlers import MessageHandler
@@ -11,25 +11,25 @@ from utils import custom_filters
 class InputWaitManager:
     """Менеджер ожидания отправки пользователем сообщения боту."""
 
-    _waiting_chats: dict[int : dict[str:any]] = {}
+    _waiting_chats: dict[int, dict[str, Any]] = {}
 
     def add(
         self,
         chat_id: int,
-        func: Callable[[Client, Message, any], None],
+        func: Callable[..., Awaitable[Any]],
         client: Client,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
+        handler = MessageHandler(
+            self.__input_text,
+            filters=(custom_filters.chat(chat_id) & ~custom_filters.command_message),
+        )
+        group = 0
+        client.add_handler(handler, group=group)
+
         self._waiting_chats[chat_id] = {
-            "handler": client.add_handler(
-                MessageHandler(
-                    self.__input_text,
-                    filters=(
-                        custom_filters.chat(chat_id) & ~custom_filters.command_message
-                    ),
-                ),
-            ),
+            "handler": (handler, group),
             "func": func,
             "args": args,
             "kwargs": kwargs,
@@ -41,9 +41,10 @@ class InputWaitManager:
         self,
         client: Client,
         chat_id: int,
-    ) -> dict[str]:
+    ) -> dict[str, Any]:
         input_chat = self._waiting_chats.pop(chat_id)
-        client.remove_handler(*input_chat["handler"])
+        handler, group = input_chat["handler"]
+        client.remove_handler(handler, group)
 
         logging.debug("Удален обработчик ожидания сообщения из чата %s", chat_id)
 

@@ -94,7 +94,8 @@ def get_input_media(
         }
         entity_params = {}
         for key in inspect.signature(entity.type.value).parameters.keys():
-            entity_params.update({key: possible_entity_params[key]})
+            if key in possible_entity_params:
+                entity_params[key] = possible_entity_params[key]
         raw_caption_entities.append(entity.type.value(**entity_params))
 
     if message.photo:
