@@ -42,13 +42,18 @@ async def message_history_statistics(menu: Menu):
     )
 
 
-def get_statistic_text(where: Expression = None):
-    where = where or True
-
+def get_statistic_text(where: Expression | None = None):
     current_timestamp = datetime.now()
     interval_1d = current_timestamp - timedelta(days=1)
     interval_7d = current_timestamp - timedelta(days=7)
     interval_30d = current_timestamp - timedelta(days=30)
+
+    base_where = (
+        (MessageHistory.created_at >= interval_30d)
+        & (MessageHistory.repeat_history_id.is_null(True))
+    )
+    if where is not None:
+        base_where = base_where & where
 
     counts_cte = (
         MessageHistory.select(
@@ -63,11 +68,7 @@ def get_statistic_text(where: Expression = None):
                 "last_message_with_error", "exception", "level"
             ).alias("last_msg_exc_lvl"),
         )
-        .where(
-            (MessageHistory.created_at >= interval_30d)
-            & (MessageHistory.repeat_history_id.is_null(True))
-            & where
-        )
+        .where(base_where)
         .cte("Counts")
     )
     created_at = counts_cte.c.created_at

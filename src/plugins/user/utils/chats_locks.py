@@ -7,14 +7,15 @@ class ChatsLocks:
         self.__name = name
 
     def get(self, key):
-        if not (messages := self.__chats.get(key)):
-            messages = self.__chats[key] = set()
+        if key not in self.__chats:
+            self.__chats[key] = set()
             self.__optimize()
-        return MessagesLocks(self.__name, key, messages)
+        return MessagesLocks(self.__name, key, self.__chats[key])
 
     def __optimize(self):
         if len(self.__chats) > 5:
-            self.__chats.pop(list(self.__chats.keys())[0])
+            oldest_key = next(iter(self.__chats))
+            self.__chats.pop(oldest_key, None)
 
     def __str__(self):
         return str(self.__chats)
