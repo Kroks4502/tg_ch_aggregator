@@ -33,6 +33,7 @@ async def main_menu_by_button(menu: Menu):
 
 def _set_main_menu_buttons(menu: Menu):
     if menu.is_admin_user():
+        menu.add_button.read()
         menu.add_button.categories()
         menu.add_button.sources()
         menu.add_button.alert_rules(user_id=menu.user.id)

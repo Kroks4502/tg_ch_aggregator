@@ -10,6 +10,7 @@ SOURCES_BTN = ButtonData(title="📚 Источники", path="s")
 FILTERS_BTN = ButtonData(title="🪤 Фильтры", path="ft")
 CLEANUPS_BTN = ButtonData(title="🧹 Очистка", path="cl")
 ALERT_RULES_BTN = ButtonData(title="🔔 Уведомления", path="r")
+READ_BTN = ButtonData(title="📖 Читать", path="rd")
 MESSAGES_HISTORIES_BTN = ButtonData(title="📖 Сообщения", path="mh")
 STATISTICS_BTN = ButtonData(title="📊 Статистика", path="stat")
 CHECK_POST_BTN = ButtonData(title="🚧 Проверить пост", path=":check_post")
@@ -108,6 +109,12 @@ class ButtonAdder(ButtonAdderBase):
     def options(self, back_step: int = 0):
         self._add_row_button(
             button=OPTIONS_BTN,
+            back_step=back_step,
+        )
+
+    def read(self, back_step: int = 0):
+        self._add_row_button(
+            button=READ_BTN,
             back_step=back_step,
         )
 
