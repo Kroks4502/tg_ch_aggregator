@@ -5,11 +5,13 @@ from pathlib import Path
 
 from plugins.user.types import Operation
 
+DEFAULT_MESSAGE_HISTORY_RETENTION_MONTHS = 6
+
 
 def _parse_message_history_retention_months() -> int:
     raw = os.getenv("MESSAGE_HISTORY_RETENTION_MONTHS")
     if raw is None or not str(raw).strip():
-        return 6
+        return DEFAULT_MESSAGE_HISTORY_RETENTION_MONTHS
     try:
         months = int(str(raw).strip())
     except ValueError as exc:
