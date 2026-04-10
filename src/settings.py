@@ -25,6 +25,7 @@ def _parse_message_history_retention_months() -> int:
         )
     return months
 
+
 BASE_DIR = Path(__file__).parent
 SESSIONS_DIR = BASE_DIR.parent / "sessions"
 DUMP_MESSAGES_DIR = BASE_DIR.parent / "tests" / "dump_messages"
