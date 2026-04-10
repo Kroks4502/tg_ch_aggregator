@@ -68,6 +68,10 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
    # Empty value for production
    DEVELOP_MODE=
 
+   # Optional. Rows in message_history older than this many months are purged nightly (scheduler).
+   # Default 6, minimum 1. Omit to use the default.
+   # MESSAGE_HISTORY_RETENTION_MONTHS=6
+
    # Integration tests credentials
    # Bot should be added to channels as administrator
    # Recommended not to use the same bot as the main bot, because it can cause throttling

@@ -2,9 +2,11 @@ import logging
 from asyncio import sleep
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from clients import bot_client, user_client
 from scheduler.jobs.alerts import add_all_evaluation_counter_rule_job
+from scheduler.jobs.cleanup_message_history import cleanup_message_history_job
 from scheduler.jobs.processing_unread_messages import processing_unread_messages_job
 from scheduler.jobs.set_user_bot_as_admin import set_user_bot_as_admin_job
 from scheduler.jobs.update_channels_info import update_channels_info_job
@@ -76,6 +78,12 @@ async def startup_job():
         trigger="interval",
         minutes=180,
         id=f"{update_channels_info_job.__name__}_interval_180min",
+        max_instances=1,
+    )
+    scheduler.add_job(
+        func=cleanup_message_history_job,
+        trigger=CronTrigger(hour=0, minute=0),
+        id=f"{cleanup_message_history_job.__name__}_daily_midnight",
         max_instances=1,
     )
 
