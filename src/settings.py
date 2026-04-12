@@ -5,6 +5,27 @@ from pathlib import Path
 
 from plugins.user.types import Operation
 
+DEFAULT_MESSAGE_HISTORY_RETENTION_MONTHS = 6
+
+
+def _parse_message_history_retention_months() -> int:
+    raw = os.getenv("MESSAGE_HISTORY_RETENTION_MONTHS")
+    if raw is None or not str(raw).strip():
+        return DEFAULT_MESSAGE_HISTORY_RETENTION_MONTHS
+    try:
+        months = int(str(raw).strip())
+    except ValueError as exc:
+        raise ValueError(
+            "MESSAGE_HISTORY_RETENTION_MONTHS must be a positive integer, "
+            f"got {raw!r}"
+        ) from exc
+    if months < 1:
+        raise ValueError(
+            f"MESSAGE_HISTORY_RETENTION_MONTHS must be >= 1, got {months}"
+        )
+    return months
+
+
 BASE_DIR = Path(__file__).parent
 SESSIONS_DIR = BASE_DIR.parent / "sessions"
 DUMP_MESSAGES_DIR = BASE_DIR.parent / "tests" / "dump_messages"
@@ -35,6 +56,8 @@ POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+
+MESSAGE_HISTORY_RETENTION_MONTHS = _parse_message_history_retention_months()
 
 IS_ONLY_BOT = True if DEVELOP_MODE == "bot" else False
 
