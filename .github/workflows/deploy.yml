@@ -3,8 +3,8 @@ name: Deploy
 on:
   push:
     branches:
-     - main
-     - deploy/*
+      - main
+      - deploy/*
   workflow_dispatch:
 
 env:
@@ -85,14 +85,14 @@ jobs:
             cd /opt/tg_ch_aggregator
 
             # Stop existing containers
-            docker-compose -f docker/docker-compose.prod.yml down || true
-            
+            docker compose -f docker/docker-compose.prod.yml down || true
+
             # Pull latest image
             docker pull $BACKEND_IMAGE
-            
-            # Start services with docker-compose using environment variables
-            docker-compose -f docker/docker-compose.prod.yml up -d
-            
+
+            # Start services with docker compose using environment variables
+            docker compose -f docker/docker-compose.prod.yml up -d
+
             # Wait for containers to be healthy (max 1 minutes)
             timeout=60
             elapsed=0
@@ -100,22 +100,22 @@ jobs:
 
             while [ $elapsed -lt $timeout ]; do
               # Check if all containers are running and healthy
-              unhealthy_containers=$(docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}" | grep -v "Up .*(healthy)" | grep -v "STATUS" | wc -l)
+              unhealthy_containers=$(docker compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}" | grep -v "Up .*(healthy)" | grep -v "STATUS" | wc -l)
               if [ $unhealthy_containers -eq 0 ]; then
-                docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}"
+                docker compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}"
                 echo "✅ All containers are healthy!"
                 exit 0
               fi
               
-              docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}"
+              docker compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}"
               echo "⏳ Waiting for containers to be healthy... ($elapsed/$timeout seconds)"
               sleep $interval
               elapsed=$((elapsed + interval))
             done
-            
+
             echo "❌ Timeout waiting for containers to be healthy"
-            docker-compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}"
-            docker-compose -f docker/docker-compose.prod.yml logs
+            docker compose -f docker/docker-compose.prod.yml ps --format "table {{.Names}}\t{{.Status}}"
+            docker compose -f docker/docker-compose.prod.yml logs
             exit 1
 
       - name: Cleanup old Docker images
@@ -137,11 +137,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Cache pip dependencies
         uses: actions/cache@v3
@@ -150,17 +150,17 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-      
+
       - name: Run unit tests
         run: |
           pytest tests/unit/ -v --tb=short
-      
+
       - name: Run integration tests
         env:
           TEST_TELEGRAM_BOT_TOKEN: ${{ secrets.TEST_TELEGRAM_BOT_TOKEN }}
@@ -180,7 +180,7 @@ jobs:
         run: |
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
-      
+
       - name: Send Telegram notification
         uses: appleboy/telegram-action@master
         with:
