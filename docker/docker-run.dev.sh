@@ -47,7 +47,7 @@ check_env_file() {
 start() {
     print_info "Starting tg_ch_aggregator in Docker..."
     check_env_file
-    docker-compose -f docker-compose.dev.yml --env-file ../.env up -d
+    docker compose -f docker-compose.dev.yml --env-file ../.env up -d
     print_info "Services started!"
     print_info "For viewing logs, use: $0 logs"
     suggest_logs "$1"
@@ -55,7 +55,7 @@ start() {
 
 stop() {
     print_info "Stopping tg_ch_aggregator..."
-    docker-compose -f docker-compose.dev.yml --env-file ../.env down
+    docker compose -f docker-compose.dev.yml --env-file ../.env down
     print_info "Services stopped!"
     suggest_logs "$1"
 }
@@ -63,12 +63,12 @@ stop() {
 restart() {
     if [ -z "$1" ]; then
         print_info "Restarting all tg_ch_aggregator services..."
-        docker-compose -f docker-compose.dev.yml --env-file ../.env down
-        docker-compose -f docker-compose.dev.yml --env-file ../.env up -d
+        docker compose -f docker-compose.dev.yml --env-file ../.env down
+        docker compose -f docker-compose.dev.yml --env-file ../.env up -d
         print_info "All services restarted!"
     else
         print_info "Restarting service: $1"
-        docker-compose -f docker-compose.dev.yml --env-file ../.env restart "$1"
+        docker compose -f docker-compose.dev.yml --env-file ../.env restart "$1"
         print_info "Service $1 restarted!"
     fi
     suggest_logs "$1"
@@ -85,41 +85,41 @@ suggest_logs() {
 
 logs() {
     if [ -z "$1" ]; then
-        cids=$(docker-compose -f docker-compose.dev.yml --env-file ../.env ps -q)
+        cids=$(docker compose -f docker-compose.dev.yml --env-file ../.env ps -q)
         if [ -z "$cids" ]; then
             print_error "No containers running!"
             exit 1
         fi
         early_started=$(docker inspect -f '{{.State.StartedAt}}' $cids | sort | head -n1)
         print_info "Logs for all services (since $early_started)"
-        docker-compose -f docker-compose.dev.yml --env-file ../.env logs --since "$early_started" -f
+        docker compose -f docker-compose.dev.yml --env-file ../.env logs --since "$early_started" -f
     else
-        if ! docker-compose -f docker-compose.dev.yml --env-file ../.env ps "$1" >/dev/null 2>&1; then
+        if ! docker compose -f docker-compose.dev.yml --env-file ../.env ps "$1" >/dev/null 2>&1; then
             print_error "Service '$1' not found!"
             print_info "Available services:"
-            docker-compose -f docker-compose.dev.yml --env-file ../.env ps --services
+            docker compose -f docker-compose.dev.yml --env-file ../.env ps --services
             exit 1
         fi
-        cid=$(docker-compose -f docker-compose.dev.yml --env-file ../.env ps -q "$1")
+        cid=$(docker compose -f docker-compose.dev.yml --env-file ../.env ps -q "$1")
         if [ -z "$cid" ]; then
             print_error "Service '$1' is not running!"
             exit 1
         fi
         started=$(docker inspect -f '{{.State.StartedAt}}' "$cid")
         print_info "Logs for service '$1' (container: $cid, since $started)"
-        docker-compose -f docker-compose.dev.yml --env-file ../.env logs --since "$started" -f "$1"
+        docker compose -f docker-compose.dev.yml --env-file ../.env logs --since "$started" -f "$1"
     fi
 }
 
 create_sessions() {
     print_info "Creating Telegram sessions..."
     check_env_file
-    docker-compose -f docker-compose.dev.yml --env-file ../.env run --rm create_sessions
+    docker compose -f docker-compose.dev.yml --env-file ../.env run --rm create_sessions
 }
 
 build() {
     print_info "Building Docker images..."
-    docker-compose -f docker-compose.dev.yml --env-file ../.env build
+    docker compose -f docker-compose.dev.yml --env-file ../.env build
 }
 
 clean() {
@@ -130,13 +130,13 @@ clean() {
         print_info "Operation cancelled"
         exit 1
     fi
-    docker-compose -f docker-compose.dev.yml --env-file ../.env down --rmi all --volumes --remove-orphans
+    docker compose -f docker-compose.dev.yml --env-file ../.env down --rmi all --volumes --remove-orphans
     print_info "Cleaning completed!"
 }
 
 status() {
     print_info "Status of services:"
-    docker-compose -f docker-compose.dev.yml --env-file ../.env ps
+    docker compose -f docker-compose.dev.yml --env-file ../.env ps
 }
 
 help() {
