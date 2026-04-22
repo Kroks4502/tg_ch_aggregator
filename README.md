@@ -104,6 +104,8 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
 
    Create secrets in the repository settings "Settings" -> "Secrets and variables" -> "Actions" -> "New repository secret":
 
+   For deployment over SSH, generate an SSH key pair **on the server** (as the user from `DEPLOY_HOST_SSH_USER`), add the **public** key to that user's `~/.ssh/authorized_keys`, and put the **private** key (full file contents, including header/footer lines) into the GitHub secret `DEPLOY_HOST_SSH_KEY`.
+
    Telegram API credentials:
    - `APP_TELEGRAM_API_ID`
    - `APP_TELEGRAM_API_HASH`
@@ -126,29 +128,69 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
    - `TEST_TELEGRAM_SOURCE_CHANNEL_ID`
    - `TEST_TELEGRAM_AGGREGATOR_CHANNEL_ID`
 
-3. **Deploy**
+3. **Install Docker on the server (Ubuntu)**
+[Docker documentation](https://docs.docker.com/engine/install/ubuntu/)
+```sh
+# Add Docker's official GPG key:
+sudo apt update
+sudo apt install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+4. **Deploy**
 
    Run the workflow "[Deploy Telegram Channel Aggregator](.github/workflows/deploy.yml)"
 
-4. **Create Telegram sessions in Docker container (this will be interactive)**
+5. **Create Telegram sessions in Docker container (this will be interactive)**
 
    The workflow "[Deploy Telegram Channel Aggregator](.github/workflows/deploy.yml)" will start the container `create_sessions` and wait for the authorization parameters if don't have session files.
 
-   Check last logs:
+   On the **deploy server** (SSH session as the deploy user), check the latest logs:
    ```shell
    docker logs --tail 20 tg_ch_aggregator-create_sessions-1
    ```
 
-   Attach to the container to enter the authorization parameters:
+   Still on the server, attach to the container; in **that** terminal, enter the interactive prompts (phone number, confirmation code, two-step password if enabled):
    ```shell
    docker attach tg_ch_aggregator-create_sessions-1
    ```
 
-5. **Check the deployment**
+6. **Check the deployment**
 
    ```shell
    docker ps
    docker logs
+   ```
+
+7. **SSH access on the VM**
+
+   Configure login to the VM **by SSH key**: add the public keys of every account that should access the server to that user's `~/.ssh/authorized_keys`, then verify you can open a new SSH session with the key (keep an existing session open while testing so you are not locked out).
+
+   **Recommendation:** after key-based login works reliably, disable password authentication:
+
+   ```shell
+   sudo nano /etc/ssh/sshd_config
+   ```
+
+   Set `PasswordAuthentication no` (ensure `PubkeyAuthentication yes` is enabled).
+
+   ```shell
+   sudo systemctl restart ssh
    ```
 
 ## Contributing
