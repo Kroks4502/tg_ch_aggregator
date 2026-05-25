@@ -1,8 +1,9 @@
+from common.menu_paths import (  # noqa: F401
+    CATEGORY_DETAIL_PATH as CATEGORY_CALLBACK_DATA,
+)
 from plugins.bot import router
 from plugins.bot.handlers.category.common.utils import get_category_menu_text
 from plugins.bot.menu import Menu
-
-CATEGORY_CALLBACK_DATA = "/c/{category_id}/"
 
 
 @router.page(path=CATEGORY_CALLBACK_DATA.format(category_id=r"-\d+"))

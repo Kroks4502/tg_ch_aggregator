@@ -56,10 +56,11 @@ QUESTION_SELECT_ALERT_RULE_TYPE = "Выбери тип правила"
 ALERT_COUNTER_MAX_WORDS = 20
 ALERT_COUNTER_MAX_MESSAGES = 8
 
-# PATH ALERT RULES
-ALERT_RULE_DETAIL_PATH = "/r/{rule_id}/"
-
-# PATH ALERTS
-
-ALERT_DETAIL_PATH = "/a/{alert_id}/"
-ALERT_LIST_PATH = f"{ALERT_RULE_DETAIL_PATH}a/"
+# PATH ALERT RULES / ALERTS
+# Канонические определения теперь живут в common.menu_paths,
+# чтобы внешние подсистемы (alerts, scheduler) не зависели от plugins.bot.
+from common.menu_paths import (  # noqa: E402, F401
+    ALERT_DETAIL_PATH,
+    ALERT_LIST_PATH,
+    ALERT_RULE_DETAIL_PATH,
+)

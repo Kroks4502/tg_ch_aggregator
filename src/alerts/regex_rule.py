@@ -4,10 +4,9 @@ import re
 from pyrogram.types import Message
 
 from alerts.configs import AlertRegexHistory, MatchData
-from common.call_handlers import call_callback_query_handler
+from common.dto import AlertNotification
+from common.notifier_registry import get_alert_notifier
 from models import AlertHistory, AlertRule
-from plugins.bot.handlers.alert_rules.alert.detail import alert_detail
-from plugins.bot.handlers.alert_rules.common.constants import ALERT_DETAIL_PATH
 
 
 async def check_message_by_regex_alert_rule(
@@ -47,13 +46,9 @@ async def check_message_by_regex_alert_rule(
             alert_rule_id=rule_obj.id,
         )
 
-        await call_callback_query_handler(
-            func=alert_detail,
-            user_id=rule_obj.user_id,
-            path=(
-                ALERT_DETAIL_PATH.format(
-                    alert_id=alert_obj.id,
-                )
-                + "?new"
-            ),
+        await get_alert_notifier().alert(
+            AlertNotification(
+                alert_id=alert_obj.id,
+                user_id=rule_obj.user_id,
+            )
         )

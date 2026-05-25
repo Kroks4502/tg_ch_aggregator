@@ -1,13 +1,12 @@
 import logging
 
 from pyrogram.errors import ChannelPrivate
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from clients import bot_client, user_client
-from common.senders import send_message_to_admins
+from clients import user_client
+from common.dto import AdminNotification, Button, ButtonRow
+from common.menu_paths import CATEGORY_DETAIL_PATH, SOURCE_DETAIL_PATH
+from common.notifier_registry import get_admin_notifier
 from models import Category, Source
-from plugins.bot.handlers.category.detail import CATEGORY_CALLBACK_DATA
-from plugins.bot.handlers.source.detail import DETAIL_SOURCE_PATH
 from settings import USER_BOT_NAME
 
 logger = logging.getLogger(__name__)
@@ -65,28 +64,24 @@ async def send_not_found_chat_message_to_admins(db_obj: Source | Category):
             channel_id=db_obj.id,
         )
         button_text = GO_TO_SOURCE
-        callback_data = DETAIL_SOURCE_PATH.format(source_id=db_obj.id) + "?new"
+        callback_data = SOURCE_DETAIL_PATH.format(source_id=db_obj.id) + "?new"
     else:
         text = ERROR_NOT_FOUND_CATEGORY.format(
             channel_title=db_obj.title,
             channel_id=db_obj.id,
         )
         button_text = GO_TO_CATEGORY
-        callback_data = CATEGORY_CALLBACK_DATA.format(category_id=db_obj.id) + "?new"
+        callback_data = CATEGORY_DETAIL_PATH.format(category_id=db_obj.id) + "?new"
 
     logger.warning(text)
-    await send_message_to_admins(
-        client=bot_client,
-        text=text,
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        text=button_text,
-                        callback_data=callback_data,
-                    )
-                ],
-            ]
-        ),
+    await get_admin_notifier().notify(
+        AdminNotification(
+            text=text,
+            button_rows=(
+                ButtonRow(
+                    buttons=(Button(text=button_text, callback_data=callback_data),)
+                ),
+            ),
+        )
     )
     logger.info(f"Message to admins about not found chat {db_obj.id} sent")

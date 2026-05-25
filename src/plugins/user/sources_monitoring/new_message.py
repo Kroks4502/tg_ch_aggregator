@@ -31,9 +31,9 @@ from plugins.user.sources_monitoring.common import (
 )
 from plugins.user.types import Operation
 from plugins.user.utils import custom_filters
+from common.notifier_registry import get_user_error_notifier
 from plugins.user.utils.cleanup import cleanup_message
 from plugins.user.utils.dump import dump_message
-from plugins.user.utils.senders import send_error_to_admins
 from pyrogram_fork.send_media_group import SendMediaGroup
 
 NEW = Operation.NEW
@@ -158,7 +158,7 @@ async def new_message(client: Client, message: Message):  # noqa: C901
     except pyrogram_errors.ChatForwardsRestricted:
         exc = MessageForwardsRestrictedError(operation=NEW, message=message)
         if source and not source.is_rewrite:
-            await send_error_to_admins(
+            await get_user_error_notifier().report(
                 f"⚠ Источник {message.chat.title} запрещает пересылку сообщений. "
                 "Установите режим перепечатывания сообщений."
             )
