@@ -1,26 +1,19 @@
 from datetime import datetime
 
+from aiogram.types import Message
+from aiogram.types import User as AiogramUser
 from peewee import DoesNotExist
-from pyrogram import Client
-from pyrogram.types import Message
-from pyrogram.types import User as PyUser
 
 from models import GlobalSettings, User
-from plugins.bot import input_wait_manager, router
+from plugins.bot import router
 from plugins.bot.constants.commands import CANCEL_TEXT, START_TEXT
 from plugins.bot.constants.text import MAIN_MENU_TEXT
 from plugins.bot.menu import Menu
 
 
 @router.command(commands=[START_TEXT, CANCEL_TEXT])
-async def main_menu_by_command(client: Client, message: Message, menu: Menu):
-    try:
-        input_wait_manager.remove(client=client, chat_id=message.chat.id)
-    except KeyError:
-        pass
-
-    _update_or_create_user(menu.user)
-
+async def main_menu_by_command(message: Message, menu: Menu):
+    _update_or_create_user(message.from_user)
     _set_main_menu_buttons(menu)
     return MAIN_MENU_TEXT
 
@@ -46,7 +39,7 @@ def _set_main_menu_buttons(menu: Menu):
         menu.add_button.options()
 
 
-def _update_or_create_user(user: PyUser):
+def _update_or_create_user(user: AiogramUser):
     try:
         user_obj = User.get(id=user.id)
         user_obj.last_interaction_at = datetime.now()

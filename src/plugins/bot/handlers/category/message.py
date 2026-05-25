@@ -1,5 +1,5 @@
+from aiogram import Bot
 from peewee import DoesNotExist
-from pyrogram import Client
 
 from models import MessageHistory
 from plugins.bot import router
@@ -15,7 +15,7 @@ GET_CATEGORY_MESSAGE_PATH = "/c/{category_id}/m/{message_id}/"
     path=GET_CATEGORY_MESSAGE_PATH.format(category_id=r"-\d+", message_id=r"\d+")
 )
 async def get_category_message(
-    client: Client,
+    bot: Bot,
     menu: Menu,
 ):
     category_id = menu.path.get_value("c")
@@ -27,21 +27,23 @@ async def get_category_message(
             category_message_id=category_message_id,
         )
     except DoesNotExist:
-        await client.send_message(
+        await bot.send_message(
             chat_id=menu.user.id,
             text=MESSAGE_NOT_EXISTS,
         )
         return
 
     if history_obj.category_media_group_id:
-        message_ids = _get_media_group_message_ids(
-            category_id=category_id,
-            category_media_group_id=history_obj.category_media_group_id,
+        message_ids = list(
+            _get_media_group_message_ids(
+                category_id=category_id,
+                category_media_group_id=history_obj.category_media_group_id,
+            )
         )
     else:
-        message_ids = category_message_id
+        message_ids = [category_message_id]
 
-    await client.forward_messages(
+    await bot.forward_messages(
         chat_id=menu.user.id,
         from_chat_id=category_id,
         message_ids=message_ids,

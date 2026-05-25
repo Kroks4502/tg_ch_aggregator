@@ -1,4 +1,4 @@
-from pyrogram.types import CallbackQuery
+from aiogram.types import CallbackQuery
 
 from clients import user_client
 from models import Source

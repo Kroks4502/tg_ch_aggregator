@@ -1,5 +1,5 @@
-from pyrogram import Client
-from pyrogram.types import Message
+from aiogram import Bot
+from aiogram.types import Message
 
 from plugins.bot import router, validators
 from plugins.bot.handlers.category.common.constants import (
@@ -16,14 +16,15 @@ from plugins.bot.menu import Menu
 
 @router.wait_input(back_step=2, send_to_admins=True)
 async def edit_category_photo_waiting_input(
-    client: Client,
+    bot: Bot,
     message: Message,
     menu: Menu,
 ):
     validators.is_photo(message)
 
     category_id = menu.path.get_value("c")
-    await client.set_chat_photo(chat_id=category_id, photo=message.photo.file_id)
+    # aiogram: message.photo — список PhotoSize от худшего к лучшему качеству
+    await bot.set_chat_photo(chat_id=category_id, photo=message.photo[-1].file_id)
 
     return await get_category_menu_success_text(
         category_id=category_id,

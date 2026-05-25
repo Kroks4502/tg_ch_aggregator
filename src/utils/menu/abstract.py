@@ -1,7 +1,7 @@
 import abc
 from typing import Type
 
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from utils import menu
 from utils.menu.pagination import Pagination
@@ -111,7 +111,10 @@ class MenuAbstract(abc.ABC):
         :param buttons_args: Кортеж, где первый элемент – текст кнопки, второй – абсолютный или относительный путь.
         """
         self.inline_keyboard.append(
-            [InlineKeyboardButton(b[0], self.path.join(b[1])) for b in buttons_args]
+            [
+                InlineKeyboardButton(text=b[0], callback_data=self.path.join(b[1]))
+                for b in buttons_args
+            ]
         )
 
     def add_rows_from_data(
@@ -135,7 +138,7 @@ class MenuAbstract(abc.ABC):
 
             row_buttons.append(
                 InlineKeyboardButton(
-                    item.get_processed_title(length=self.MAX_LENGTH_BUTTON_TEXT),
+                    text=item.get_processed_title(length=self.MAX_LENGTH_BUTTON_TEXT),
                     callback_data=self.path.join(item.path) + postfix,
                 )
             )
@@ -158,10 +161,12 @@ class MenuAbstract(abc.ABC):
             return None
 
         return InlineKeyboardMarkup(
-            self.inline_keyboard
-            + [pagination_buttons_row]
-            + self.after_pagination_buttons_row
-            + [footer_buttons_row]
+            inline_keyboard=(
+                self.inline_keyboard
+                + [pagination_buttons_row]
+                + self.after_pagination_buttons_row
+                + [footer_buttons_row]
+            )
         )
 
     def get_pagination_buttons_row(self) -> list:

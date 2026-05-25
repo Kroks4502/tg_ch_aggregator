@@ -1,5 +1,6 @@
-from pyrogram import Client
-from pyrogram.types import ChatPrivileges, Message
+from aiogram import Bot
+from aiogram.types import Message
+from pyrogram.types import ChatPrivileges
 
 from clients import user_client
 from models import Category
@@ -15,19 +16,20 @@ from plugins.bot.handlers.category.common.utils import get_category_menu_success
 
 @router.wait_input(initial_text="⏳ Создаю канал для категории…", send_to_admins=True)
 async def add_category_waiting_input(
-    client: Client,
+    bot: Bot,
     message: Message,
 ):
     validators.is_text(message)
     validators.text_length_less_than(message, MAX_LENGTH_CATEGORY_NAME)
 
+    bot_me = await bot.me()
     new_channel = await user_client.create_channel(
         CATEGORY_NAME_TPL.format(message.text),
-        f"Создан ботом {client.me.username}",
+        f"Создан ботом {bot_me.username}",
     )
 
     await new_channel.promote_member(
-        client.me.id,
+        bot_me.id,
         ChatPrivileges(
             can_manage_chat=True,
             can_delete_messages=True,

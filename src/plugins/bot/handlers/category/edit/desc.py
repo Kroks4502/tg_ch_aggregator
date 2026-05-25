@@ -1,5 +1,5 @@
-from pyrogram import Client
-from pyrogram.types import Message
+from aiogram import Bot
+from aiogram.types import Message
 
 from plugins.bot import router, validators
 from plugins.bot.constants.settings import MAX_LENGTH_CATEGORY_DESC
@@ -17,7 +17,7 @@ from plugins.bot.menu import Menu
 
 @router.wait_input(back_step=2, send_to_admins=True)
 async def edit_category_desc_waiting_input(
-    client: Client,
+    bot: Bot,
     message: Message,
     menu: Menu,
 ):
@@ -26,11 +26,11 @@ async def edit_category_desc_waiting_input(
 
     category_id = menu.path.get_value("c")
 
-    chat = await client.get_chat(chat_id=category_id)
+    chat = await bot.get_chat(chat_id=category_id)
 
     old_desc = chat.description
     new_desc = message.text
-    await chat.set_description(description=new_desc)
+    await bot.set_chat_description(chat_id=category_id, description=new_desc)
 
     return await get_category_menu_success_text(
         category_id=category_id,

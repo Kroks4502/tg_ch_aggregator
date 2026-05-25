@@ -1,4 +1,4 @@
-from pyrogram import Client
+from aiogram import Bot
 
 from plugins.bot import router
 from plugins.bot.constants.text import QUESTION_EDIT_PAGE
@@ -7,14 +7,14 @@ from plugins.bot.menu import Menu
 
 
 @router.page(path=r"/c/-\d+/:edit/")
-async def edit_category(client: Client, menu: Menu):
+async def edit_category(bot: Bot, menu: Menu):
     category_id = menu.path.get_value("c")
 
     menu.add_row_button("Название", "title")
     menu.add_row_button("Описание", "desc")
     menu.add_row_button("Изображение", "photo")
 
-    channel = await client.get_chat(chat_id=category_id)
+    channel = await bot.get_chat(chat_id=category_id)
     return await get_category_menu_text(
         category_id=category_id,
         desc=channel.description,

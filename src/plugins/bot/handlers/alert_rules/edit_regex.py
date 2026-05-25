@@ -1,4 +1,4 @@
-from pyrogram.types import Message
+from aiogram.types import Message
 
 from alerts.configs import AlertRegexConfig
 from models import AlertRule

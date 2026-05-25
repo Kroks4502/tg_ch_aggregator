@@ -2,8 +2,9 @@ import logging
 import re
 
 import peewee
+from aiogram.types import Message
 from pyrogram.errors import RPCError, UserAlreadyParticipant
-from pyrogram.types import Chat, ChatPreview, Message
+from pyrogram.types import Chat, ChatPreview
 
 from clients import user_client
 from models import Source
