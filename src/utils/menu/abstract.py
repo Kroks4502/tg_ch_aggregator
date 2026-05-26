@@ -183,14 +183,14 @@ class MenuAbstract(abc.ABC):
             return []
 
         footer_buttons_row = [
-            InlineKeyboardButton(self.MAIN_MENU_BUTTON_TITLE, callback_data="/"),
+            InlineKeyboardButton(text=self.MAIN_MENU_BUTTON_TITLE, callback_data="/"),
         ]
 
         prev_path = self.path.get_prev(self.back_step)
         if prev_path != "/":
             footer_buttons_row.append(
                 InlineKeyboardButton(
-                    self.BACK_BUTTON_TITLE_TEMPLATE.format(self.back_title),
+                    text=self.BACK_BUTTON_TITLE_TEMPLATE.format(self.back_title),
                     callback_data=prev_path,
                 ),
             )
