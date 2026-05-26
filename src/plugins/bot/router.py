@@ -127,6 +127,16 @@ class CallbackQueryRouter:
                         state=state,
                         func=add_wait_for_input,
                         callback_path=callback_query.data,
+                        prev_menu_chat_id=(
+                            callback_query.message.chat.id
+                            if callback_query.message
+                            else None
+                        ),
+                        prev_menu_message_id=(
+                            callback_query.message.message_id
+                            if callback_query.message
+                            else None
+                        ),
                     )
 
             inner.__name__ = func.__name__
@@ -294,6 +304,8 @@ class CallbackQueryRouter:
         handler_key = data.get("wait_handler_key")
         callback_path = data.get("wait_callback_path", "/")
         meta = data.get("wait_meta") or {}
+        prev_menu_chat_id = data.get("prev_menu_chat_id")
+        prev_menu_message_id = data.get("prev_menu_message_id")
 
         func = resolve(handler_key) if handler_key else None
         if func is None:
@@ -332,6 +344,10 @@ class CallbackQueryRouter:
         else:
             send_to_admins = meta.get("send_to_admins", False)
             next_wait = meta.get("add_wait_for_input")
+            # Транслировать другим админам действие — оригинальный порядок:
+            # сначала рассылка, потом редактирование ответа пользователю.
+            if send_to_admins and text:
+                await _send_to_admins(message.from_user, text)
 
         await state.clear()
 
@@ -343,22 +359,31 @@ class CallbackQueryRouter:
             text=text,
         )
 
-        if send_to_admins and text:
-            await _send_to_admins(message.from_user, text)
-
         if next_wait:
             await _arm_wait_input(
                 state=state,
                 func=next_wait,
                 callback_path=callback_path,
+                prev_menu_chat_id=prev_menu_chat_id,
+                prev_menu_message_id=prev_menu_message_id,
             )
 
-        if meta.get("delete_previous_menu") and callback_path:
-            # Сообщение с меню — последнее сообщение бота до текста пользователя.
-            # В исходном коде удалялось callback_query.message.delete(); в aiogram
-            # без явного callback_query это сделать сложно, поэтому пропускаем
-            # удаление здесь — следующее меню придёт новым сообщением.
-            pass
+        # Удалить предыдущее меню (сообщение бота с кнопкой ➕Добавить и т.п.),
+        # повторяет оригинальное `callback_query.message.delete()` из pyrogram-роутера.
+        if (
+            meta.get("delete_previous_menu")
+            and prev_menu_chat_id
+            and prev_menu_message_id
+        ):
+            try:
+                await message.bot.delete_message(
+                    chat_id=prev_menu_chat_id,
+                    message_id=prev_menu_message_id,
+                )
+            except TelegramBadRequest:
+                # сообщение могло быть удалено пользователем или истечь —
+                # не критично, продолжаем.
+                pass
 
 
 # ============================================================ module-level helpers
@@ -373,6 +398,8 @@ async def _arm_wait_input(
     state: FSMContext,
     func: Callable[..., Awaitable],
     callback_path: str,
+    prev_menu_chat_id: int | None = None,
+    prev_menu_message_id: int | None = None,
 ):
     key = make_key(func)
     meta = getattr(func, "__wait_input_meta__", None) or {}
@@ -391,6 +418,8 @@ async def _arm_wait_input(
         wait_handler_key=key,
         wait_callback_path=callback_path,
         wait_meta=serializable_meta,
+        prev_menu_chat_id=prev_menu_chat_id,
+        prev_menu_message_id=prev_menu_message_id,
     )
     await state.set_state(WaitInput.waiting_text)
 
