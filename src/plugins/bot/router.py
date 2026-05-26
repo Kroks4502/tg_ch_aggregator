@@ -133,7 +133,13 @@ class CallbackQueryRouter:
             inner.__qualname__ = func.__qualname__
             inner.__module__ = func.__module__
 
-            target_router.callback_query.register(inner, F.data.regexp(compiled))
+            # search-режим: схема путей у нас «хвостовая» (`/s/` должен
+            # матчить `/c/-123/s/`), а default mode у magic_filter — match,
+            # т.е. привязка к началу строки. Это бы рубило все вложенные
+            # переходы вроде «Категории → выбор категории → Источники».
+            target_router.callback_query.register(
+                inner, F.data.regexp(compiled, mode="search")
+            )
 
             if command:
                 self._page_as_command(
