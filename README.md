@@ -87,13 +87,13 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
    - Enter two-step verification password (if it's enabled)
 
    ```shell
-   ./docker/docker-dev-run.sh create_sessions
+   ./docker/docker-run.dev.sh create_sessions
    ```
 
 4. **Start the main application**
 
    ```shell
-   ./docker/docker-dev-run.sh start
+   ./docker/docker-run.dev.sh start
    ```
 
 ### Deployment
