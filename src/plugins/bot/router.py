@@ -1,7 +1,6 @@
 import inspect
 import logging
 import re
-from functools import wraps
 from typing import Awaitable, Callable
 
 from aiogram import Bot, F, Router
@@ -82,7 +81,6 @@ class CallbackQueryRouter:
         target_router = self.admin_router if admin_only else self.public_router
 
         def decorator(func: Callable) -> Callable:
-            @wraps(func)
             async def inner(callback_query: CallbackQuery, state: FSMContext):
                 if callback_query.id != "synthetic":
                     try:
@@ -130,6 +128,10 @@ class CallbackQueryRouter:
                         func=add_wait_for_input,
                         callback_path=callback_query.data,
                     )
+
+            inner.__name__ = func.__name__
+            inner.__qualname__ = func.__qualname__
+            inner.__module__ = func.__module__
 
             target_router.callback_query.register(inner, F.data.regexp(compiled))
 
@@ -188,7 +190,6 @@ class CallbackQueryRouter:
         cmd_list = [commands] if isinstance(commands, str) else list(commands)
 
         def decorator(func: Callable) -> Callable:
-            @wraps(func)
             async def inner(message: Message, state: FSMContext):
                 # Команды /start и /cancel сбрасывают FSM
                 await state.clear()
@@ -217,6 +218,10 @@ class CallbackQueryRouter:
                     markup=menu.reply_markup,
                     text=text,
                 )
+
+            inner.__name__ = func.__name__
+            inner.__qualname__ = func.__qualname__
+            inner.__module__ = func.__module__
 
             self.public_router.message.register(inner, Command(*cmd_list))
             return inner

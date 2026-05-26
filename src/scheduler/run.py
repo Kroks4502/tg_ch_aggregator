@@ -4,7 +4,7 @@ from asyncio import sleep
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from clients import bot_client, user_client
+from clients import user_client
 from scheduler.jobs.alerts import add_all_evaluation_counter_rule_job
 from scheduler.jobs.cleanup_message_history import cleanup_message_history_job
 from scheduler.jobs.processing_unread_messages import processing_unread_messages_job
@@ -32,13 +32,9 @@ def stop_scheduler():
 
 async def startup_job():
     logger.debug("Starting startup job...")
-    while (
-        not user_client.is_connected
-        or not user_client.is_initialized
-        or not bot_client.is_connected
-        or not bot_client.is_initialized
-    ):
-        logger.debug("Waiting for clients to be connected...")
+    # Бот теперь на aiogram (polling), здесь ждём только userbot (pyrogram).
+    while not user_client.is_connected or not user_client.is_initialized:
+        logger.debug("Waiting for user client to be connected...")
         await sleep(1)
 
     logger.debug("Clients are connected, adding jobs...")
