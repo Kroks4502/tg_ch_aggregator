@@ -19,6 +19,7 @@ from common.notifier_registry import get_admin_notifier
 from plugins.bot.fsm import WaitInput
 from plugins.bot.menu import Menu
 from plugins.bot.middlewares.admin import AdminOnlyMiddleware
+from plugins.bot.text_formatter import pyrogram_markdown_to_html
 from plugins.bot.wait_registry import make_key, register, resolve
 
 logger = logging.getLogger(__name__)
@@ -433,6 +434,11 @@ async def _send_final_text(
 ):
     if not text:
         return
+
+    # Тексты handler'ов написаны под pyrogram-Markdown (`**bold**`,
+    # `` `code` ``, `[text](url)`). У aiogram parse_mode выставлен в HTML —
+    # конвертируем на лету.
+    text = pyrogram_markdown_to_html(text)
 
     if reply:
         target_chat_id = (

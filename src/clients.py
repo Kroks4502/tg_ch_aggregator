@@ -1,4 +1,6 @@
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from pyrogram import Client
 
@@ -35,10 +37,15 @@ bot_client = Client(
     workdir=SESSIONS_DIR,
 )
 
-# Aiogram-бот для нового стека. parse_mode пока не задан: существующие тексты
-# используют pyrogram-flavoured Markdown ("**bold**", "__italic__"), который
-# не совместим со стандартным Telegram-Markdown / HTML aiogram'а. После cutover
-# в отдельном PR тексты переезжают на HTML и DefaultBotProperties выставляется
-# на ParseMode.HTML.
-aiogram_bot = Bot(token=BOT_TOKEN)
+# Aiogram-бот для нового стека. parse_mode=HTML, потому что тексты в проекте
+# писались под pyrogram (``**bold**``, `` `code` ``, ``[text](url)``).
+# Конвертация pyrogram-Markdown → HTML делается на лету в
+# `plugins.bot.text_formatter.pyrogram_markdown_to_html` перед отправкой
+# (см. использование в `plugins.bot.router._send_final_text` и
+# `plugins.bot.notifiers`). Так не пришлось переписывать ~40 текстовых
+# шаблонов вручную.
+aiogram_bot = Bot(
+    token=BOT_TOKEN,
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+)
 dispatcher = Dispatcher(storage=MemoryStorage())
