@@ -1,26 +1,32 @@
-from pyrogram import Client
+from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
+from telethon import TelegramClient
 
-from settings import API_HASH, API_ID, BOT_TOKEN, SESSIONS_DIR, IS_ONLY_BOT
+from plugins.user.utils.album_collector import AlbumCollector
+from settings import API_HASH, API_ID, BOT_TOKEN, SESSIONS_DIR
 
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
-user_client = Client(
-    "user",
-    API_ID,
-    API_HASH,
-    plugins=dict(
-        root="plugins.user",
-    ) if not IS_ONLY_BOT else {},
-    workdir=SESSIONS_DIR,
+# Userbot (Telethon) — заменяет pyrogram user_client
+telethon_user_client = TelegramClient(
+    str(SESSIONS_DIR / "user"),
+    api_id=API_ID,
+    api_hash=API_HASH,
 )
 
-bot_client = Client(
-    "bot",
-    API_ID,
-    API_HASH,
-    bot_token=BOT_TOKEN,
-    plugins=dict(
-        root="plugins.bot",
-    ),
-    workdir=SESSIONS_DIR,
+# Буфер медиа-групп для userbot'а — собирает сообщения альбома перед обработкой
+album_collector = AlbumCollector()
+
+# ID userbot'а — устанавливается в set_user_bot_as_admin_job после get_me()
+userbot_me_id: int | None = None
+
+# Aiogram-бот. parse_mode=HTML — тексты хендлеров используют внутренний
+# Markdown-диалект, конвертируются в HTML через plugins.bot.text_formatter.md_to_html
+# в router._send_final_text и notifiers.
+aiogram_bot = Bot(
+    token=BOT_TOKEN,
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
 )
+dispatcher = Dispatcher(storage=MemoryStorage())

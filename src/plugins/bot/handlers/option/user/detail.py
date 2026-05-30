@@ -1,4 +1,4 @@
-from clients import user_client
+from clients import userbot_me_id
 from models import User
 from plugins.bot import router
 from plugins.bot.constants.settings import FORMAT_TIMESTAMP
@@ -18,7 +18,7 @@ async def user_detail(menu: Menu):
     user_id = menu.path.get_value("u")
     user_obj = User.get(user_id)
 
-    if user_id != user_client.me.id:
+    if user_id != userbot_me_id:
         if user_obj.is_admin:
             menu.add_row_button("Разжаловать", "demote")
         else:

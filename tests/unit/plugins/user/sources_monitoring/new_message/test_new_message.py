@@ -12,6 +12,7 @@ from .utils import (
     default_new_message_log_asserts,
     history_new_message_asserts,
     history_with_category_asserts,
+    setup_check_regex_alert,
     setup_filtered,
     setup_history_save,
     setup_json_loads,
@@ -34,6 +35,7 @@ async def test_new_message(
     mock_source = mock_source.get()
     mock_repeated = setup_repeated(mocker, None)
     mock_filtered = setup_filtered(mocker, None)
+    setup_check_regex_alert(mocker)
 
     mock_new_one_message = mocker.patch(
         "plugins.user.sources_monitoring.new_message.new_one_message"
@@ -45,11 +47,13 @@ async def test_new_message(
     await new_message(client=client, message=message)
     ###
 
-    mock_new_one_message.assert_called_once_with(message=message, source=mock_source)
+    # Telethon: new_one_message(client, message, source) — с client как первым аргументом
+    mock_new_one_message.assert_called_once_with(client, message, mock_source)
     mock_repeated.assert_called_once()
     mock_filtered.assert_called_once()
     mock_history_save.assert_called_once()
-    client.read_chat_history.assert_called_once()
+    # Telethon: send_read_acknowledge заменяет read_chat_history
+    client.send_read_acknowledge.assert_called_once()
 
     history = mock_history_save.call_args.args[0]
     history_new_message_asserts(
@@ -66,5 +70,5 @@ async def test_new_message(
 
     assert len(blocking_messages.get(key=message.chat.id)) == 0
 
-    assert "Источник 0 отправил сообщение 0, оно отправлено в категорию" in caplog.text
+    assert "Источник 0 отправил сообщение 0 → категория" in caplog.text
     default_new_message_log_asserts(caplog=caplog)

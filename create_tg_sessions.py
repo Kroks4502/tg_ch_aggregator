@@ -1,46 +1,52 @@
-from clients import bot_client, user_client  # noqa: E402
+"""
+Создание Telethon-сессии для userbot.
 
-SUCCESS_MESSAGE_TEXT = (
-    "Sessions for Telegram user `{user_id}` (`{user_username}`) "
-    "and bot `{bot_id}` (`{bot_username}`) are valid"
+Использование:
+    python create_tg_sessions.py
+
+Предварительно удалите старый sessions/user.session (pyrogram-формат),
+если он существует: форматы несовместимы.
+
+aiogram-бот работает через BOT_TOKEN — bot.session не нужен.
+"""
+
+import asyncio
+import logging
+import sys
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    stream=sys.stdout,
 )
+log = logging.getLogger(__name__)
 
 
-async def create_sessions():
+async def create_telethon_sessions():
     """
-    Create sessions and send message from bot to user.
+    Создать userbot-сессию в формате Telethon.
 
-    [!] For sending a message, the user must already have been talking to the bot.
-    [!] When creating a session, you need to go through authorization.
+    После этого sessions/user.session будет в Telethon-формате (SQLite).
+    aiogram-бот работает через BOT_TOKEN без файла сессии — bot.session не нужен.
+
+    [!] Предварительно удалите старый sessions/user.session (pyrogram-формат),
+        если он существует: форматы несовместимы.
     """
-    bot_client.plugins = None
-    user_client.plugins = None
+    from telethon import TelegramClient
 
-    print("\033[93m[bot_client]: Initialize Telegram bot client\033[0m")
-    async with bot_client:
-        print("\033[93m[bot_client]: Get bot info\033[0m")
-        bot_info = await bot_client.get_me()
-        print(bot_info)
+    from settings import API_HASH, API_ID, SESSIONS_DIR
 
-        print("\033[93m[user_client]: Initialize Telegram user client\033[0m")
-        async with user_client:
-            print("\033[93m[user_client]: Get user info\033[0m")
-            user_info = await user_client.get_me()
-            print(user_info)
+    session_path = SESSIONS_DIR / "user"
 
-            print("\033[93m[bot_client]: Send message to user_client\033[0m")
-            message_text = SUCCESS_MESSAGE_TEXT.format(
-                user_id=user_info.id,
-                user_username=user_info.username,
-                bot_id=bot_info.id,
-                bot_username=bot_info.username,
-            )
-            await bot_client.send_message(
-                chat_id=user_info.id,
-                text=message_text,
-            )
-    print(f"\033[92m{message_text}\033[0m")  # noqa: T201
+    log.info("[user_client / Telethon]: Инициализация userbot-сессии")
+    log.info("  Файл сессии: %s.session", session_path)
+
+    async with TelegramClient(str(session_path), API_ID, API_HASH) as client:
+        me = await client.get_me()
+        log.info("✓ Userbot авторизован: @%s (id=%s)", me.username or "—", me.id)
+
+    log.info("✓ Сессия создана. aiogram-бот использует BOT_TOKEN — bot.session не нужен.")
 
 
 if __name__ == "__main__":
-    user_client.run(create_sessions())
+    asyncio.run(create_telethon_sessions())

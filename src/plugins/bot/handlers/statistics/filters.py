@@ -34,14 +34,10 @@ async def filter_history_statistics(menu: Menu):
     source_id = menu.path.get_value("s")
     days = menu.path.get_value("d")
 
-    menu.add_row_many_buttons(
-        *(bt_data for day, bt_data in INTERVAL_BUTTONS_DATA.items() if day != days)
-    )
+    menu.add_row_many_buttons(*(bt_data for day, bt_data in INTERVAL_BUTTONS_DATA.items() if day != days))
 
     return get_menu_text(
-        title=(
-            STATISTIC_FILTER_TITLE if source_id else STATISTIC_FILTER_COMMON_TITLE
-        ).format(days),
+        title=(STATISTIC_FILTER_TITLE if source_id else STATISTIC_FILTER_COMMON_TITLE).format(days),
         params=(await g_params.source(source_id),) if source_id else None,
         content=get_content(days, source_id),
     )

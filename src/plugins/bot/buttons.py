@@ -100,8 +100,7 @@ class ButtonAdder(ButtonAdderBase):
         self._add_row_button(
             button=ALERT_RULES_BTN,
             model=AlertRule,
-            where=(AlertRule.user_id == user_id)
-            & (AlertRule.category_id == category_id),
+            where=(AlertRule.user_id == user_id) & (AlertRule.category_id == category_id),
             back_step=back_step,
         )
 

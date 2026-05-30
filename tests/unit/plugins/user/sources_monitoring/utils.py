@@ -29,6 +29,21 @@ def setup_filtered(mocker: MockerFixture, return_value=...):
 
 
 def setup_json_loads(mocker, return_value=...):
-    mock = mocker.patch("plugins.user.sources_monitoring.new_message.json.loads")
-    set_return_value(mock, return_value)
-    return mock
+    """
+    Патчим tl_message_to_dict в обоих хендлерах (Telethon-версия).
+    Ранее патчил json.loads в pyrogram-версии.
+    """
+    mocks = []
+    for target in [
+        "plugins.user.sources_monitoring.new_message.tl_message_to_dict",
+        "plugins.user.sources_monitoring.edited_message.tl_message_to_dict",
+        "alerts.regex_rule.tl_message_to_dict",
+    ]:
+        try:
+            mock = mocker.patch(target)
+            if return_value is not ...:
+                mock.return_value = return_value
+            mocks.append(mock)
+        except Exception:
+            pass
+    return mocks[0] if mocks else None

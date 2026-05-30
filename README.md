@@ -4,7 +4,7 @@
 [![codestyle](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/codestyle.yml/badge.svg)](https://github.com/Kroks4502/tg_ch_aggregator/actions/workflows/codestyle.yml)
 
 [![Python][Python-badge]][Python-url]
-[![Pyrogram][Pyrogram-badge]][Pyrogram-url]
+[![Telethon][Telethon-badge]][Telethon-url]
 [![Postgres][Postgres-badge]][Postgres-url]
 [![Docker][Docker-badge]][Docker-url]
 
@@ -26,8 +26,8 @@ Create your own news feeds from Telegram channels!
 - Docker 24.0.0 or higher
 - Docker Compose 2.25.0 or higher
 - PostgreSQL 14 or higher
-- Python 3.10 or higher
-- Pyrogram 2.0
+- Python 3.13 or higher
+- Telethon 1.36+
 - Telegram API credentials
 
 ### Telegram App Setup
@@ -87,13 +87,13 @@ To set up your Telegram bot and obtain necessary credentials, follow these steps
    - Enter two-step verification password (if it's enabled)
 
    ```shell
-   ./docker/docker-dev-run.sh create_sessions
+   ./docker/docker-run.dev.sh create_sessions
    ```
 
 4. **Start the main application**
 
    ```shell
-   ./docker/docker-dev-run.sh start
+   ./docker/docker-run.dev.sh start
    ```
 
 ### Deployment
@@ -204,8 +204,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 [Python-url]: https://www.python.org/
 [Python-badge]: https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54
 
-[Pyrogram-url]: https://docs.pyrogram.org/
-[Pyrogram-badge]: https://img.shields.io/badge/Pyrogram-ff1709?style=for-the-badge&logo=telegram&color=bf431d
+[Telethon-url]: https://docs.telethon.dev/
+[Telethon-badge]: https://img.shields.io/badge/Telethon-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white
 
 [Postgres-url]: https://www.postgresql.org/
 [Postgres-badge]: https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white

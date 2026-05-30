@@ -1,130 +1,150 @@
 import inspect
-from functools import wraps
-from typing import Callable, Optional
+import logging
+import re
+from typing import Awaitable, Callable
 
-import pyrogram
-from pyrogram.handlers import CallbackQueryHandler, MessageHandler
+from aiogram import Bot, F, Router
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.filters import Command, StateFilter
+from aiogram.fsm.context import FSMContext
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardMarkup,
+    Message,
+)
+from aiogram.types import (
+    User as AiogramUser,
+)
 
-from common.senders import send_message_to_admins
+from common.dto import AdminNotification
+from common.notifier_registry import get_admin_notifier
+from plugins.bot.fsm import WaitInput
 from plugins.bot.menu import Menu
-from utils import custom_filters
-from utils.input_wait_manager import InputWaitManager
+from plugins.bot.middlewares.admin import AdminOnlyMiddleware
+from plugins.bot.text_formatter import md_to_html
+from plugins.bot.wait_registry import make_key, register, resolve
+
+logger = logging.getLogger(__name__)
+
+
+def _suffix_optional_pagination_and_new(path: str, pagination: bool) -> str:
+    if pagination:
+        path += r"(p/\d+/|)"
+    path += r"(\?new|)$"
+    return path
 
 
 class CallbackQueryRouter:
-    def __init__(self, client: "pyrogram.Client", input_wait_manager: InputWaitManager):
-        self.client = client
-        self.input_wait_manager = input_wait_manager
+    """
+    Совместимая надстройка над aiogram.Router/Dispatcher: сохраняет старые
+    декораторы @router.page / @router.wait_input / @router.command, чтобы
+    handler'ы могли мигрировать без перерегистрации.
+    """
+
+    def __init__(self, dispatcher):
+        self.dispatcher = dispatcher
+
+        # Два sub-router'а: один защищён admin-middleware, второй — публичный.
+        self.admin_router = Router(name="bot.admin")
+        self.admin_router.callback_query.middleware(AdminOnlyMiddleware())
+        self.admin_router.message.middleware(AdminOnlyMiddleware())
+
+        self.public_router = Router(name="bot.public")
+
+        dispatcher.include_router(self.public_router)
+        dispatcher.include_router(self.admin_router)
+
+        # Универсальный handler ожидания текстового ввода (FSM).
+        self.public_router.message.register(
+            self._handle_wait_input,
+            StateFilter(WaitInput.waiting_text),
+        )
+
+    # ------------------------------------------------------------------ page
 
     def page(
         self,
         *,
-        path: str = "/",
+        path: str,
         back_step: int = 1,
         pagination: bool = False,
         admin_only: bool = True,
         send_to_admins: bool = False,
         reply: bool = False,
-        add_wait_for_input: Callable = None,
-        callback_answer_text: str = None,
+        add_wait_for_input: Callable | None = None,
+        callback_answer_text: str | None = None,
         group: int = 0,
         command: bool = False,
     ):
-        """
-        Декоратор для организации меню путём обработки запросов обратного вызова,
-        используя ~pyrogram.handlers.CallbackQueryHandler.
-
-        Обернутая функция может принимать следующие аргументы:
-
-        - client: Client
-        - menu: Menu
-        - callback_query: CallbackQuery
-
-        Она должна возвращать текст сообщения для пользователя или None, когда ответ не требуется.
-
-        :param path: Путь меню.
-        :param back_step: Количество шагов для кнопки назад.
-        :param pagination: Добавить пагинацию.
-        :param admin_only: Доступно только администраторам.
-        :param send_to_admins: Отправить сообщение администраторам.
-        :param reply: Ответить репликой.
-        :param add_wait_for_input: Добавить функцию ожидающую ввод от пользователя.
-        :param callback_answer_text: Текст для метода answer of ~pyrogram.pyrogram.types.CallbackQuery.
-        :param group: Группа обработчика.
-        :param command: Подключить обработку командами.
-        """
+        """См. оригинальный CallbackQueryRouter.page — параметры совпадают."""
         origin_path = path
-        if pagination:
-            path += r"(p/\d+/|)"
-        path += r"(\?new|)$"
+        regex = _suffix_optional_pagination_and_new(path, pagination)
+        compiled = re.compile(regex)
 
-        filters = pyrogram.filters.regex(pattern=path)
-        if admin_only:
-            filters &= custom_filters.admin_only
+        target_router = self.admin_router if admin_only else self.public_router
 
         def decorator(func: Callable) -> Callable:
-            @wraps(func)
-            async def inner(
-                client: "pyrogram.Client",
-                callback_query: "pyrogram.types.CallbackQuery",
-                **kwargs,
-            ):
-                if callback_query.id is not ...:
-                    await callback_query.answer(text=callback_answer_text)
+            async def inner(callback_query: CallbackQuery, state: FSMContext):
+                if callback_query.id != "synthetic":
+                    try:
+                        await callback_query.answer(text=callback_answer_text)
+                    except TelegramBadRequest:
+                        # callback_query истёк — не критично, продолжаем
+                        pass
 
                 menu = Menu(
                     path=callback_query.data,
-                    user=callback_query.from_user,
+                    user_id=callback_query.from_user.id,
                     back_step=back_step,
                 )
 
                 text = await func(
-                    **self._get_func_kwargs(
+                    **_pick_kwargs(
                         func,
-                        available_kwargs=dict(
-                            client=client,
+                        dict(
+                            bot=callback_query.bot,
+                            client=callback_query.bot,
                             menu=menu,
                             callback_query=callback_query,
                         ),
-                    ),
-                    **kwargs,
+                    )
                 )
 
-                await self._send_final_text(
+                await _send_final_text(
+                    bot=callback_query.bot,
                     event=callback_query,
                     reply=menu.need_send_new_message or reply,
-                    markup=(
-                        None
-                        if reply and not menu.need_send_new_message
-                        else menu.reply_markup
-                    ),
+                    markup=(None if reply and not menu.need_send_new_message else menu.reply_markup),
                     text=text,
                 )
 
-                await self._send_message_to_admins(
-                    send_to_admins,
-                    callback_query.from_user,
-                    text,
-                )
-                await self._add_to_input_wait_manager(
-                    add_wait_for_input,
-                    callback_query,
-                )
+                if send_to_admins and text:
+                    await _send_to_admins(callback_query.from_user, text)
 
-            self.client.add_handler(
-                handler=CallbackQueryHandler(
-                    callback=inner,
-                    filters=filters,
-                ),
-                group=group,
-            )
+                if add_wait_for_input:
+                    await _arm_wait_input(
+                        state=state,
+                        func=add_wait_for_input,
+                        callback_path=callback_query.data,
+                        prev_menu_chat_id=(callback_query.message.chat.id if callback_query.message else None),
+                        prev_menu_message_id=(callback_query.message.message_id if callback_query.message else None),
+                    )
+
+            inner.__name__ = func.__name__
+            inner.__qualname__ = func.__qualname__
+            inner.__module__ = func.__module__
+
+            # search-режим: схема путей у нас «хвостовая» (`/s/` должен
+            # матчить `/c/-123/s/`), а default mode у magic_filter — match,
+            # т.е. привязка к началу строки. Это бы рубило все вложенные
+            # переходы вроде «Категории → выбор категории → Источники».
+            target_router.callback_query.register(inner, F.data.regexp(compiled, mode="search"))
 
             if command:
                 self._page_as_command(
                     func=func,
                     path=origin_path,
                     back_step=back_step,
-                    group=group,
                     admin_only=admin_only,
                 )
 
@@ -132,57 +152,62 @@ class CallbackQueryRouter:
 
         return decorator
 
+    # ------------------------------------------------------------ wait_input
+
     def wait_input(
         self,
         *,
         back_step: int = 1,
         send_to_admins: bool = False,
-        add_wait_for_input: Callable = None,
-        initial_text: str = None,
+        add_wait_for_input: Callable | None = None,
+        initial_text: str | None = None,
         delete_previous_menu: bool = True,
     ):
         """
-        Декоратор для создания обработчика сообщения от пользователя,
-        используя ~pyrogram.handlers.MessageHandler.
-
-        Функция может принимать следующие аргументы:
-
-        - client: Client
-        - menu: Menu
-        - message: Message
-
-        Функция должна возвращать текст сообщения для пользователя.
-
-        :param back_step: Количество шагов для кнопки назад.
-        :param send_to_admins: Отправить сообщение администраторам.
-        :param add_wait_for_input: Добавить функцию ожидающую ввод от пользователя.
-        :param initial_text: Первоначальный текст ответа.
-        :param delete_previous_menu: Удалить предыдущее сообщение с меню.
+        Регистрирует функцию-обработчик текстового ввода в wait_registry.
+        Сама функция не превращается в aiogram-handler — её вызовет
+        универсальный FSM-handler из __init__.
         """
 
         def decorator(func: Callable) -> Callable:
-            @wraps(func)
-            async def inner(
-                client: "pyrogram.Client",
-                message: "pyrogram.types.Message",
-                callback_query: "pyrogram.types.CallbackQuery",
-            ):
-                answer_message = None
-                if initial_text:
-                    answer_message = await message.reply_text(initial_text)
+            # Метаданные оригинальной функции для FSM-handler'а
+            func.__wait_input_meta__ = dict(
+                back_step=back_step,
+                send_to_admins=send_to_admins,
+                add_wait_for_input=add_wait_for_input,
+                initial_text=initial_text,
+                delete_previous_menu=delete_previous_menu,
+            )
+            register(func)
+            return func
 
-                menu = Menu(
-                    path=callback_query.data,
-                    user=callback_query.from_user,
-                    back_step=back_step,
-                )
+        return decorator
+
+    # --------------------------------------------------------------- command
+
+    def command(
+        self,
+        *,
+        commands: str | list[str],
+        group: int = 0,
+    ):
+        """См. оригинальный CallbackQueryRouter.command."""
+        cmd_list = [commands] if isinstance(commands, str) else list(commands)
+
+        def decorator(func: Callable) -> Callable:
+            async def inner(message: Message, state: FSMContext):
+                # Команды /start и /cancel сбрасывают FSM
+                await state.clear()
+
+                menu = Menu(path="/", user_id=message.from_user.id)
 
                 try:
                     text = await func(
-                        **self._get_func_kwargs(
+                        **_pick_kwargs(
                             func,
-                            available_kwargs=dict(
-                                client=client,
+                            dict(
+                                bot=message.bot,
+                                client=message.bot,
                                 menu=menu,
                                 message=message,
                             ),
@@ -190,65 +215,57 @@ class CallbackQueryRouter:
                     )
                 except ValueError as error:
                     text = str(error)
-                else:
-                    await self._send_message_to_admins(
-                        send_to_admins,
-                        callback_query.from_user,
-                        text,
-                    )
-                    await self._add_to_input_wait_manager(
-                        add_wait_for_input,
-                        callback_query,
-                    )
 
-                await self._send_final_text(
-                    event=answer_message or message,
-                    reply=not answer_message,
+                await _send_final_text(
+                    bot=message.bot,
+                    event=message,
+                    reply=True,
                     markup=menu.reply_markup,
                     text=text,
                 )
 
-                if delete_previous_menu:
-                    await callback_query.message.delete()
+            inner.__name__ = func.__name__
+            inner.__qualname__ = func.__qualname__
+            inner.__module__ = func.__module__
 
+            self.public_router.message.register(inner, Command(*cmd_list))
             return inner
 
         return decorator
+
+    # ------------------------------------------------------------- internals
 
     def _page_as_command(
         self,
         func: Callable,
         path: str,
         back_step: int,
-        group: int,
         admin_only: bool,
     ):
         """
-        :param func: Функция для обработчика.
-        :param path: Путь меню.
-        :param back_step: Количество шагов для кнопки назад.
-        :param group: Группа обработчика.
-        :param admin_only: Доступно только администраторам.
+        Открывает страницу меню по команде /a_b при path=/a/b/.
         """
+        cmd_name = path.strip("/").replace("/", "_")
+        target_router = self.admin_router if admin_only else self.public_router
 
-        async def inner(
-            client: "pyrogram.Client",
-            message: "pyrogram.types.Message",
-        ):
+        async def inner(message: Message, state: FSMContext):
+            await state.clear()
+
             msg_path = message.text.replace("_", "/") + "/"
             menu = Menu(
                 path=msg_path,
-                user=message.from_user,
+                user_id=message.from_user.id,
                 back_step=back_step,
             )
             menu.set_footer_buttons = False
 
             try:
                 text = await func(
-                    **self._get_func_kwargs(
+                    **_pick_kwargs(
                         func,
-                        available_kwargs=dict(
-                            client=client,
+                        dict(
+                            bot=message.bot,
+                            client=message.bot,
                             menu=menu,
                             message=message,
                         ),
@@ -257,167 +274,203 @@ class CallbackQueryRouter:
             except ValueError as error:
                 text = str(error)
 
-            await self._send_final_text(
+            await _send_final_text(
+                bot=message.bot,
                 event=message,
                 reply=True,
                 text=text,
                 markup=menu.reply_markup,
             )
 
-        commands = [path.strip("/").replace("/", "_")]
-        filters = pyrogram.filters.command(commands)
-        if admin_only:
-            filters &= custom_filters.admin_only
+        target_router.message.register(inner, Command(cmd_name))
 
-        self.client.add_handler(
-            handler=MessageHandler(
-                callback=inner,
-                filters=filters,
-            ),
-            group=group,
+    async def _handle_wait_input(
+        self,
+        message: Message,
+        state: FSMContext,
+    ):
+        data = await state.get_data()
+        handler_key = data.get("wait_handler_key")
+        callback_path = data.get("wait_callback_path", "/")
+        meta = data.get("wait_meta") or {}
+        prev_menu_chat_id = data.get("prev_menu_chat_id")
+        prev_menu_message_id = data.get("prev_menu_message_id")
+
+        func = resolve(handler_key) if handler_key else None
+        if func is None:
+            await state.clear()
+            logger.warning("FSM waiting state has no resolvable handler")
+            return
+
+        # Initial-ack: «⏳ Создаю…» и т.п.
+        answer_message: Message | None = None
+        initial_text = meta.get("initial_text")
+        if initial_text:
+            answer_message = await message.reply(text=initial_text)
+
+        menu = Menu(
+            path=callback_path,
+            user_id=message.from_user.id,
+            back_step=meta.get("back_step", 1),
         )
 
-    def command(
-        self,
-        *,
-        commands: str | list[str],
-        group: int = 0,
-    ):
-        """
-        Декоратор для создания обработчика команд от пользователя,
-        используя ~pyrogram.handlers.MessageHandler.
-
-        Функция может принимать следующие аргументы:
-
-        - client: Client
-        - menu: Menu
-        - message: Message
-
-        Функция должна возвращать текст сообщения для пользователя.
-
-        :param commands: Список обрабатываемых команд.
-        :param group: Группа обработчика.
-        """
-
-        def decorator(func: Callable) -> Callable:
-            @wraps(func)
-            async def inner(
-                client: "pyrogram.Client",
-                message: "pyrogram.types.Message",
-            ):
-                menu = Menu(
-                    path="/",
-                    user=message.from_user,
+        try:
+            text = await func(
+                **_pick_kwargs(
+                    func,
+                    dict(
+                        bot=message.bot,
+                        client=message.bot,
+                        menu=menu,
+                        message=message,
+                    ),
                 )
-
-                try:
-                    text = await func(
-                        **self._get_func_kwargs(
-                            func,
-                            available_kwargs=dict(
-                                client=client,
-                                menu=menu,
-                                message=message,
-                            ),
-                        )
-                    )
-                except ValueError as error:
-                    text = str(error)
-
-                await self._send_final_text(
-                    event=message,
-                    reply=True,
-                    text=text,
-                    markup=menu.reply_markup,
-                )
-
-            self.client.add_handler(
-                handler=MessageHandler(
-                    callback=inner,
-                    filters=pyrogram.filters.command(commands),
-                ),
-                group=group,
             )
+        except ValueError as error:
+            text = str(error)
+            send_to_admins = False
+            next_wait = None
+        else:
+            send_to_admins = meta.get("send_to_admins", False)
+            next_wait = meta.get("add_wait_for_input")
+            # Транслировать другим админам действие — оригинальный порядок:
+            # сначала рассылка, потом редактирование ответа пользователю.
+            if send_to_admins and text:
+                await _send_to_admins(message.from_user, text)
 
-            return inner
+        await state.clear()
 
-        return decorator
-
-    @staticmethod
-    def _get_func_kwargs(func: Callable, available_kwargs: dict):
-        return {
-            arg_name: available_kwargs[arg_name]
-            for arg_name in inspect.signature(func).parameters
-            if arg_name in available_kwargs
-        }
-
-    async def _add_to_input_wait_manager(
-        self,
-        add_wait_for_input: Callable,
-        callback_query: "pyrogram.types.CallbackQuery",
-    ):
-        if add_wait_for_input:
-            self.input_wait_manager.add(
-                callback_query.message.chat.id,
-                add_wait_for_input,
-                self.client,
-                callback_query,
-            )
-
-    async def _send_final_text(
-        self,
-        event: ["pyrogram.types.Message", "pyrogram.types.CallbackQuery"],
-        reply: bool,
-        text: str,
-        markup: Optional["pyrogram.types.InlineKeyboardMarkup"],
-    ):
-        if text:
-            if reply:
-                await self.client.send_message(
-                    chat_id=event.from_user.id,
-                    text=text,
-                    reply_markup=markup,
-                    disable_web_page_preview=True,
-                )
-            else:
-                message = (
-                    event
-                    if isinstance(event, pyrogram.types.Message)
-                    else event.message
-                )
-
-                if message is None:
-                    raise ValueError("_send_final_text: not message for edit")
-
-                await self.client.edit_message_text(
-                    chat_id=message.chat.id,
-                    message_id=message.id,
-                    text=text,
-                    reply_markup=markup,
-                    disable_web_page_preview=True,
-                )
-
-    async def _send_message_to_admins(
-        self,
-        send_to_admins: bool,
-        user: "pyrogram.types.User",
-        text: str,
-    ):
-        if send_to_admins and text:
-            await send_message_to_admins(
-                client=self.client,
-                text=f"Действие пользователя {self._get_username(user)}\n\n{text}",
-                except_user_id=user.id,
-            )
-
-    @staticmethod
-    def _get_username(user: "pyrogram.types.User") -> str:
-        """Получить имя пользователя для сообщения администраторам."""
-        if user.username:
-            return f"@{user.username}"
-
-        full_name = (
-            f'{user.first_name + " " if user.first_name else ""}'
-            f'{user.last_name if user.last_name else ""}'
+        await _send_final_text(
+            bot=message.bot,
+            event=answer_message or message,
+            reply=not answer_message,
+            markup=menu.reply_markup,
+            text=text,
         )
-        return f"{full_name} ({user.id})" if full_name else f"{user.id}"
+
+        if next_wait:
+            await _arm_wait_input(
+                state=state,
+                func=next_wait,
+                callback_path=callback_path,
+                prev_menu_chat_id=prev_menu_chat_id,
+                prev_menu_message_id=prev_menu_message_id,
+            )
+
+        # Удалить предыдущее меню (сообщение бота с кнопкой ➕Добавить и т.п.),
+        # повторяет оригинальное `callback_query.message.delete()` из pyrogram-роутера.
+        if meta.get("delete_previous_menu") and prev_menu_chat_id and prev_menu_message_id:
+            try:
+                await message.bot.delete_message(
+                    chat_id=prev_menu_chat_id,
+                    message_id=prev_menu_message_id,
+                )
+            except TelegramBadRequest:
+                # сообщение могло быть удалено пользователем или истечь —
+                # не критично, продолжаем.
+                pass
+
+
+# ============================================================ module-level helpers
+
+
+def _pick_kwargs(func: Callable, available: dict) -> dict:
+    sig = inspect.signature(func)
+    return {name: available[name] for name in sig.parameters if name in available}
+
+
+async def _arm_wait_input(
+    state: FSMContext,
+    func: Callable[..., Awaitable],
+    callback_path: str,
+    prev_menu_chat_id: int | None = None,
+    prev_menu_message_id: int | None = None,
+):
+    key = make_key(func)
+    meta = getattr(func, "__wait_input_meta__", None) or {}
+    serializable_meta = {
+        "back_step": meta.get("back_step", 1),
+        "send_to_admins": meta.get("send_to_admins", False),
+        "initial_text": meta.get("initial_text"),
+        "delete_previous_menu": meta.get("delete_previous_menu", True),
+    }
+
+    nxt = meta.get("add_wait_for_input")
+    if nxt is not None:
+        serializable_meta["add_wait_for_input"] = make_key(nxt)
+
+    await state.update_data(
+        wait_handler_key=key,
+        wait_callback_path=callback_path,
+        wait_meta=serializable_meta,
+        prev_menu_chat_id=prev_menu_chat_id,
+        prev_menu_message_id=prev_menu_message_id,
+    )
+    await state.set_state(WaitInput.waiting_text)
+
+
+async def _send_final_text(
+    bot: Bot,
+    event: CallbackQuery | Message,
+    reply: bool,
+    text: str | None,
+    markup: InlineKeyboardMarkup | None,
+):
+    if not text:
+        return
+
+    # Тексты handler'ов используют внутренний Markdown-диалект (`**bold**`,
+    # `` `code` ``, `[text](url)`). У aiogram parse_mode выставлен в HTML —
+    # конвертируем на лету.
+    text = md_to_html(text)
+
+    if reply:
+        target_chat_id = event.from_user.id if isinstance(event, CallbackQuery) else event.chat.id
+        await bot.send_message(
+            chat_id=target_chat_id,
+            text=text,
+            reply_markup=markup,
+            disable_web_page_preview=True,
+        )
+        return
+
+    if isinstance(event, CallbackQuery):
+        message = event.message
+        if message is None:
+            raise ValueError("_send_final_text: callback_query has no message")
+        target_chat_id = message.chat.id
+        target_message_id = message.message_id
+    else:
+        target_chat_id = event.chat.id
+        target_message_id = event.message_id
+
+    try:
+        await bot.edit_message_text(
+            chat_id=target_chat_id,
+            message_id=target_message_id,
+            text=text,
+            reply_markup=markup,
+            disable_web_page_preview=True,
+        )
+    except TelegramBadRequest as exc:
+        if "message is not modified" in str(exc).lower():
+            return
+        raise
+
+
+async def _send_to_admins(user: AiogramUser, text: str):
+    """Транслировать сообщение от лица пользователя всем остальным админам."""
+    await get_admin_notifier().notify(
+        AdminNotification(
+            text=f"Действие пользователя {_get_username(user)}\n\n{text}",
+            except_user_id=user.id,
+        )
+    )
+
+
+def _get_username(user: AiogramUser) -> str:
+    if user.username:
+        return f"@{user.username}"
+
+    full_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+    return f"{full_name} ({user.id})" if full_name else f"{user.id}"

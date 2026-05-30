@@ -39,16 +39,12 @@ ACTION_ENTER_THRESHOLD = "Введи количество сообщений д�
 # QUESTION
 
 QUESTION_CONF_DEL = CONF_DEL_TEXT_TPL.format(SINGULAR_ALERT_RULE_TITLE.lower())
-QUESTION_COUNT_INTERVAL = (
-    "За сколько последних минут будет выполняться проверка количества сообщений?"
-)
+QUESTION_COUNT_INTERVAL = "За сколько последних минут будет выполняться проверка количества сообщений?"
 QUESTION_JOB_INTERVAL = "Как часто будет выполнятся проверка правила?"
 
 # ERRORS
 
-ERROR_INVALID_THRESHOLD = ERROR_TEXT.format(
-    text="Невалидный порог срабатывания уведомления"
-)
+ERROR_INVALID_THRESHOLD = ERROR_TEXT.format(text="Невалидный порог срабатывания уведомления")
 QUESTION_SELECT_ALERT_RULE_TYPE = "Выбери тип правила"
 
 # ALERT COUNTER MESSAGE
@@ -56,10 +52,11 @@ QUESTION_SELECT_ALERT_RULE_TYPE = "Выбери тип правила"
 ALERT_COUNTER_MAX_WORDS = 20
 ALERT_COUNTER_MAX_MESSAGES = 8
 
-# PATH ALERT RULES
-ALERT_RULE_DETAIL_PATH = "/r/{rule_id}/"
-
-# PATH ALERTS
-
-ALERT_DETAIL_PATH = "/a/{alert_id}/"
-ALERT_LIST_PATH = f"{ALERT_RULE_DETAIL_PATH}a/"
+# PATH ALERT RULES / ALERTS
+# Канонические определения теперь живут в common.menu_paths,
+# чтобы внешние подсистемы (alerts, scheduler) не зависели от plugins.bot.
+from common.menu_paths import (  # noqa: E402, F401
+    ALERT_DETAIL_PATH,
+    ALERT_LIST_PATH,
+    ALERT_RULE_DETAIL_PATH,
+)

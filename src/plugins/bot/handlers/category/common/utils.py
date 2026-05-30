@@ -49,6 +49,4 @@ async def get_category_menu_success_text(
     action: str,
 ) -> str:
     category_link = await get_channel_formatted_link(category_id)
-    return SUCCESS_TEXT.format(
-        text=f"{SINGULAR_CATEGORY_TITLE} {category_link} {action}"
-    )
+    return SUCCESS_TEXT.format(text=f"{SINGULAR_CATEGORY_TITLE} {category_link} {action}")

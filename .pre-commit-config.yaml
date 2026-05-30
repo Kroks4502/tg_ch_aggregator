@@ -1,4 +1,4 @@
-exclude: (migrations|.github|pyrogram_fork)
+exclude: (migrations|.github)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -9,31 +9,10 @@ repos:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
       - id: check-merge-conflict
-      # - id: mixed-line-ending
-      #   args: [--fix=crlf]
-      # - id: no-commit-to-branch
-      #   args: [--branch, master]
 
-  - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.15
     hooks:
-      - id: isort
-        args: [--settings, setup.cfg]
-
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
-    hooks:
-      - id: black
-        args: [-t, py313]
-        exclude: ^pyrogram_fork/
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - pep8-naming
-          - flake8-broken-line
-          - flake8-return
-          - flake8-print
-        args: [--config, setup.cfg]
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format

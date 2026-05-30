@@ -20,11 +20,7 @@ async def list_alerts(menu: Menu):
     rule_id = menu.path.get_value("r")
     rule_obj: AlertRule = AlertRule.get(rule_id)
 
-    query = (
-        AlertHistory.select()
-        .where(AlertHistory.alert_rule_id == rule_id)
-        .order_by(AlertHistory.fired_at.desc())
-    )
+    query = AlertHistory.select().where(AlertHistory.alert_rule_id == rule_id).order_by(AlertHistory.fired_at.desc())
 
     pagination = menu.set_pagination(total_items=query.count(), size=5)
     for i in query.paginate(pagination.page, pagination.size):

@@ -37,31 +37,33 @@ async def test_edited_message(
     mocker.patch("plugins.user.sources_monitoring.edited_message.cleanup_message")
     mocker.patch("plugins.user.sources_monitoring.edited_message.add_header")
     mocker.patch("plugins.user.sources_monitoring.edited_message.cut_long_message")
-
-    mock_edit_media = mocker.patch(
-        "plugins.user.sources_monitoring.edited_message.EditMessageMedia.edit_message_media"
+    # Мокаем DB-запрос для медиа-группы
+    mocker.patch(
+        "plugins.user.sources_monitoring.edited_message._is_text_in_mediagroup",
+        return_value=False,
     )
-    mocker.patch("plugins.user.sources_monitoring.edited_message.get_input_media")
+
+    # Telethon-версия: edit_message_with_entities заменяет EditMessageMedia + edit_message_text
+    mock_edit = mocker.patch(
+        "plugins.user.sources_monitoring.edited_message.edit_message_with_entities"
+    )
+    mocker.patch("plugins.user.sources_monitoring.edited_message._get_album_input_media")
+    # get_messages нужен для получения category_message после edit
+    client.get_messages = AsyncMock(return_value=[])
 
     setup_json_loads(mocker)
-
-    mock_edit_text = AsyncMock()
-    client.edit_message_text = mock_edit_text
 
     ###
     await edited_message.edited_message(client=client, message=message)
     ###
 
-    if not message.text:
-        mock_edit_media.assert_called_once()
-    else:
-        mock_edit_text.assert_called_once()
+    mock_edit.assert_called_once()
     mock_get_history_obj.assert_called_once_with(
-        source_id=message.chat.id, source_message_id=message.id
+        source_id=message.chat_id, source_message_id=message.id
     )
     mock_history_obj = mock_get_history_obj.return_value
     assert mock_history_obj.edited_at == message.edit_date
     mock_history_obj.save.assert_called_once()
 
-    assert "Источник 0 изменил сообщение 0, оно изменено в категории" in caplog.text
+    assert "Источник 0 изменил сообщение 0 → обновлено в категории" in caplog.text
     default_edited_message_log_asserts(caplog=caplog)

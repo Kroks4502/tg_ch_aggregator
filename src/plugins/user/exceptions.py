@@ -1,8 +1,5 @@
 import logging
 
-from pyrogram import errors as pyrogram_errors
-from pyrogram.types import Message
-
 from plugins.user.types import Operation
 from plugins.user.utils.chats_locks import MessagesLocks
 from settings import APP_START_DATETIME
@@ -20,7 +17,7 @@ class MessageBaseError(UserBaseError):
     end_tmpl = ""
     include_message = False
 
-    def __init__(self, operation: Operation, message: Message, **kwargs):
+    def __init__(self, operation: Operation, message, **kwargs):
         self.message = message
         self.operation = operation
         self.text = self.generate_exc_text(**kwargs)
@@ -34,7 +31,7 @@ class MessageBaseError(UserBaseError):
 
     def generate_exc_text(self, **kwargs):
         start_text = self.start_tmpl.format(
-            source_id=self.message.chat.id,
+            source_id=self.message.chat_id,
             operation=self.operation.value,
             message_id=self.message.id,
         )
@@ -61,15 +58,15 @@ class MessageBaseError(UserBaseError):
 
 
 class MessageBlockedByMediaGroupError(MessageBaseError):
-    """Сообщение было ранее заблокировано по message.media_group_id."""
+    """Сообщение было ранее заблокировано по message.grouped_id."""
 
     end_tmpl = "но медиа группа {media_group_id} уже заблокирована {blocked}"
 
-    def __init__(self, operation: Operation, message: Message, blocked: MessagesLocks):
+    def __init__(self, operation: Operation, message, blocked: MessagesLocks):
         super().__init__(
             operation=operation,
             message=message,
-            media_group_id=message.media_group_id,
+            media_group_id=message.grouped_id,
             blocked=blocked,
         )
 
@@ -79,7 +76,7 @@ class MessageBlockedByIdError(MessageBaseError):
 
     end_tmpl = "но оно уже заблокировано {blocked}"
 
-    def __init__(self, operation: Operation, message: Message, blocked: MessagesLocks):
+    def __init__(self, operation: Operation, message, blocked: MessagesLocks):
         super().__init__(operation=operation, message=message, blocked=blocked)
 
 
@@ -89,14 +86,11 @@ class MessageNotFoundOnHistoryError(MessageBaseError):
     logging_level = logging.WARNING
     end_tmpl = "его нет в истории date={date}, edit_date={edit_date}"
 
-    def __init__(self, operation: Operation, message: Message):
+    def __init__(self, operation: Operation, message):
         if (
             message.date
             and message.edit_date
-            and (
-                (message.edit_date - message.date).total_seconds() < 10
-                or APP_START_DATETIME > message.date
-            )
+            and ((message.edit_date - message.date).total_seconds() < 10 or APP_START_DATETIME > message.date)
             or (not message.date and operation == Operation.DELETE)
         ):
             self.logging_level = logging.INFO
@@ -121,10 +115,7 @@ class MessageNotOnCategoryError(MessageBaseError):
 class MessageNotRewrittenError(MessageBaseError):
     """Сообщение нельзя отредактировать."""
 
-    end_tmpl = (
-        "оно не может быть изменено в категории, "
-        "потому что было переслано и не перепечатывалось"
-    )
+    end_tmpl = "оно не может быть изменено в категории, потому что было переслано и не перепечатывалось"
 
 
 class MessageNotModifiedError(MessageBaseError):
@@ -132,12 +123,7 @@ class MessageNotModifiedError(MessageBaseError):
 
     end_tmpl = "перепечатать сообщение в категории не удалось {error}"
 
-    def __init__(
-        self,
-        operation: Operation,
-        message: Message,
-        error: pyrogram_errors.MessageNotModified,
-    ):
+    def __init__(self, operation: Operation, message, error: Exception):
         super().__init__(operation=operation, message=message, error=error)
 
 
@@ -165,12 +151,7 @@ class MessageIdInvalidError(MessageBaseError):
     logging_level = logging.WARNING
     end_tmpl = "оно привело к ошибке {error}"
 
-    def __init__(
-        self,
-        operation: Operation,
-        message: Message,
-        error: pyrogram_errors.MessageIdInvalid,
-    ):
+    def __init__(self, operation: Operation, message, error: Exception):
         super().__init__(operation=operation, message=message, error=error)
 
 
@@ -187,12 +168,7 @@ class MessageTooLongError(MessageBaseError):
     logging_level = logging.ERROR
     end_tmpl = "но при перепечатывании оно превышает лимит знаков {error}"
 
-    def __init__(
-        self,
-        operation: Operation,
-        message: Message,
-        error: pyrogram_errors.MediaCaptionTooLong | pyrogram_errors.MessageTooLong,
-    ):
+    def __init__(self, operation: Operation, message, error: Exception):
         super().__init__(operation=operation, message=message, error=error)
 
 
@@ -202,12 +178,7 @@ class MessageBadRequestError(MessageBaseError):
     logging_level = logging.ERROR
     end_tmpl = "оно привело к необработанной ошибке при запросе {error}"
 
-    def __init__(
-        self,
-        operation: Operation,
-        message: Message,
-        error: pyrogram_errors.BadRequest,
-    ):
+    def __init__(self, operation: Operation, message, error: Exception):
         super().__init__(operation=operation, message=message, error=error)
 
 
@@ -217,12 +188,7 @@ class MessageUnknownError(MessageBaseError):
     logging_level = logging.ERROR
     end_tmpl = "оно привело к неизвестной ошибке {error}"
 
-    def __init__(
-        self,
-        operation: Operation,
-        message: Message,
-        error: Exception,
-    ):
+    def __init__(self, operation: Operation, message, error: Exception):
         super().__init__(operation=operation, message=message, error=error)
 
 

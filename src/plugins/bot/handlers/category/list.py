@@ -29,10 +29,7 @@ async def list_category(menu: Menu):
 
     pagination = menu.set_pagination(total_items=query.count())
     menu.add_rows_from_data(
-        data=[
-            ButtonData(i.title, i.id, i.amount)
-            for i in query.paginate(pagination.page, pagination.size)
-        ],
+        data=[ButtonData(i.title, i.id, i.amount) for i in query.paginate(pagination.page, pagination.size)],
     )
 
     return await get_category_menu_text()

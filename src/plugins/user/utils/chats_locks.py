@@ -47,10 +47,7 @@ class MessagesLocks:
             self.__chat.remove(value)
         except KeyError:
             logging.warning(
-                (
-                    "Не удалось снять блокировку %s для чата %s со значением %s."
-                    " Текущие блокировки: %s"
-                ),
+                ("Не удалось снять блокировку %s для чата %s со значением %s. Текущие блокировки: %s"),
                 self.__name,
                 self.__chat_id,
                 value,

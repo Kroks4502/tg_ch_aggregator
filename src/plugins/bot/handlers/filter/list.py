@@ -21,23 +21,16 @@ async def list_filters(menu: Menu):
     if filter_type_id:
         title_common = PLURAL_COMMON_FILTER_TITLE
         if source_id:
-            query = Filter.select().where(
-                (Filter.source == source_id) & (Filter.type == filter_type_id)
-            )
+            query = Filter.select().where((Filter.source == source_id) & (Filter.type == filter_type_id))
         else:
-            query = Filter.select().where(
-                Filter.source.is_null(True) & (Filter.type == filter_type_id)
-            )
+            query = Filter.select().where(Filter.source.is_null(True) & (Filter.type == filter_type_id))
     else:
         title_common = ALL_PLURAL_FILTER_TITLE
         query = Filter.select()
 
     pagination = menu.set_pagination(total_items=query.count())
     menu.add_rows_from_data(
-        data=[
-            ButtonData(i.pattern, i.id, 0)
-            for i in query.paginate(pagination.page, pagination.size)
-        ],
+        data=[ButtonData(i.pattern, i.id, 0) for i in query.paginate(pagination.page, pagination.size)],
     )
 
     return await get_filter_menu_text(

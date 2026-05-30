@@ -1,5 +1,5 @@
-from pyrogram import Client
-from pyrogram.types import Message
+from aiogram import Bot
+from aiogram.types import Message
 
 from models import Category
 from plugins.bot import router, validators
@@ -20,7 +20,7 @@ from plugins.bot.utils.links import get_channel_formatted_link
 
 @router.wait_input(back_step=2, send_to_admins=True)
 async def edit_category_title_waiting_input(
-    client: Client,
+    bot: Bot,
     message: Message,
     menu: Menu,
 ):
@@ -30,11 +30,11 @@ async def edit_category_title_waiting_input(
     category_id = menu.path.get_value("c")
     category_obj: Category = Category.get(category_id)
 
-    chat = await client.get_chat(chat_id=category_id)
+    chat = await bot.get_chat(chat_id=category_id)
 
     old_title = chat.title
     new_title = CATEGORY_NAME_TPL.format(message.text)
-    await chat.set_title(title=new_title)
+    await bot.set_chat_title(chat_id=category_id, title=new_title)
 
     category_obj.title = new_title
     category_obj.save()

@@ -80,6 +80,4 @@ async def get_filter_menu_success_text(
         text = SINGULAR_COMMON_FILTER_TITLE
 
     filter_type = FILTER_TYPES_BY_ID.get(filter_obj.type)
-    return SUCCESS_TEXT.format(
-        text=f"{text} {FILTER_TYPE_TEXT.format(filter_type)} {action}"
-    )
+    return SUCCESS_TEXT.format(text=f"{text} {FILTER_TYPE_TEXT.format(filter_type)} {action}")

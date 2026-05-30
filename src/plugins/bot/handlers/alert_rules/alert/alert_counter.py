@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
-
-from pyrogram.types import Message
+from types import SimpleNamespace
 
 from alerts.configs import AlertCounterHistory
 from common.links import get_message_link
@@ -19,9 +18,7 @@ from plugins.bot.menu_text import get_menu_text
 from plugins.bot.utils.links import get_channel_formatted_link
 
 FIRING_REGEX_ALERT_RULE_CATEGORY = "В категории {category_link}"
-FIRING_REGEX_ALERT_RULE_TITLE = (
-    "За последние {interval} мин. опубликовано сообщений: {amount} шт."
-)
+FIRING_REGEX_ALERT_RULE_TITLE = "За последние {interval} мин. опубликовано сообщений: {amount} шт."
 
 
 async def get_alert_counter_messages(
@@ -39,12 +36,8 @@ async def get_alert_counter_messages(
         end_ts=end_ts,
     )
 
-    pagination = menu.set_pagination(
-        total_items=query_messages.count(), size=ALERT_COUNTER_MAX_MESSAGES
-    )
-    category_messages = query_messages.paginate(
-        pagination.page, pagination.size
-    ).execute()
+    pagination = menu.set_pagination(total_items=query_messages.count(), size=ALERT_COUNTER_MAX_MESSAGES)
+    category_messages = query_messages.paginate(pagination.page, pagination.size).execute()
 
     menu.add_row_many_buttons(
         *(
@@ -104,12 +97,8 @@ def _get_query_history_category_messages(
         & (
             mh.data.path("last_message_without_error").is_null(False)
             & (
-                mh.data.path("last_message_without_error", "category", "text").is_null(
-                    False
-                )
-                | mh.data.path(
-                    "last_message_without_error", "category", "caption"
-                ).is_null(False)
+                mh.data.path("last_message_without_error", "category", "text").is_null(False)
+                | mh.data.path("last_message_without_error", "category", "caption").is_null(False)
             )
             | mh.data.path("last_message_without_error").is_null()
             & (
@@ -145,21 +134,14 @@ def _get_category_messages_texts(query) -> list[str]:
                 message_id=row.category_message_id,
             )
             link = f"**[>>>]({url})**"
-            lines.append(
-                f"`#{n}` **{row.source.title_alias or row.source.title}**:"
-                f" {short_text} {link}"
-            )
+            lines.append(f"`#{n}` **{row.source.title_alias or row.source.title}**: {short_text} {link}")
 
     return lines
 
 
 def get_short_text(data: dict, line: int) -> str:
     if not data or not (
-        message_data := (
-            (data.get("last_message_without_error") or data.get("first_message")).get(
-                "category"
-            )
-        )
+        message_data := ((data.get("last_message_without_error") or data.get("first_message")).get("category"))
     ):
         return ""
 
@@ -167,7 +149,7 @@ def get_short_text(data: dict, line: int) -> str:
         return ""
 
     message_data.pop("_")
-    message = Message(**message_data)
+    message = SimpleNamespace(**message_data)
     text = message.text or message.caption
     if text:
         words = get_words(text=text, line=line)

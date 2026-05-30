@@ -25,10 +25,7 @@ async def cleanup_message_history_job():
     months = MESSAGE_HISTORY_RETENTION_MONTHS
     deleted = (
         MessageHistory.delete()
-        .where(
-            MessageHistory.created_at
-            < SQL("NOW() - (%s * INTERVAL '1 month')", (months,))
-        )
+        .where(MessageHistory.created_at < SQL("NOW() - (%s * INTERVAL '1 month')", (months,)))
         .execute()
     )
     logger.info(

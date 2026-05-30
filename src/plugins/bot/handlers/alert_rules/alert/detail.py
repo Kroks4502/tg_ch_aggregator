@@ -1,21 +1,21 @@
+from common.menu_paths import ALERT_DETAIL_PATH
 from models import AlertHistory
 from plugins.bot import router
 from plugins.bot.handlers.alert_rules.alert.alert_counter import (
     get_alert_counter_messages,
 )
 from plugins.bot.handlers.alert_rules.alert.alert_regex import get_alert_regex_message
-from plugins.bot.handlers.alert_rules.common.constants import ALERT_DETAIL_PATH
 from plugins.bot.menu import Menu
 
 
-@router.page(
-    path=ALERT_DETAIL_PATH.format(
-        alert_id=r"\d+",
-    ),
-    pagination=True,
-)
-async def alert_detail(menu: Menu):
-    alert_id = menu.path.get_value("a")
+async def render_alert_view(menu: Menu, alert_id: int | None = None) -> str:
+    """
+    Заполнить переданный menu кнопками и вернуть текст уведомления по alert_id.
+    Используется и обычным callback-handler'ом, и нотифаером при срабатывании
+    правила (когда нужно отправить новое сообщение администратору).
+    """
+    if alert_id is None:
+        alert_id = menu.path.get_value("a")
     alert_obj: AlertHistory = AlertHistory.get(alert_id)
 
     firing_right_now = not bool(menu.path.get_value("r"))
@@ -36,3 +36,13 @@ async def alert_detail(menu: Menu):
         )
 
     return ""
+
+
+@router.page(
+    path=ALERT_DETAIL_PATH.format(
+        alert_id=r"\d+",
+    ),
+    pagination=True,
+)
+async def alert_detail(menu: Menu):
+    return await render_alert_view(menu)

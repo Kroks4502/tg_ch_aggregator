@@ -17,9 +17,7 @@ async def list_alerts_rules(menu: Menu):
     if menu.is_admin_user():
         menu.add_button.add()
 
-    query = AlertRule.select().where(
-        (AlertRule.user_id == menu.user.id) & (AlertRule.category_id == category_id)
-    )
+    query = AlertRule.select().where((AlertRule.user_id == menu.user.id) & (AlertRule.category_id == category_id))
 
     pagination = menu.set_pagination(total_items=query.count())
     menu.add_rows_from_data(

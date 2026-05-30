@@ -107,9 +107,7 @@ async def get_dialog_text(
         text_items.append(f"{JOB_INTERVAL_TEXT.format(job_interval=job_interval)},")
 
     if count_interval:
-        text_items.append(
-            f"{COUNT_INTERVAL_TEXT.format(count_interval=count_interval)}"
-        )
+        text_items.append(f"{COUNT_INTERVAL_TEXT.format(count_interval=count_interval)}")
 
     if threshold:
         text_items.append(f"и {THRESHOLD_TEXT.format(threshold=threshold)}")
@@ -158,9 +156,7 @@ async def get_full_text_about_alert_rule(
 
     if rule_obj.type == "counter":
         return (
-            f"{title}{user_text} {JOB_INTERVAL_TEXT}, {COUNT_INTERVAL_TEXT} и"
-            f" {THRESHOLD_TEXT}"
-            + category_text
+            f"{title}{user_text} {JOB_INTERVAL_TEXT}, {COUNT_INTERVAL_TEXT} и {THRESHOLD_TEXT}" + category_text
         ).format(**rule_obj.config)
 
     return f"{title}{user_text} {REGEX_TEXT}{category_text}".format(**rule_obj.config)

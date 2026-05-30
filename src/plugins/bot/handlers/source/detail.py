@@ -1,10 +1,9 @@
+from common.menu_paths import SOURCE_DETAIL_PATH as DETAIL_SOURCE_PATH  # noqa: F401
 from models import Source
 from plugins.bot import router
 from plugins.bot.handlers.source.common.constants import SINGULAR_SOURCE_TITLE
 from plugins.bot.handlers.source.common.utils import get_source_menu_text
 from plugins.bot.menu import Menu
-
-DETAIL_SOURCE_PATH = "/s/{source_id}/"
 
 
 @router.page(path=DETAIL_SOURCE_PATH.format(source_id=r"-\d+"))

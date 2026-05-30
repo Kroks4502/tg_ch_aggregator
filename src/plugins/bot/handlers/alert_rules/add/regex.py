@@ -1,4 +1,4 @@
-from pyrogram.types import Message
+from aiogram.types import Message
 
 from models import AlertRule
 from plugins.bot import router, validators

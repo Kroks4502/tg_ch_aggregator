@@ -56,6 +56,13 @@ def setup_history_save(mocker: MockerFixture) -> MagicMock:
     )
 
 
+def setup_check_regex_alert(mocker: MockerFixture) -> MagicMock:
+    """Мок для check_message_by_regex_alert_rule (Telethon-версия вызывает после отправки)."""
+    return mocker.patch(
+        "plugins.user.sources_monitoring.new_message.check_message_by_regex_alert_rule",
+    )
+
+
 def history_new_message_asserts(
     history: MessageHistory,
     input_source: MagicMock,
@@ -65,12 +72,12 @@ def history_new_message_asserts(
 ) -> None:
     assert history.source_id is input_source.id
     assert history.source_message_id is input_message.id
-    assert history.source_media_group_id is input_message.media_group_id
+    # Telethon: grouped_id (был media_group_id)
+    assert history.source_media_group_id is input_message.grouped_id
 
-    assert history.source_forward_from_chat_id is input_message.forward_from_chat.id
-    assert (
-        history.source_forward_from_message_id is input_message.forward_from_message_id
-    )
+    # Telethon: forward origin через get_fwd_origin() — None если message.fwd_from is None
+    assert history.source_forward_from_chat_id is None
+    assert history.source_forward_from_message_id is None
 
     assert history.category_id is input_source.category_id
     assert history.repeat_history_id is repeat_history_id
@@ -88,5 +95,6 @@ def history_with_category_asserts(
 ) -> None:
     assert history.category_message_rewritten is input_source.is_rewrite
     assert history.category_message_id is mock_category_msg.id
-    assert history.category_media_group_id is mock_category_msg.media_group_id
+    # Telethon: grouped_id (был media_group_id)
+    assert history.category_media_group_id is mock_category_msg.grouped_id
     assert "category" in history.data["first_message"]

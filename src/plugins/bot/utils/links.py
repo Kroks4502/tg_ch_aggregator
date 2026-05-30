@@ -1,39 +1,47 @@
 import logging
 
 from async_lru import alru_cache
-from pyrogram.errors import RPCError
+from telethon.tl.functions.channels import GetFullChannelRequest
 
-from clients import user_client
+from clients import telethon_user_client
 
 
 @alru_cache(maxsize=16)
 async def get_user_formatted_link(chat_id: int) -> str:
-    """Получить отформатированную в markdown ссылку на пользователя по chat_id."""
+    """Получить отформатированную ссылку на пользователя по chat_id."""
     try:
-        chat = await user_client.get_chat(chat_id)
-        if chat.username:
-            return f"[{chat.username}](https://{chat.username}.t.me)"
-        full_name = (
-            f'{chat.first_name + " " if chat.first_name else ""}'
-            f'{chat.last_name + " " if chat.last_name else ""}'
-        )
+        entity = await telethon_user_client.get_entity(chat_id)
+        username = getattr(entity, "username", None)
+        if username:
+            return f"[{username}](https://{username}.t.me)"
+        first = getattr(entity, "first_name", "") or ""
+        last = getattr(entity, "last_name", "") or ""
+        full_name = f"{first} {last}".strip()
         if full_name:
-            return f'{full_name + " " if full_name else ""}…{str(chat_id)[-5:]}'
-    except RPCError as e:
-        logging.warning(e, exc_info=True)
+            return f"{full_name} …{str(chat_id)[-5:]}"
+    except Exception as e:
+        logging.warning("get_user_formatted_link(%s): %s", chat_id, e)
     return str(chat_id)
 
 
 @alru_cache(maxsize=256)
 async def get_channel_formatted_link(chat_id: int) -> str:
-    """Получить отформатированную в markdown ссылку на канал по chat_id."""
+    """Получить отформатированную ссылку на канал по chat_id."""
     try:
-        chat = await user_client.get_chat(chat_id)
-        if chat.username:
-            return f"[{chat.title}](https://{chat.username}.t.me)"
-        if chat.invite_link:
-            return f"[{chat.title}]({chat.invite_link})"
-        return chat.title
-    except RPCError as e:
-        logging.warning(e, exc_info=True)
+        entity = await telethon_user_client.get_entity(chat_id)
+        title = getattr(entity, "title", None) or str(chat_id)
+        username = getattr(entity, "username", None)
+        if username:
+            return f"[{title}](https://{username}.t.me)"
+        # Для закрытых каналов получаем invite link
+        try:
+            full = await telethon_user_client(GetFullChannelRequest(entity))
+            invite_link = getattr(full.full_chat, "invite_link", None)
+            if invite_link:
+                return f"[{title}]({invite_link})"
+        except Exception:
+            pass
+        return title
+    except Exception as e:
+        logging.warning("get_channel_formatted_link(%s): %s", chat_id, e)
     return str(chat_id)

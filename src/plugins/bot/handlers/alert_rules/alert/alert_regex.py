@@ -1,4 +1,4 @@
-from pyrogram.types import Message
+from types import SimpleNamespace
 
 from alerts.configs import AlertRegexHistory, MatchData
 from common.text import get_words
@@ -16,10 +16,7 @@ from plugins.bot.handlers.category.message import (
 from plugins.bot.menu_text import get_menu_text
 from plugins.bot.utils.links import get_channel_formatted_link
 
-FIRING_REGEX_ALERT_RULE_TITLE = (
-    "В категории {category_link} опубликовано сообщение, подходящее "
-    "под паттерн `{pattern}`"
-)
+FIRING_REGEX_ALERT_RULE_TITLE = "В категории {category_link} опубликовано сообщение, подходящее под паттерн `{pattern}`"
 NUMBER_OF_WORDS = 20
 
 
@@ -33,7 +30,7 @@ async def get_alert_regex_message(
     if "_" not in alert_data.message:
         return ""
     alert_data.message.pop("_")
-    message = Message(**alert_data.message)
+    message = SimpleNamespace(**alert_data.message)
 
     menu.add_row_button(
         text=GET_CATEGORY_MESSAGE_BUTTON_TEXT,
