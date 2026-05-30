@@ -1,17 +1,11 @@
 """
-Адаптер pyrogram-flavored Markdown → Telegram HTML.
+Конвертер внутреннего Markdown-диалекта проекта → Telegram HTML.
 
-Зачем: тексты в проекте писались под pyrogram (``**bold**``, ``` `code` ```,
-``[text](url)``, и т.п.), который имеет свой диалект Markdown, не совпадающий
-ни с одним из двух parse_mode Telegram Bot API (``Markdown`` legacy и
-``MarkdownV2``). После миграции бота на aiogram эти тексты стали
-отображаться дословно.
+Тексты в проекте используют Markdown-подобный синтаксис; бот отправляет
+сообщения с ``parse_mode=ParseMode.HTML``. Конвертация делается на лету
+перед отправкой/редактированием.
 
-Чтобы не переписывать ~40+ шаблонов руками, конвертация делается на лету
-перед отправкой/редактированием сообщения. Bot создаётся с
-``parse_mode=ParseMode.HTML``.
-
-Поддерживаемые конструкции (pyrogram → HTML):
+Поддерживаемые конструкции:
     ``**bold**``       → ``<b>bold</b>``
     ``__italic__``     → ``<i>italic</i>``
     ``--underline--``  → ``<u>underline</u>``
@@ -56,9 +50,9 @@ _SPOILER_RE = re.compile(r"\|\|(.+?)\|\|", re.DOTALL)
 _QUOTE_LINE_RE = re.compile(r"^&gt; ?(.*)$", re.MULTILINE)
 
 
-def pyrogram_markdown_to_html(text: str | None) -> str | None:
+def md_to_html(text: str | None) -> str | None:
     """
-    Сконвертировать строку с pyrogram-Markdown в Telegram HTML.
+    Сконвертировать строку с внутренним Markdown-диалектом в Telegram HTML.
 
     None → None (для удобства подстановки в kwarg'и).
     Пустая строка → пустая строка.
@@ -82,7 +76,7 @@ def pyrogram_markdown_to_html(text: str | None) -> str | None:
     def _on_link(match: re.Match) -> str:
         # Текст ссылки — допустимо вложение жирного/курсива → парсим рекурсивно.
         # URL — экранируем только кавычки и амперсанд, чтобы атрибут href был валиден.
-        inner_text = pyrogram_markdown_to_html(match.group(1))
+        inner_text = md_to_html(match.group(1))
         url = match.group(2).replace("&", "&amp;").replace('"', "&quot;")
         return _stash(f'<a href="{url}">{inner_text}</a>')
 

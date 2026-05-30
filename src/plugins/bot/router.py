@@ -11,6 +11,8 @@ from aiogram.types import (
     CallbackQuery,
     InlineKeyboardMarkup,
     Message,
+)
+from aiogram.types import (
     User as AiogramUser,
 )
 
@@ -19,7 +21,7 @@ from common.notifier_registry import get_admin_notifier
 from plugins.bot.fsm import WaitInput
 from plugins.bot.menu import Menu
 from plugins.bot.middlewares.admin import AdminOnlyMiddleware
-from plugins.bot.text_formatter import pyrogram_markdown_to_html
+from plugins.bot.text_formatter import md_to_html
 from plugins.bot.wait_registry import make_key, register, resolve
 
 logger = logging.getLogger(__name__)
@@ -112,11 +114,7 @@ class CallbackQueryRouter:
                     bot=callback_query.bot,
                     event=callback_query,
                     reply=menu.need_send_new_message or reply,
-                    markup=(
-                        None
-                        if reply and not menu.need_send_new_message
-                        else menu.reply_markup
-                    ),
+                    markup=(None if reply and not menu.need_send_new_message else menu.reply_markup),
                     text=text,
                 )
 
@@ -128,16 +126,8 @@ class CallbackQueryRouter:
                         state=state,
                         func=add_wait_for_input,
                         callback_path=callback_query.data,
-                        prev_menu_chat_id=(
-                            callback_query.message.chat.id
-                            if callback_query.message
-                            else None
-                        ),
-                        prev_menu_message_id=(
-                            callback_query.message.message_id
-                            if callback_query.message
-                            else None
-                        ),
+                        prev_menu_chat_id=(callback_query.message.chat.id if callback_query.message else None),
+                        prev_menu_message_id=(callback_query.message.message_id if callback_query.message else None),
                     )
 
             inner.__name__ = func.__name__
@@ -148,9 +138,7 @@ class CallbackQueryRouter:
             # матчить `/c/-123/s/`), а default mode у magic_filter — match,
             # т.е. привязка к началу строки. Это бы рубило все вложенные
             # переходы вроде «Категории → выбор категории → Источники».
-            target_router.callback_query.register(
-                inner, F.data.regexp(compiled, mode="search")
-            )
+            target_router.callback_query.register(inner, F.data.regexp(compiled, mode="search"))
 
             if command:
                 self._page_as_command(
@@ -371,11 +359,7 @@ class CallbackQueryRouter:
 
         # Удалить предыдущее меню (сообщение бота с кнопкой ➕Добавить и т.п.),
         # повторяет оригинальное `callback_query.message.delete()` из pyrogram-роутера.
-        if (
-            meta.get("delete_previous_menu")
-            and prev_menu_chat_id
-            and prev_menu_message_id
-        ):
+        if meta.get("delete_previous_menu") and prev_menu_chat_id and prev_menu_message_id:
             try:
                 await message.bot.delete_message(
                     chat_id=prev_menu_chat_id,
@@ -435,15 +419,13 @@ async def _send_final_text(
     if not text:
         return
 
-    # Тексты handler'ов написаны под pyrogram-Markdown (`**bold**`,
+    # Тексты handler'ов используют внутренний Markdown-диалект (`**bold**`,
     # `` `code` ``, `[text](url)`). У aiogram parse_mode выставлен в HTML —
     # конвертируем на лету.
-    text = pyrogram_markdown_to_html(text)
+    text = md_to_html(text)
 
     if reply:
-        target_chat_id = (
-            event.from_user.id if isinstance(event, CallbackQuery) else event.chat.id
-        )
+        target_chat_id = event.from_user.id if isinstance(event, CallbackQuery) else event.chat.id
         await bot.send_message(
             chat_id=target_chat_id,
             text=text,

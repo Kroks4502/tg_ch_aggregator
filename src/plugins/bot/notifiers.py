@@ -16,7 +16,7 @@ from clients import aiogram_bot
 from common.dto import AdminNotification, AlertNotification
 from common.menu_paths import ALERT_DETAIL_PATH
 from models import User
-from plugins.bot.text_formatter import pyrogram_markdown_to_html
+from plugins.bot.text_formatter import md_to_html
 
 
 def _to_aiogram_markup(
@@ -26,20 +26,17 @@ def _to_aiogram_markup(
         return None
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(text=btn.text, callback_data=btn.callback_data)
-                for btn in row.buttons
-            ]
+            [InlineKeyboardButton(text=btn.text, callback_data=btn.callback_data) for btn in row.buttons]
             for row in notification.button_rows
         ]
     )
 
 
 async def _send_to_one(bot: Bot, chat_id: int, **kwargs) -> None:
-    # Тексты пишутся под pyrogram-Markdown — конвертируем в HTML, потому что
-    # aiogram_bot создан с parse_mode=HTML (см. clients.py).
+    # Тексты используют внутренний Markdown-диалект — конвертируем в HTML,
+    # потому что aiogram_bot создан с parse_mode=HTML (см. clients.py).
     if "text" in kwargs:
-        kwargs["text"] = pyrogram_markdown_to_html(kwargs["text"])
+        kwargs["text"] = md_to_html(kwargs["text"])
     try:
         await bot.send_message(chat_id=chat_id, disable_web_page_preview=True, **kwargs)
     except TelegramAPIError as exc:
@@ -49,9 +46,7 @@ async def _send_to_one(bot: Bot, chat_id: int, **kwargs) -> None:
 class _InProcessAdminNotifier:
     async def notify(self, notification: AdminNotification) -> None:
         markup = _to_aiogram_markup(notification)
-        admins = User.select(User.id).where(
-            (User.is_admin == True) & (User.id != notification.except_user_id)
-        )
+        admins = User.select(User.id).where((User.is_admin == True) & (User.id != notification.except_user_id))
         for admin in admins:
             await _send_to_one(
                 aiogram_bot,
@@ -85,9 +80,7 @@ class _InProcessAlertNotifier:
         try:
             text = await render_alert_view(menu, alert_id=notification.alert_id)
         except Exception:
-            logging.exception(
-                "render_alert_view failed for alert %s", notification.alert_id
-            )
+            logging.exception("render_alert_view failed for alert %s", notification.alert_id)
             return
 
         if not text:
