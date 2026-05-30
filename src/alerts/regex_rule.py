@@ -17,8 +17,7 @@ async def check_message_by_regex_alert_rule(
         return
 
     for rule_obj in AlertRule.select().where(
-        ((AlertRule.category_id == category_id) | (AlertRule.category_id.is_null()))
-        & (AlertRule.type == "regex")
+        ((AlertRule.category_id == category_id) | (AlertRule.category_id.is_null())) & (AlertRule.type == "regex")
     ):
         match = None
         pattern = rule_obj.config["regex"]

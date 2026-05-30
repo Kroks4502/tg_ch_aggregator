@@ -11,9 +11,7 @@ GET_CATEGORY_MESSAGE_BUTTON_TEXT = "Сообщение категории"
 GET_CATEGORY_MESSAGE_PATH = "/c/{category_id}/m/{message_id}/"
 
 
-@router.page(
-    path=GET_CATEGORY_MESSAGE_PATH.format(category_id=r"-\d+", message_id=r"\d+")
-)
+@router.page(path=GET_CATEGORY_MESSAGE_PATH.format(category_id=r"-\d+", message_id=r"\d+"))
 async def get_category_message(
     bot: Bot,
     menu: Menu,

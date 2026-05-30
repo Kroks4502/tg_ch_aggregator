@@ -21,10 +21,7 @@ async def list_users(menu: Menu):
 
     pagination = menu.set_pagination(total_items=query.count())
     menu.add_rows_from_data(
-        data=[
-            ButtonData(_get_title_for_user(i), i.id, 0)
-            for i in query.paginate(pagination.page, pagination.size)
-        ],
+        data=[ButtonData(_get_title_for_user(i), i.id, 0) for i in query.paginate(pagination.page, pagination.size)],
     )
 
     return get_menu_text(title=PLURAL_USER_TITLE)

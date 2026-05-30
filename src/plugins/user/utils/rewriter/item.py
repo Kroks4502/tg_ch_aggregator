@@ -61,9 +61,7 @@ class TextItem:
                 entities=list(
                     {
                         str(attr): str(getattr(entity, attr))
-                        for attr in filter(
-                            lambda x: not x.startswith("_"), entity.__dict__
-                        )
+                        for attr in filter(lambda x: not x.startswith("_"), entity.__dict__)
                         if getattr(entity, attr) is not None
                     }
                     for entity in self.entities

@@ -48,10 +48,7 @@ def get_statistic_text(where: Expression | None = None):
     interval_7d = current_timestamp - timedelta(days=7)
     interval_30d = current_timestamp - timedelta(days=30)
 
-    base_where = (
-        (MessageHistory.created_at >= interval_30d)
-        & (MessageHistory.repeat_history_id.is_null(True))
-    )
+    base_where = (MessageHistory.created_at >= interval_30d) & (MessageHistory.repeat_history_id.is_null(True))
     if where is not None:
         base_where = base_where & where
 
@@ -61,12 +58,8 @@ def get_statistic_text(where: Expression | None = None):
             MessageHistory.edited_at,
             MessageHistory.filter_id,
             MessageHistory.deleted_at,
-            MessageHistory.data.path("first_message", "exception", "level").alias(
-                "first_msg_exc_lvl"
-            ),
-            MessageHistory.data.path(
-                "last_message_with_error", "exception", "level"
-            ).alias("last_msg_exc_lvl"),
+            MessageHistory.data.path("first_message", "exception", "level").alias("first_msg_exc_lvl"),
+            MessageHistory.data.path("last_message_with_error", "exception", "level").alias("last_msg_exc_lvl"),
         )
         .where(base_where)
         .cte("Counts")
@@ -112,8 +105,4 @@ def get_sub_query(
     interval: datetime,
     alias: str,
 ):
-    return (
-        counts_cte.select(fn.COUNT(count_col))
-        .where(counts_cte.c.created_at >= interval)
-        .alias(alias)
-    )
+    return counts_cte.select(fn.COUNT(count_col)).where(counts_cte.c.created_at >= interval).alias(alias)

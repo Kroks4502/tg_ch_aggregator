@@ -16,7 +16,6 @@ from plugins.user.exceptions import (
 from plugins.user.sources_monitoring.common import _get_active_source_ids
 from plugins.user.types import Operation
 from plugins.user.utils.dump import dump_message
-from plugins.user.utils.telethon_helpers import tl_message_to_dict
 
 DELETE = Operation.DELETE
 
@@ -85,7 +84,8 @@ async def _handle_deleted_message(client, chat_id: int, msg_id: int) -> None:
 
         log.info(
             "Источник %s удалил сообщение %s → удалено из категории",
-            chat_id, msg_id,
+            chat_id,
+            msg_id,
         )
     except MessageBaseError as e:
         exc = e

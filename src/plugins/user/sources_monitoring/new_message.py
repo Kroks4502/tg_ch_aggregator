@@ -21,9 +21,9 @@ from plugins.user.sources_monitoring.common import (
     add_header,
     cut_long_message,
     get_filter_id_or_none,
+    get_reply_to,
     is_media_message_with_caption,
     is_monitored_filter,
-    get_reply_to,
     set_blocking,
 )
 from plugins.user.types import Operation
@@ -63,6 +63,7 @@ async def on_new_message(event):
     # Медиа-группы собираются буфером, одиночные — сразу
     if message.grouped_id is not None:
         from clients import album_collector
+
         await album_collector.add(
             chat_id=message.chat_id,
             grouped_id=message.grouped_id,
@@ -132,20 +133,20 @@ async def handle_new_messages(client, source_messages: list) -> None:  # noqa: C
             raise MessageFilteredError(operation=NEW, message=first_msg)
 
         if not is_album:
-            category_messages = [
-                await new_one_message(client, first_msg, source)
-            ]
+            category_messages = [await new_one_message(client, first_msg, source)]
             log.info(
                 "Источник %s отправил сообщение %s → категория %s",
-                first_msg.chat_id, first_msg.id, source.category_id,
+                first_msg.chat_id,
+                first_msg.id,
+                source.category_id,
             )
         else:
-            category_messages = await new_media_group_messages(
-                client, source_messages, source
-            )
+            category_messages = await new_media_group_messages(client, source_messages, source)
             log.info(
                 "Источник %s медиа-группа %s → категория %s (%d сообщений)",
-                first_msg.chat_id, first_msg.grouped_id, source.category_id,
+                first_msg.chat_id,
+                first_msg.grouped_id,
+                source.category_id,
                 len(source_messages),
             )
 
@@ -218,10 +219,7 @@ def get_repeated_history_id_or_none(message) -> int | None:
             mh.select(mh.id)
             .where(
                 (
-                    (
-                        (mh.source_id == source_chat_id)
-                        & (mh.source_message_id == source_message_id)
-                    )
+                    ((mh.source_id == source_chat_id) & (mh.source_message_id == source_message_id))
                     | (
                         (mh.source_forward_from_chat_id == forward_from_chat_id)
                         & (mh.source_forward_from_message_id == forward_from_message_id)

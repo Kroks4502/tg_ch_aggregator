@@ -70,7 +70,6 @@ def _register_telethon_handlers(client):
     """Явная регистрация обработчиков Telethon (вместо pyrogram plugins=dict(root=...))."""
     from telethon import events
 
-    from plugins.user.sources_monitoring.common import is_monitored_filter
     from plugins.user.sources_monitoring.deleted_messages import on_deleted_messages
     from plugins.user.sources_monitoring.edited_message import on_edited_message
     from plugins.user.sources_monitoring.new_message import on_new_message

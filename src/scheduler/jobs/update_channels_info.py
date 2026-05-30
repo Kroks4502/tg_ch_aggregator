@@ -14,9 +14,7 @@ logger = logging.getLogger(__name__)
 GO_TO_CATEGORY = "Перейти к категории"
 GO_TO_SOURCE = "Перейти к источнику"
 
-ERROR_NOT_FOUND_CHANNEL = (
-    f"{{channel_title}} ({{channel_id}}) отсутствует в диалогах {USER_BOT_NAME}"
-)
+ERROR_NOT_FOUND_CHANNEL = f"{{channel_title}} ({{channel_id}}) отсутствует в диалогах {USER_BOT_NAME}"
 ERROR_NOT_FOUND_CATEGORY = f"Категория {ERROR_NOT_FOUND_CHANNEL}"
 ERROR_NOT_FOUND_SOURCE = f"Источник {ERROR_NOT_FOUND_CHANNEL}"
 
@@ -25,10 +23,7 @@ async def update_channels_info_job():
     logger.debug("Starting job...")
 
     # dialog.id возвращает marked peer ID (-100xxx для каналов)
-    user_client_chats = {
-        dialog.id: dialog.entity
-        async for dialog in telethon_user_client.iter_dialogs()
-    }
+    user_client_chats = {dialog.id: dialog.entity async for dialog in telethon_user_client.iter_dialogs()}
 
     for db_obj in (
         *Source.select().where(Source.is_deleted == False),
@@ -43,7 +38,8 @@ async def update_channels_info_job():
             except ChannelPrivateError as e:
                 logger.warning(
                     "Не удалось получить информацию о канале %s: %s",
-                    db_obj.id, e,
+                    db_obj.id,
+                    e,
                 )
                 tg_entity = None
             except Exception as e:
@@ -84,11 +80,7 @@ async def send_not_found_chat_message_to_admins(db_obj: Source | Category):
     await get_admin_notifier().notify(
         AdminNotification(
             text=text,
-            button_rows=(
-                ButtonRow(
-                    buttons=(Button(text=button_text, callback_data=callback_data),)
-                ),
-            ),
+            button_rows=(ButtonRow(buttons=(Button(text=button_text, callback_data=callback_data),)),),
         )
     )
     logger.info("Message to admins about not found chat %s sent", db_obj.id)

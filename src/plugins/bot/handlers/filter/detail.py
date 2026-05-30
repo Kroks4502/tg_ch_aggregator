@@ -37,9 +37,7 @@ async def filter_detail(menu: Menu):
             .order_by(MessageHistory.id.desc())
             .get()
         )
-        content = FILTER_LAST_FIRED_CONTENT.format(
-            history_obj.created_at.strftime(FORMAT_TIMESTAMP)
-        )
+        content = FILTER_LAST_FIRED_CONTENT.format(history_obj.created_at.strftime(FORMAT_TIMESTAMP))
     except DoesNotExist:
         content = None
 

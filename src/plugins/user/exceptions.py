@@ -90,10 +90,7 @@ class MessageNotFoundOnHistoryError(MessageBaseError):
         if (
             message.date
             and message.edit_date
-            and (
-                (message.edit_date - message.date).total_seconds() < 10
-                or APP_START_DATETIME > message.date
-            )
+            and ((message.edit_date - message.date).total_seconds() < 10 or APP_START_DATETIME > message.date)
             or (not message.date and operation == Operation.DELETE)
         ):
             self.logging_level = logging.INFO
@@ -118,10 +115,7 @@ class MessageNotOnCategoryError(MessageBaseError):
 class MessageNotRewrittenError(MessageBaseError):
     """Сообщение нельзя отредактировать."""
 
-    end_tmpl = (
-        "оно не может быть изменено в категории, "
-        "потому что было переслано и не перепечатывалось"
-    )
+    end_tmpl = "оно не может быть изменено в категории, потому что было переслано и не перепечатывалось"
 
 
 class MessageNotModifiedError(MessageBaseError):

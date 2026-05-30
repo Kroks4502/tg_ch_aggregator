@@ -3,6 +3,7 @@
 
 Сервисные сообщения (pin, join, leave, etc.) просто помечаются прочитанными.
 """
+
 from telethon import events
 
 from plugins.user.sources_monitoring.common import is_monitored_filter

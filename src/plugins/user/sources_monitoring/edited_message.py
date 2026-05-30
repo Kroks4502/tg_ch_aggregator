@@ -26,11 +26,11 @@ from plugins.user.types import Operation
 from plugins.user.utils.cleanup import cleanup_message
 from plugins.user.utils.dump import dump_message
 from plugins.user.utils.telethon_helpers import (
+    _get_album_input_media,
     edit_message_with_entities,
     msg_entities,
     msg_text,
     tl_message_to_dict,
-    _get_album_input_media,
 )
 
 EDIT = Operation.EDIT
@@ -103,10 +103,7 @@ async def _handle_edited_message(client, message) -> None:  # noqa: C901
             cleanup_message(message=message, source=source)
             await add_header(client, source=source, message=message)
             cut_long_message(message=message)
-        elif (
-            not history_obj.category_media_group_id
-            or not _is_text_in_mediagroup(history_obj)
-        ):
+        elif not history_obj.category_media_group_id or not _is_text_in_mediagroup(history_obj):
             await add_header(client, source=source, message=message)
 
         if is_media:
@@ -140,7 +137,9 @@ async def _handle_edited_message(client, message) -> None:  # noqa: C901
 
         log.info(
             "Источник %s изменил сообщение %s → обновлено в категории %s",
-            message.chat_id, message.id, source.category_id,
+            message.chat_id,
+            message.id,
+            source.category_id,
         )
 
         if category_message:
@@ -186,11 +185,7 @@ def _is_text_in_mediagroup(history_obj: MessageHistory) -> bool:
                     mh.data.path("last_message_without_error", "category").is_null()
                     & mh.data.path("first_message", "category", "text").is_null(False)
                 )
-                | (
-                    mh.data.path(
-                        "last_message_without_error", "category", "text"
-                    ).is_null(False)
-                )
+                | (mh.data.path("last_message_without_error", "category", "text").is_null(False))
             )
         )
         .exists()

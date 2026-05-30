@@ -9,13 +9,15 @@
 на Telethon. В PR-5 файл только создаётся без подключения к основному коду.
 """
 
-import random as _random
 import logging
+import random as _random
 
 from telethon import utils as _tl_utils
 from telethon.tl import types as _tl_types
 from telethon.tl.functions.messages import (
     EditMessageRequest as _EditMessageRequest,
+)
+from telethon.tl.functions.messages import (
     SendMultiMediaRequest as _SendMultiMediaRequest,
 )
 from telethon.tl.types import InputSingleMedia as _InputSingleMedia
@@ -26,6 +28,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Работа с атрибутами сообщений
 # ---------------------------------------------------------------------------
+
 
 def msg_text(message) -> str | None:
     """
@@ -75,13 +78,14 @@ def set_msg_text(message, text: str | None, entities: list | None) -> None:
 # Ссылки и идентификаторы
 # ---------------------------------------------------------------------------
 
+
 def get_message_link(chat_id: int, msg_id: int) -> str:
     """
     Ссылка на сообщение в закрытом канале/супергруппе.
 
     Для chat_id вида -100XXXXXXXXXX берём XXXXXXXXXX (bare channel id).
     """
-    bare_id = abs(chat_id) - 10 ** 12
+    bare_id = abs(chat_id) - 10**12
     return f"https://t.me/c/{bare_id}/{msg_id}"
 
 
@@ -125,6 +129,7 @@ def get_fwd_from_name(message) -> str | None:
 # ---------------------------------------------------------------------------
 # Копирование и пересылка
 # ---------------------------------------------------------------------------
+
 
 async def copy_message(
     client,
@@ -194,6 +199,7 @@ async def forward_messages(
 # Медиа-группы (raw TL для сохранения entities)
 # ---------------------------------------------------------------------------
 
+
 def _get_album_input_media(message):
     """
     Преобразовать медиа сообщения в InputMedia для SendMultiMedia.
@@ -247,7 +253,7 @@ async def send_album_with_entities(
     multi_media = [
         _InputSingleMedia(
             media=_get_album_input_media(msg),
-            random_id=_random.randrange(-(2 ** 63), 2 ** 63),
+            random_id=_random.randrange(-(2**63), 2**63),
             message=msg_text(msg) or "",
             entities=msg_entities(msg) or [],
         )

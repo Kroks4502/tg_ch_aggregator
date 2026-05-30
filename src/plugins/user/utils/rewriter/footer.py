@@ -38,9 +38,7 @@ class FooterController(AbstractItemController):
     def _cut_text(self, length: int, cropped_text: str = ""):
         # tg_slice заменяет pyrogram Str(text)[:length] — корректный UTF-16 срез
         self._set_text(tg_slice(self._get_text(), length) + cropped_text)
-        self._set_entities(
-            [e for e in self._get_entities() if e.offset + e.length < length]
-        )
+        self._set_entities([e for e in self._get_entities() if e.offset + e.length < length])
 
     def _include_entities_to_message(self) -> None:
         self._additional_item.shift_entities(tg_len(self._get_text()))

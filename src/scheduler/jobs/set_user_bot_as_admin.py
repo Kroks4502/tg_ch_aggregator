@@ -29,6 +29,7 @@ async def set_user_bot_as_admin_job():
 
     # Сохраняем ID в clients для использования в bot handlers
     import clients
+
     clients.userbot_me_id = user_id
 
     logger.debug("Job completed")

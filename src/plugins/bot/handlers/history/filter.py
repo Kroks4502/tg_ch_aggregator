@@ -40,13 +40,13 @@ async def filter_history(menu: Menu):
     text_items = []
     for f in query.paginate(pagination.page, pagination.size):
         text_items.append(
-            f'{"🏞" if f.source_media_group_id else "🗞"}'
+            f"{'🏞' if f.source_media_group_id else '🗞'}"
             f"[{get_shortened_text(f.source.title, 30)}]"
             f"({get_message_link(f.source_id, f.source_message_id)})\n"
-            f'**{"П" if f.filter.source else "O"}** '
+            f"**{'П' if f.filter.source else 'O'}** "
             f"**{FILTER_TYPES_BY_ID.get(f.filter.type)}** "
             f"`{f.filter.pattern}`\n"
-            f'__{f.source_message_id} {f.created_at.strftime("%Y.%m.%d, %H:%M:%S")}__'
+            f"__{f.source_message_id} {f.created_at.strftime('%Y.%m.%d, %H:%M:%S')}__"
         )
 
     return (

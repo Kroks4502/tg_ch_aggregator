@@ -83,9 +83,7 @@ class MenuAbstract(abc.ABC):
             ]
         )
 
-    def add_row_button_after_pagination(
-        self, text: str, path: str, new: bool = False
-    ) -> None:
+    def add_row_button_after_pagination(self, text: str, path: str, new: bool = False) -> None:
         """
         Добавить строку из одной кнопки после пагинации.
 
@@ -100,9 +98,7 @@ class MenuAbstract(abc.ABC):
         )
 
     def _get_inline_keyboard_button(self, text: str, path: str, new: bool = False):
-        return InlineKeyboardButton(
-            text=text, callback_data=self.path.join(path) + ("?new" if new else "")
-        )
+        return InlineKeyboardButton(text=text, callback_data=self.path.join(path) + ("?new" if new else ""))
 
     def add_row_many_buttons(self, *buttons_args: tuple[str, str]) -> None:
         """
@@ -111,10 +107,7 @@ class MenuAbstract(abc.ABC):
         :param buttons_args: Кортеж, где первый элемент – текст кнопки, второй – абсолютный или относительный путь.
         """
         self.inline_keyboard.append(
-            [
-                InlineKeyboardButton(text=b[0], callback_data=self.path.join(b[1]))
-                for b in buttons_args
-            ]
+            [InlineKeyboardButton(text=b[0], callback_data=self.path.join(b[1])) for b in buttons_args]
         )
 
     def add_rows_from_data(
@@ -153,10 +146,7 @@ class MenuAbstract(abc.ABC):
         pagination_buttons_row = self.get_pagination_buttons_row()
         footer_buttons_row = self.get_footer_buttons_row()
         if not (
-            self.inline_keyboard
-            or self.after_pagination_buttons_row
-            or pagination_buttons_row
-            or footer_buttons_row
+            self.inline_keyboard or self.after_pagination_buttons_row or pagination_buttons_row or footer_buttons_row
         ):
             return None
 

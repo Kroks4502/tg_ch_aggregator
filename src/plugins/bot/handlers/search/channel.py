@@ -24,9 +24,7 @@ async def search_channel(inline_query: InlineQuery):
     offset = int(inline_query.offset) if inline_query.offset else 0
 
     source_query = Source.select(Source.id, Source.title, SQL("'source'").alias("type"))
-    category_query = Category.select(
-        Category.id, Category.title, SQL("'category'").alias("type")
-    )
+    category_query = Category.select(Category.id, Category.title, SQL("'category'").alias("type"))
 
     scq = source_query | category_query
 
@@ -53,18 +51,12 @@ async def search_channel(inline_query: InlineQuery):
                             (
                                 InlineKeyboardButton(
                                     text="Открыть",
-                                    callback_data=CATEGORY_DETAIL_PATH.format(
-                                        category_id=item.id
-                                    )
-                                    + "?new",
+                                    callback_data=CATEGORY_DETAIL_PATH.format(category_id=item.id) + "?new",
                                 )
                                 if item.type == "category"
                                 else InlineKeyboardButton(
                                     text="Открыть",
-                                    callback_data=SOURCE_DETAIL_PATH.format(
-                                        source_id=item.id
-                                    )
-                                    + "?new",
+                                    callback_data=SOURCE_DETAIL_PATH.format(source_id=item.id) + "?new",
                                 )
                             )
                         ]

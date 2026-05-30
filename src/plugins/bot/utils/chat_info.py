@@ -10,22 +10,19 @@ async def get_chat_info(source_obj: Source) -> str:
     text = []
 
     if getattr(entity, "verified", False):
-        text.append(f"Проверен: True ✅")
+        text.append("Проверен: True ✅")
 
     if getattr(entity, "restricted", False):
-        text.append(f"Ограничен: True 🔺")
+        text.append("Ограничен: True 🔺")
 
     if getattr(entity, "scam", False):
-        text.append(f"Мошенник: True 🔺")
+        text.append("Мошенник: True 🔺")
 
     if getattr(entity, "fake", False):
-        text.append(f"Фейк: True 🔺")
+        text.append("Фейк: True 🔺")
 
     # Telethon: noforwards = нет пересылки (pyrogram: has_protected_content)
     if getattr(entity, "noforwards", False):
-        text.append(
-            f"Запрет пересылки: True "
-            + ("✅" if source_obj.is_rewrite else "⚠")
-        )
+        text.append("Запрет пересылки: True " + ("✅" if source_obj.is_rewrite else "⚠"))
 
     return "\n".join(text)

@@ -15,14 +15,9 @@ def _parse_message_history_retention_months() -> int:
     try:
         months = int(str(raw).strip())
     except ValueError as exc:
-        raise ValueError(
-            "MESSAGE_HISTORY_RETENTION_MONTHS must be a positive integer, "
-            f"got {raw!r}"
-        ) from exc
+        raise ValueError(f"MESSAGE_HISTORY_RETENTION_MONTHS must be a positive integer, got {raw!r}") from exc
     if months < 1:
-        raise ValueError(
-            f"MESSAGE_HISTORY_RETENTION_MONTHS must be >= 1, got {months}"
-        )
+        raise ValueError(f"MESSAGE_HISTORY_RETENTION_MONTHS must be >= 1, got {months}")
     return months
 
 
@@ -84,8 +79,7 @@ def check_required_env_vars():
     missing_vars = [name for name, value in REQUIRED_ENV_VARS if not value]
     if missing_vars:
         raise ValueError(
-            f"Missing required environment variables: {', '.join(missing_vars)}. "
-            "Please check your .env file."
+            f"Missing required environment variables: {', '.join(missing_vars)}. Please check your .env file."
         )
 
 

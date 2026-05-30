@@ -8,6 +8,4 @@ async def get_user_menu_success_text(
     action: str,
 ) -> str:
     user_link = await get_user_formatted_link(user_id)
-    return SUCCESS_TEXT.format(
-        text=f"{SINGULAR_USER_TITLE} **{user_link}** ({user_id}) {action}"
-    )
+    return SUCCESS_TEXT.format(text=f"{SINGULAR_USER_TITLE} **{user_link}** ({user_id}) {action}")

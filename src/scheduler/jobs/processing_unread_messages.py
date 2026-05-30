@@ -27,12 +27,9 @@ async def _get_unread_message_groups() -> list[list]:
     """
     logger.debug("Getting unread messages...")
 
-    sources_ids: set[int] = {
-        source.id
-        for source in Source.select(Source.id).where(Source.is_deleted == False)
-    }
+    sources_ids: set[int] = {source.id for source in Source.select(Source.id).where(Source.is_deleted == False)}
 
-    albums: dict[int, list] = {}   # grouped_id → сообщения
+    albums: dict[int, list] = {}  # grouped_id → сообщения
     singles: list[list] = []
 
     async for dialog in telethon_user_client.iter_dialogs():
@@ -40,7 +37,8 @@ async def _get_unread_message_groups() -> list[list]:
             continue
         logger.debug(
             "Dialog %s has %d unread messages",
-            dialog.id, dialog.unread_count,
+            dialog.id,
+            dialog.unread_count,
         )
 
         async for msg in telethon_user_client.iter_messages(

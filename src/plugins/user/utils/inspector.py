@@ -83,6 +83,7 @@ class FilterInspector:
                     return filter_obj
             except (AttributeError, KeyError) as e:
                 logging.error(e, exc_info=True)
+        return None
 
     def check_white_text(self) -> Filter | None:
         for filter_obj in self._get_filters(FilterType.ONLY_WHITE_TEXT):
@@ -141,8 +142,7 @@ class FilterInspector:
 
     def _get_filters(self, f_type: FilterType) -> Iterable[Filter]:
         return Filter.select().where(
-            (Filter.type == f_type.value)
-            & ((Filter.source == self._source_id) | (Filter.source.is_null()))
+            (Filter.type == f_type.value) & ((Filter.source == self._source_id) | (Filter.source.is_null()))
         )
 
     @staticmethod

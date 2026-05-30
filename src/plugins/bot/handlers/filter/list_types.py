@@ -18,9 +18,7 @@ async def list_types_filters(menu: Menu):
 
     menu.add_button.filters_histories()
 
-    query = Filter.select(
-        Filter.type, peewee.fn.Count(Filter.id).alias("count")
-    ).group_by(Filter.type)
+    query = Filter.select(Filter.type, peewee.fn.Count(Filter.id).alias("count")).group_by(Filter.type)
     if source_id:
         query = query.where(Filter.source == source_id)
     else:
@@ -28,9 +26,7 @@ async def list_types_filters(menu: Menu):
 
     amounts = {i.type: i.count for i in query}
     menu.add_rows_from_data(
-        data=[
-            ButtonData(ft.name, ft.value, amounts.get(ft.value, 0)) for ft in FilterType
-        ],
+        data=[ButtonData(ft.name, ft.value, amounts.get(ft.value, 0)) for ft in FilterType],
         postfix="f/",
     )
 

@@ -31,9 +31,7 @@ async def add_filter_with_selected_pattern(menu: Menu):
             where & ((Filter.source_id == source_id) | (Filter.source_id.is_null()))
         )
     else:
-        query_used_patterns = query_used_patterns.where(
-            where & (Filter.source_id.is_null())
-        )
+        query_used_patterns = query_used_patterns.where(where & (Filter.source_id.is_null()))
 
     if filter_type_id == FilterType.ENTITY_TYPE.value:
         filter_enum = FILTER_ENTITY_TYPES_BY_ID

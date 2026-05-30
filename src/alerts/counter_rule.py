@@ -39,10 +39,7 @@ def _get_amount_messages(category_id: int | None, count_interval: int) -> int:
     where = (
         (MessageHistory.repeat_history.is_null(True))
         & (MessageHistory.deleted_at.is_null(True))
-        & (
-            MessageHistory.created_at
-            > (SQL("CURRENT_TIMESTAMP - INTERVAL '%smin'", (count_interval,)))
-        )
+        & (MessageHistory.created_at > (SQL("CURRENT_TIMESTAMP - INTERVAL '%smin'", (count_interval,))))
     )
     if category_id:
         where = (MessageHistory.category == category_id) & where
@@ -59,10 +56,7 @@ def _get_amount_messages(category_id: int | None, count_interval: int) -> int:
 
     query = MessageHistory.select(
         fn.SUM(
-            SQL(
-                "CASE WHEN source_media_group_id IS NOT NULL AND source_media_group_id"
-                " != '' THEN 1 ELSE t.amount END"
-            )
+            SQL("CASE WHEN source_media_group_id IS NOT NULL AND source_media_group_id != '' THEN 1 ELSE t.amount END")
         ).alias("amount")
     ).from_(subquery)
 

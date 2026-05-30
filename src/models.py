@@ -64,9 +64,7 @@ class Source(BaseModel):
 
 class Filter(BaseModel):
     pattern = CharField()
-    type = SmallIntegerField(
-        choices=[(filter_type.name, filter_type.value) for filter_type in FilterType]
-    )
+    type = SmallIntegerField(choices=[(filter_type.name, filter_type.value) for filter_type in FilterType])
     source = ForeignKeyField(Source, null=True, backref="filters", on_delete="CASCADE")
 
 

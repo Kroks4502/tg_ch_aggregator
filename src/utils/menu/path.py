@@ -21,9 +21,7 @@ class Path:
             return None
 
     def set_value(self, prefix: str, value: str | int) -> None:
-        self.raw_path = re.sub(
-            rf"/{prefix}/([\d-]+)/", f"/{prefix}/{value}/", self.raw_path, 1
-        )
+        self.raw_path = re.sub(rf"/{prefix}/([\d-]+)/", f"/{prefix}/{value}/", self.raw_path, 1)
 
     def _search_first_group(self, pattern: str, path: str = "") -> str:
         path = path or self.raw_path

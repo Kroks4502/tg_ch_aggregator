@@ -39,16 +39,12 @@ ACTION_ENTER_THRESHOLD = "Введи количество сообщений д�
 # QUESTION
 
 QUESTION_CONF_DEL = CONF_DEL_TEXT_TPL.format(SINGULAR_ALERT_RULE_TITLE.lower())
-QUESTION_COUNT_INTERVAL = (
-    "За сколько последних минут будет выполняться проверка количества сообщений?"
-)
+QUESTION_COUNT_INTERVAL = "За сколько последних минут будет выполняться проверка количества сообщений?"
 QUESTION_JOB_INTERVAL = "Как часто будет выполнятся проверка правила?"
 
 # ERRORS
 
-ERROR_INVALID_THRESHOLD = ERROR_TEXT.format(
-    text="Невалидный порог срабатывания уведомления"
-)
+ERROR_INVALID_THRESHOLD = ERROR_TEXT.format(text="Невалидный порог срабатывания уведомления")
 QUESTION_SELECT_ALERT_RULE_TYPE = "Выбери тип правила"
 
 # ALERT COUNTER MESSAGE

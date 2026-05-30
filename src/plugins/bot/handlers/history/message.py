@@ -35,20 +35,18 @@ async def message_history(menu: Menu):
     text_items = []
     for item in query.paginate(pagination.page, pagination.size):
         text_items.append(
-            f'{"🏞" if item.source_media_group_id else "🗞"}'
-            f'{">📝" if item.edited_at else ""}'
-            f'{">🗑" if item.deleted_at else ""}'
+            f"{'🏞' if item.source_media_group_id else '🗞'}"
+            f"{'>📝' if item.edited_at else ''}"
+            f"{'>🗑' if item.deleted_at else ''}"
             f" [{get_shortened_text(item.source.title, 30)}]"
             f"({get_message_link(item.source_id, item.source_message_id)})\n"
-            f'✅{">🖨" if item.category_message_rewritten else ""}'
-            f'{">🗑" if item.deleted_at else ""}'
+            f"✅{'>🖨' if item.category_message_rewritten else ''}"
+            f"{'>🗑' if item.deleted_at else ''}"
             f" [{get_shortened_text(item.category.title, 30)}]"
             f"({get_message_link(item.category_id, item.category_message_id)})\n"
-            f'__{item.source_message_id} {item.created_at.strftime("%Y.%m.%d, %H:%M:%S")}__'
+            f"__{item.source_message_id} {item.created_at.strftime('%Y.%m.%d, %H:%M:%S')}__"
         )
 
     return (
-        f"**История сообщений{start_text}**\n\n"
-        + "\n\n".join(text_items)
-        + f"\n\nВсего: **{pagination.total_items}**"
+        f"**История сообщений{start_text}**\n\n" + "\n\n".join(text_items) + f"\n\nВсего: **{pagination.total_items}**"
     )

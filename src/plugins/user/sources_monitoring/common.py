@@ -39,9 +39,7 @@ blocking_messages = ChatsLocks("all")
 log = logging.getLogger(__name__)
 
 
-def set_blocking(
-    operation: Operation, message, block_value: int
-) -> MessagesLocks:
+def set_blocking(operation: Operation, message, block_value: int) -> MessagesLocks:
     """
     Установить блокировку для сущности.
 
@@ -53,13 +51,9 @@ def set_blocking(
     """
     blocked = blocking_messages.get(key=message.chat_id)
     if blocked.contains(key=message.grouped_id):
-        raise MessageBlockedByMediaGroupError(
-            operation=operation, message=message, blocked=blocked
-        )
+        raise MessageBlockedByMediaGroupError(operation=operation, message=message, blocked=blocked)
     if blocked.contains(key=message.id):
-        raise MessageBlockedByIdError(
-            operation=operation, message=message, blocked=blocked
-        )
+        raise MessageBlockedByIdError(operation=operation, message=message, blocked=blocked)
     blocked.add(value=block_value)
     return blocked
 
@@ -92,6 +86,7 @@ def get_input_media_for_album(message):
     Вынесено в telethon_helpers._get_album_input_media — здесь просто alias.
     """
     from plugins.user.utils.telethon_helpers import _get_album_input_media
+
     return _get_album_input_media(message)
 
 
@@ -128,9 +123,7 @@ async def add_header(client, source: Source, message) -> None:
     """
     header = HeaderController(item_separator="\n")
     header.add_item(
-        text=SRC_TEXT_TMPL.format(
-            source.title_alias or source.title or str(message.chat_id)
-        ),
+        text=SRC_TEXT_TMPL.format(source.title_alias or source.title or str(message.chat_id)),
         bold=True,
         url=get_message_link(message.chat_id, message.id),
     )
@@ -216,6 +209,7 @@ def get_reply_to(message) -> int | None:
 # Внутренние хелперы
 # ---------------------------------------------------------------------------
 
+
 @alru_cache(ttl=300)
 async def _get_cached_entity(client, peer_id: int):
     """Получить сущность по marked peer_id с кешированием 5 мин."""
@@ -236,17 +230,14 @@ async def _get_fwd_title(client, fwd_chat_id: int) -> str:
 
 def _get_fwd_link_by_ids(fwd_chat_id: int, fwd_msg_id: int, entity=None) -> str:
     """Сформировать ссылку на оригинальное сообщение пересылки."""
-    bare_id = abs(fwd_chat_id) - 10 ** 12
+    bare_id = abs(fwd_chat_id) - 10**12
     return f"https://t.me/c/{bare_id}/{fwd_msg_id}"
 
 
 @alru_cache(ttl=60)
 async def _get_active_source_ids() -> frozenset:
     """Получить множество ID активных источников (с кешированием 60 сек)."""
-    return frozenset(
-        row[0]
-        for row in Source.select(Source.id).where(Source.is_deleted == False).tuples()
-    )
+    return frozenset(row[0] for row in Source.select(Source.id).where(Source.is_deleted == False).tuples())
 
 
 async def is_monitored_filter(event) -> bool:

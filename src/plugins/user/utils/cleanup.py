@@ -17,10 +17,7 @@ def cleanup_message(message, source: Source) -> None:
     Мутирует message.message и message.entities на месте.
     """
     global_cleanup_list = (
-        GlobalSettings.select(GlobalSettings.value)
-        .where(GlobalSettings.key == "cleanup_list")
-        .get()
-        .value
+        GlobalSettings.select(GlobalSettings.value).where(GlobalSettings.key == "cleanup_list").get().value
     )
 
     for pattern in itertools.chain(global_cleanup_list, source.cleanup_list):

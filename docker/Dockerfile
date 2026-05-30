@@ -1,11 +1,13 @@
 # Build stage
-FROM python:3.13-slim as builder
+FROM python:3.13-slim AS builder
 
-# Set environment variables for build
+# Копируем uv из официального образа
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
 WORKDIR /app
 
@@ -15,21 +17,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first to leverage Docker cache
-COPY requirements.txt requirements-dev.txt ./
+# Copy dependency files first to leverage Docker cache
+COPY pyproject.toml uv.lock ./
 
-# Install Python dependencies
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+# Install runtime dependencies only (no dev group)
+RUN uv sync --frozen --no-dev --no-editable
 
 # Final stage
 FROM python:3.13-slim
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/src \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
 
@@ -45,12 +45,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd --gid 1000 app && \
     useradd --uid 1000 --gid app --shell /bin/bash --create-home app
 
-# Copy wheels from builder and install Python dependencies
-COPY --from=builder /app/wheels /wheels
-COPY --from=builder /app/requirements.txt .
-
-RUN pip install --no-cache /wheels/* && \
-    rm -rf /wheels
+# Copy virtualenv from builder
+COPY --from=builder /app/.venv /app/.venv
 
 # Copy application code
 COPY --chown=app:app . .

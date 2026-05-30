@@ -72,6 +72,7 @@ async def _get_channel_entity(message: Message):
         if re.match(r"https://t\.me/(\+|joinchat/)", source_link):
             # Invite link — сначала получим информацию (не вступаем)
             from telethon.tl.functions.messages import CheckChatInviteRequest
+
             hash_val = re.sub(r"https://t\.me/(\+|joinchat/)", "", source_link)
             invite_info = await telethon_user_client(CheckChatInviteRequest(hash=hash_val))
             return invite_info, source_link
