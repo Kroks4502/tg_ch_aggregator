@@ -3,8 +3,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Union
 
-from pyrogram.enums import MessageEntityType
-from pyrogram.types import Message, MessageEntity
+from telethon.tl.types import MessageEntityBold, MessageEntityTextUrl
 
 from plugins.user.utils.text_length import tg_len
 
@@ -23,8 +22,7 @@ class TextItem:
 
     def set_link(self, url: str):
         self.entities.append(
-            MessageEntity(
-                type=MessageEntityType.TEXT_LINK,
+            MessageEntityTextUrl(
                 offset=self.offset,
                 length=len(self),
                 url=url,
@@ -33,8 +31,7 @@ class TextItem:
 
     def set_bold(self):
         self.entities.append(
-            MessageEntity(
-                type=MessageEntityType.BOLD,
+            MessageEntityBold(
                 offset=self.offset,
                 length=len(self),
             )
@@ -99,7 +96,7 @@ class AbstractItemController(ABC):
 
     @property
     @abstractmethod
-    def _message(self) -> Message:
+    def _message(self):
         pass
 
     @property
@@ -113,7 +110,7 @@ class AbstractItemController(ABC):
         pass
 
     @abstractmethod
-    def include_to_message(self, message: Message, **kwargs) -> None:
+    def include_to_message(self, message, **kwargs) -> None:
         pass
 
     def __init__(self, item_separator: str = ""):
@@ -141,8 +138,8 @@ class AbstractItemController(ABC):
     def _get_text(self) -> str:
         return getattr(self._message, self._text_attr_name) or ""
 
-    def _set_entities(self, entities: list[MessageEntity]) -> None:
+    def _set_entities(self, entities: list) -> None:
         setattr(self._message, self._entities_attr_name, entities)
 
-    def _get_entities(self) -> list[MessageEntity]:
+    def _get_entities(self) -> list:
         return getattr(self._message, self._entities_attr_name) or []

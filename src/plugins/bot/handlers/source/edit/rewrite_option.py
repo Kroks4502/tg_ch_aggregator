@@ -1,6 +1,6 @@
 from aiogram.types import CallbackQuery
 
-from clients import user_client
+from clients import telethon_user_client
 from models import Source
 from plugins.bot import router
 from plugins.bot.handlers.source.common.constants import (
@@ -24,9 +24,13 @@ async def set_rewrite(menu: Menu, callback_query: CallbackQuery):
     else:
         source_obj.is_rewrite = True
         mode = "пересылки"
-        chat = await user_client.get_chat(source_id)
-        if chat.has_protected_content:
-            mode += ", но канал запрещает пересылку сообщений! ⚠"
+        try:
+            entity = await telethon_user_client.get_entity(source_id)
+            # Telethon: noforwards = нет пересылки (pyrogram: has_protected_content)
+            if getattr(entity, "noforwards", False):
+                mode += ", но канал запрещает пересылку сообщений! ⚠"
+        except Exception:
+            pass
     source_obj.save()
 
     return await get_source_menu_success_text(

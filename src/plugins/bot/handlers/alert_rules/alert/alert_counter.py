@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-from pyrogram.types import Message
 
 from alerts.configs import AlertCounterHistory
 from common.links import get_message_link

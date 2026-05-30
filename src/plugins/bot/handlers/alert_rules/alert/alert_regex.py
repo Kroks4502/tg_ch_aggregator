@@ -1,4 +1,3 @@
-from pyrogram.types import Message
 
 from alerts.configs import AlertRegexHistory, MatchData
 from common.text import get_words

@@ -1,22 +1,20 @@
-import json
 import re
-
-from pyrogram.types import Message
 
 from alerts.configs import AlertRegexHistory, MatchData
 from common.dto import AlertNotification
 from common.notifier_registry import get_alert_notifier
 from models import AlertHistory, AlertRule
+from plugins.user.utils.telethon_helpers import msg_text, tl_message_to_dict
 
 
 async def check_message_by_regex_alert_rule(
     category_id: int,
-    message: Message,
+    message,
 ):
-    if not (message.text or message.caption):
+    # Telethon: text покрывает и текст, и подпись медиа
+    text = msg_text(message)
+    if not text:
         return
-
-    text = str(message.text or message.caption)
 
     for rule_obj in AlertRule.select().where(
         ((AlertRule.category_id == category_id) | (AlertRule.category_id.is_null()))
@@ -24,7 +22,7 @@ async def check_message_by_regex_alert_rule(
     ):
         match = None
         pattern = rule_obj.config["regex"]
-        for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+        for match in re.finditer(pattern, str(text), flags=re.IGNORECASE):
             break
 
         if not match:
@@ -35,7 +33,7 @@ async def check_message_by_regex_alert_rule(
             data=AlertRegexHistory(
                 type=rule_obj.type,
                 user_id=rule_obj.user_id,
-                message=json.loads(message.__str__()),
+                message=tl_message_to_dict(message),
                 match=MatchData(
                     text=match[0],
                     start=match.start(),

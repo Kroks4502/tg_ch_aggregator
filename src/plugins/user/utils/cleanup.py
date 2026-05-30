@@ -1,16 +1,21 @@
 import itertools
 import re
 
-from pyrogram.types import Message
-
 from models import GlobalSettings, Source
+from plugins.user.utils.telethon_helpers import msg_entities, msg_text, set_msg_text
 from plugins.user.utils.text_length import tg_len
 
 TEXT_SEPARATOR = "\n\n"
 STRIP_CHARS = " \n"
 
 
-def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
+def cleanup_message(message, source: Source) -> None:
+    """
+    Очистить текст/подпись сообщения от спам-паттернов.
+
+    Telethon: text и caption хранятся в message.message (нет отдельного caption).
+    Мутирует message.message и message.entities на месте.
+    """
     global_cleanup_list = (
         GlobalSettings.select(GlobalSettings.value)
         .where(GlobalSettings.key == "cleanup_list")
@@ -18,38 +23,25 @@ def cleanup_message(message: Message, source: Source, is_media: bool) -> None:
         .value
     )
 
-    for pattern in itertools.chain(
-        global_cleanup_list,
-        source.cleanup_list,
-    ):
-        text = message.caption or message.text
+    for pattern in itertools.chain(global_cleanup_list, source.cleanup_list):
+        text = msg_text(message)
         if not text:
             break
 
-        find_result = re.finditer(
-            pattern,
-            string=text,
-            flags=re.IGNORECASE,
-        )
+        find_result = re.finditer(pattern, string=text, flags=re.IGNORECASE)
         offset = 0
         for match in find_result:
             start = match.start()
             end = match.end()
 
             text, entities, next_offset = remove_text(
-                text=str(message.caption or message.text),  # message.Str to str
-                entities=message.caption_entities or message.entities or (),
+                text=str(msg_text(message)),  # msg.Str → str
+                entities=msg_entities(message) or [],
                 start=start - offset,
                 end=end - offset,
             )
             offset += next_offset
-
-            if is_media:
-                message.caption = text
-                message.caption_entities = entities
-            else:
-                message.text = text
-                message.entities = entities
+            set_msg_text(message, text, entities)
 
 
 def remove_text(

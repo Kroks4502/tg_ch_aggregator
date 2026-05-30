@@ -1,4 +1,4 @@
-from clients import user_client
+from clients import userbot_me_id
 from models import User
 from plugins.bot import router
 from plugins.bot.constants import symbols
@@ -33,7 +33,7 @@ async def list_users(menu: Menu):
 def _get_title_for_user(user: User):
     symbol = ""
 
-    if user_client.me.id == user.id:
+    if userbot_me_id == user.id:
         symbol = f"{symbols.USER_BOT} "
     elif user.is_admin:
         symbol = f"{symbols.ADMIN} "

@@ -271,6 +271,24 @@ async def send_album_with_entities(
     return sent
 
 
+def tl_message_to_dict(message) -> dict:
+    """
+    Минимальный JSON-сериализуемый снимок сообщения Telethon для сохранения в history.data.
+
+    Заменяет json.loads(message.__str__()) из pyrogram, которое давало полный JSON.
+    Хранится только то, что нужно для диагностики.
+    """
+    return {
+        "id": message.id,
+        "date": message.date.isoformat() if message.date else None,
+        "edit_date": message.edit_date.isoformat() if getattr(message, "edit_date", None) else None,
+        "text": message.text or None,
+        "chat_id": getattr(message, "chat_id", None),
+        "grouped_id": getattr(message, "grouped_id", None),
+        "is_media": message.media is not None if hasattr(message, "media") else False,
+    }
+
+
 async def edit_message_with_entities(
     client,
     chat_id: int,

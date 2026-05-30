@@ -1,8 +1,10 @@
 from aiogram import Bot
 from aiogram.types import Message
-from pyrogram.types import ChatPrivileges
+from telethon import utils as tl_utils
+from telethon.tl.functions.channels import CreateChannelRequest, EditAdminRequest
+from telethon.tl.types import ChatAdminRights
 
-from clients import user_client
+from clients import telethon_user_client
 from models import Category
 from plugins.bot import router, validators
 from plugins.bot.constants.settings import MAX_LENGTH_CATEGORY_NAME
@@ -23,27 +25,44 @@ async def add_category_waiting_input(
     validators.text_length_less_than(message, MAX_LENGTH_CATEGORY_NAME)
 
     bot_me = await bot.me()
-    new_channel = await user_client.create_channel(
-        CATEGORY_NAME_TPL.format(message.text),
-        f"Создан ботом {bot_me.username}",
-    )
 
-    await new_channel.promote_member(
-        bot_me.id,
-        ChatPrivileges(
-            can_manage_chat=True,
-            can_delete_messages=True,
-            can_manage_video_chats=True,
-            can_promote_members=True,
-            can_change_info=True,
-            can_post_messages=True,
-            can_edit_messages=True,
-            can_invite_users=True,
-        ),
+    # Создать канал через userbot (Telethon)
+    result = await telethon_user_client(
+        CreateChannelRequest(
+            title=CATEGORY_NAME_TPL.format(message.text),
+            about=f"Создан ботом {bot_me.username}",
+            megagroup=False,
+        )
+    )
+    new_channel = result.chats[0]
+    # Telethon возвращает bare channel_id; конвертируем в marked формат (-100xxx)
+    category_id = tl_utils.get_peer_id(new_channel)
+
+    # Назначить бота администратором созданного канала
+    bot_entity = await telethon_user_client.get_entity(bot_me.id)
+    await telethon_user_client(
+        EditAdminRequest(
+            channel=new_channel,
+            user_id=bot_entity,
+            admin_rights=ChatAdminRights(
+                change_info=True,
+                post_messages=True,
+                edit_messages=True,
+                delete_messages=True,
+                ban_users=False,
+                invite_users=True,
+                pin_messages=False,
+                add_admins=True,
+                anonymous=False,
+                manage_call=True,
+                other=True,
+            ),
+            rank="",
+        )
     )
 
     category_obj = Category.create(
-        id=new_channel.id,
+        id=category_id,
         title=new_channel.title,
     )
     return await get_category_menu_success_text(

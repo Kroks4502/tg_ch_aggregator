@@ -38,13 +38,14 @@ if [ "$?" -ne 0 ]; then
 fi
 echo '✅ Database migrations applied!'
 
-echo '🔄 Waiting for Telegram sessions...'
-while [ ! -f /app/sessions/user.session ] || [ ! -f /app/sessions/bot.session ]; do
-    echo 'Input authorization parameters into container "create_sessions" use the following command:'
-    echo 'docker logs --tail 20 tg_ch_aggregator-create_sessions-1 && docker attach tg_ch_aggregator-create_sessions-1'
+echo '🔄 Waiting for Telegram user session...'
+# aiogram-бот работает через BOT_TOKEN (файл сессии не нужен).
+# Ждём только user.session (Telethon userbot).
+while [ ! -f /app/sessions/user.session ]; do
+    echo 'Waiting for user.session. Run: python create_tg_sessions.py --telethon'
     sleep 5;
 done
-echo '✅ Telegram sessions are ready!'
+echo '✅ Telegram user session is ready!'
 
 cd src
 

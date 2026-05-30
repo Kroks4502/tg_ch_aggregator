@@ -1,28 +1,30 @@
 from async_lru import alru_cache
 
-from clients import user_client
+from clients import telethon_user_client
 from models import Source
 
 
 @alru_cache(maxsize=256)
 async def get_chat_info(source_obj: Source) -> str:
-    chat = await user_client.get_chat(source_obj.id)
+    entity = await telethon_user_client.get_entity(source_obj.id)
     text = []
-    if chat.is_verified:
-        text.append(f"Проверен: {chat.is_verified} ✅")
 
-    if chat.is_restricted:
-        text.append(f"Ограничен: {chat.is_restricted} 🔺")
+    if getattr(entity, "verified", False):
+        text.append(f"Проверен: True ✅")
 
-    if chat.is_scam:
-        text.append(f"Мошенник: {chat.is_scam} 🔺")
+    if getattr(entity, "restricted", False):
+        text.append(f"Ограничен: True 🔺")
 
-    if chat.is_fake:
-        text.append(f"Фейк: {chat.is_fake} 🔺")
+    if getattr(entity, "scam", False):
+        text.append(f"Мошенник: True 🔺")
 
-    if chat.has_protected_content:
+    if getattr(entity, "fake", False):
+        text.append(f"Фейк: True 🔺")
+
+    # Telethon: noforwards = нет пересылки (pyrogram: has_protected_content)
+    if getattr(entity, "noforwards", False):
         text.append(
-            f"Запрет пересылки: {chat.has_protected_content} "
+            f"Запрет пересылки: True "
             + ("✅" if source_obj.is_rewrite else "⚠")
         )
 

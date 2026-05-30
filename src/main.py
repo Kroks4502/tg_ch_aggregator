@@ -4,7 +4,7 @@ import signal
 import sys
 
 import db
-from clients import aiogram_bot, dispatcher, user_client
+from clients import aiogram_bot, dispatcher, telethon_user_client
 from common.notifier_registry import (
     set_admin_notifier,
     set_alert_notifier,
@@ -42,36 +42,61 @@ async def startup():
     db.patch_psycopg2()
 
     register_notifiers()
-    # Forces import of all bot handlers (decorator side-effects register
-    # them in aiogram Dispatcher). Pyrogram больше не загружает их через
-    # plugins=dict(root="plugins.bot"), потому что bot_client не стартует.
+    # Импортирует все handler-модули — декораторы @router.page/.wait_input/.command
+    # регистрируются в aiogram Dispatcher как side-effect.
     _load_bot_handlers()
 
     if not IS_ONLY_BOT:
         run_scheduler()
 
     tasks: list[asyncio.Task] = [
-        asyncio.create_task(dispatcher.start_polling(aiogram_bot)),
+        asyncio.create_task(dispatcher.start_polling(aiogram_bot, handle_signals=False)),
     ]
     if not IS_ONLY_BOT:
-        tasks.append(asyncio.create_task(_run_user_client()))
+        tasks.append(asyncio.create_task(_run_userbot()))
 
     await asyncio.gather(*tasks)
 
 
-async def _run_user_client():
-    await user_client.start()
-    # Pyrogram'у нужен живой event loop пока user_client работает.
-    # idle() блокирует до получения SIGTERM/SIGINT.
-    from pyrogram import idle
+async def _run_userbot():
+    """Запустить Telethon userbot и зарегистрировать обработчики событий."""
+    async with telethon_user_client:
+        _register_telethon_handlers(telethon_user_client)
+        logger.info("Telethon userbot connected")
+        await telethon_user_client.run_until_disconnected()
 
-    await idle()
+
+def _register_telethon_handlers(client):
+    """Явная регистрация обработчиков Telethon (вместо pyrogram plugins=dict(root=...))."""
+    from telethon import events
+
+    from plugins.user.sources_monitoring.common import is_monitored_filter
+    from plugins.user.sources_monitoring.deleted_messages import on_deleted_messages
+    from plugins.user.sources_monitoring.edited_message import on_edited_message
+    from plugins.user.sources_monitoring.new_message import on_new_message
+    from plugins.user.sources_monitoring.service_message import on_service_message
+
+    # Сообщения из источников (не сервисные)
+    client.add_event_handler(
+        on_new_message,
+        events.NewMessage(func=lambda e: not e.message.action),
+    )
+    # Редактирование
+    client.add_event_handler(
+        on_edited_message,
+        events.MessageEdited(func=lambda e: not e.message.action),
+    )
+    # Удаление (Telethon не поддерживает func= для MessageDeleted — фильтруем внутри)
+    client.add_event_handler(on_deleted_messages, events.MessageDeleted())
+    # Сервисные сообщения (pin, join, leave)
+    client.add_event_handler(
+        on_service_message,
+        events.NewMessage(func=lambda e: bool(e.message.action)),
+    )
 
 
 def register_notifiers():
-    """
-    Зарегистрировать реализации notifier-контрактов в общем реестре.
-    """
+    """Зарегистрировать реализации notifier-контрактов в общем реестре."""
     from plugins.bot.notifiers import (
         admin_notifier,
         alert_notifier,
@@ -87,7 +112,7 @@ def _load_bot_handlers():
     """
     Импортирует все модули в plugins/bot/handlers — их декораторы
     @router.page / .wait_input / .command регистрируются в Dispatcher как
-    side-effect. До PR-2 это делал pyrogram через plugins=dict(root=...).
+    side-effect.
     """
     import pkgutil
 
@@ -109,11 +134,6 @@ def shutdown_handler(signum, _frame):
     asyncio.run(dispatcher.stop_polling())
     asyncio.run(aiogram_bot.session.close())
     logger.info("Aiogram dispatcher stopped")
-
-    if not IS_ONLY_BOT:
-        logger.debug("Stopping user_client...")
-        asyncio.run(user_client.stop())
-        logger.info("user_client stopped")
 
     logger.debug("Closing database connection...")
     db.close_connection()

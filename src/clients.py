@@ -2,48 +2,29 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from pyrogram import Client
+from telethon import TelegramClient
 
-from settings import API_HASH, API_ID, BOT_TOKEN, IS_ONLY_BOT, SESSIONS_DIR
+from plugins.user.utils.album_collector import AlbumCollector
+from settings import API_HASH, API_ID, BOT_TOKEN, SESSIONS_DIR
 
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
-user_client = Client(
-    "user",
-    API_ID,
-    API_HASH,
-    plugins=(
-        dict(
-            root="plugins.user",
-        )
-        if not IS_ONLY_BOT
-        else {}
-    ),
-    workdir=SESSIONS_DIR,
+# Userbot (Telethon) — заменяет pyrogram user_client
+telethon_user_client = TelegramClient(
+    str(SESSIONS_DIR / "user"),
+    api_id=API_ID,
+    api_hash=API_HASH,
 )
 
-# Pyrogram bot_client остаётся в составе процесса до PR-3 (cutover) —
-# он нужен для совместимости с мёртвыми импортами в common/call_handlers.py
-# и common/senders.py. После cutover'а его старт убирается из main.py,
-# а сам клиент удаляется на этапе 2 вместе с pyrogram.
-bot_client = Client(
-    "bot",
-    API_ID,
-    API_HASH,
-    bot_token=BOT_TOKEN,
-    plugins=dict(
-        root="plugins.bot",
-    ),
-    workdir=SESSIONS_DIR,
-)
+# Буфер медиа-групп для userbot'а — собирает сообщения альбома перед обработкой
+album_collector = AlbumCollector()
 
-# Aiogram-бот для нового стека. parse_mode=HTML, потому что тексты в проекте
-# писались под pyrogram (``**bold**``, `` `code` ``, ``[text](url)``).
-# Конвертация pyrogram-Markdown → HTML делается на лету в
-# `plugins.bot.text_formatter.pyrogram_markdown_to_html` перед отправкой
-# (см. использование в `plugins.bot.router._send_final_text` и
-# `plugins.bot.notifiers`). Так не пришлось переписывать ~40 текстовых
-# шаблонов вручную.
+# ID userbot'а — устанавливается в set_user_bot_as_admin_job после get_me()
+userbot_me_id: int | None = None
+
+# Aiogram-бот. parse_mode=HTML — тексты хендлеров писались под pyrogram-MD,
+# конвертируются в HTML через plugins.bot.text_formatter.pyrogram_markdown_to_html
+# в router._send_final_text и notifiers.
 aiogram_bot = Bot(
     token=BOT_TOKEN,
     default=DefaultBotProperties(parse_mode=ParseMode.HTML),

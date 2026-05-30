@@ -1,8 +1,8 @@
 import logging
 
-from pyrogram.errors import ChannelPrivate
+from telethon.errors import ChannelPrivateError
 
-from clients import user_client
+from clients import telethon_user_client
 from common.dto import AdminNotification, Button, ButtonRow
 from common.menu_paths import CATEGORY_DETAIL_PATH, SOURCE_DETAIL_PATH
 from common.notifier_registry import get_admin_notifier
@@ -23,41 +23,48 @@ ERROR_NOT_FOUND_SOURCE = f"Источник {ERROR_NOT_FOUND_CHANNEL}"
 
 async def update_channels_info_job():
     logger.debug("Starting job...")
+
+    # dialog.id возвращает marked peer ID (-100xxx для каналов)
     user_client_chats = {
-        dialog.chat.id: dialog.chat async for dialog in user_client.get_dialogs()
+        dialog.id: dialog.entity
+        async for dialog in telethon_user_client.iter_dialogs()
     }
 
     for db_obj in (
         *Source.select().where(Source.is_deleted == False),
         *Category.select(),
     ):
-        logger.debug(f"Updating info about {db_obj.id}...")
-        tg_chat = user_client_chats.get(db_obj.id)
+        logger.debug("Updating info about %s...", db_obj.id)
+        tg_entity = user_client_chats.get(db_obj.id)
 
-        if not tg_chat:
+        if not tg_entity:
             try:
-                tg_chat = await user_client.get_chat(db_obj.id)
-            except ChannelPrivate as e:
-                logging.warning(
+                tg_entity = await telethon_user_client.get_entity(db_obj.id)
+            except ChannelPrivateError as e:
+                logger.warning(
                     "Не удалось получить информацию о канале %s: %s",
-                    db_obj.id,
-                    e,
+                    db_obj.id, e,
                 )
-                tg_chat = None
+                tg_entity = None
+            except Exception as e:
+                logger.warning("get_entity(%s): %s", db_obj.id, e)
+                tg_entity = None
 
-        if not tg_chat:
+        if not tg_entity:
             await send_not_found_chat_message_to_admins(db_obj)
             continue
 
-        if tg_chat.title != db_obj.title:
-            db_obj.title = tg_chat.title
+        title = getattr(tg_entity, "title", None)
+        if title and title != db_obj.title:
+            db_obj.title = title
             db_obj.save()
-            logger.info(f"Title for {db_obj.id} updated")
+            logger.info("Title for %s updated to %r", db_obj.id, title)
+
     logger.debug("Job completed")
 
 
 async def send_not_found_chat_message_to_admins(db_obj: Source | Category):
-    logger.debug(f"Sending message to admins about not found chat {db_obj.id}...")
+    logger.debug("Sending message to admins about not found chat %s...", db_obj.id)
     if isinstance(db_obj, Source):
         text = ERROR_NOT_FOUND_SOURCE.format(
             channel_title=db_obj.title,
@@ -84,4 +91,4 @@ async def send_not_found_chat_message_to_admins(db_obj: Source | Category):
             ),
         )
     )
-    logger.info(f"Message to admins about not found chat {db_obj.id} sent")
+    logger.info("Message to admins about not found chat %s sent", db_obj.id)

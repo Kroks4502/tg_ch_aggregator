@@ -1,8 +1,5 @@
-from pyrogram.types import Message
-from pyrogram.types.messages_and_media.message import Str
-
 from plugins.user.utils.rewriter.item import AbstractItemController
-from plugins.user.utils.text_length import tg_len
+from plugins.user.utils.text_length import tg_len, tg_slice
 from settings import TELEGRAM_MAX_CAPTION_LENGTH, TELEGRAM_MAX_TEXT_LENGTH
 
 CROPPED_TEXT = "…\n\n"
@@ -13,34 +10,34 @@ class FooterController(AbstractItemController):
     """Контроллер создания нижней части сообщения категории."""
 
     _message = None
-    _text_attr_name = "text"
+    # Telethon: и текст, и подпись медиа хранятся в одном поле message.message
+    _text_attr_name = "message"
     _entities_attr_name = "entities"
 
     def include_to_message(
         self,
-        message: Message,
+        message,
         cropped_text: str = CROPPED_TEXT,
     ) -> None:
         self._message = message
-        if not self._message.text:
-            self._text_attr_name = "caption"
-            self._entities_attr_name = "caption_entities"
-
         self._join_items()
 
+        # Определяем максимальную длину: медиа → caption limit, текст → text limit
+        is_media = message.media is not None
         max_len = (
-            (TELEGRAM_MAX_TEXT_LENGTH if message.text else TELEGRAM_MAX_CAPTION_LENGTH)
+            (TELEGRAM_MAX_CAPTION_LENGTH if is_media else TELEGRAM_MAX_TEXT_LENGTH)
             - len(self._additional_item)
             - tg_len(cropped_text)
         )
-        if tg_len(message.text or message.caption) > max_len:
+        if tg_len(self._get_text()) > max_len:
             self._cut_text(max_len, cropped_text=cropped_text)
 
         self._include_entities_to_message()
         self._include_text_to_message()
 
     def _cut_text(self, length: int, cropped_text: str = ""):
-        self._set_text(Str(self._get_text())[:length] + cropped_text)
+        # tg_slice заменяет pyrogram Str(text)[:length] — корректный UTF-16 срез
+        self._set_text(tg_slice(self._get_text(), length) + cropped_text)
         self._set_entities(
             [e for e in self._get_entities() if e.offset + e.length < length]
         )
